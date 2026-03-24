@@ -1,34 +1,36 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# D.O.G Platform Preview
 
-## Getting Started
+Protótipo visual em Next.js para apresentar a proposta de uma plataforma SaaS para adestradores profissionais de cães.
 
-First, run the development server:
+## Objetivo
+
+Este projeto não implementa backend real. Ele serve para mostrar ao cliente como a plataforma pode ficar antes do desenvolvimento completo.
+
+## Páginas incluídas
+
+- `/` visão geral comercial
+- `/dashboard` home do adestrador
+- `/clientes` CRM de clientes e cães
+- `/treinos` timeline e evolução de sessões
+- `/agenda` agenda com confirmações e alertas
+- `/portal` portal externo do cliente
+- `/financeiro` contratos, cobranças e renovação
+
+## Como rodar
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Depois, abra `http://localhost:3000`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Stack do protótipo
 
-## Learn More
+- Next.js 16 com App Router
+- TypeScript
+- Tailwind CSS 4
 
-To learn more about Next.js, take a look at the following resources:
+## Próximo passo natural
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Se o cliente aprovar a interface, a evolução recomendada é implementar o MVP com autenticação, banco de dados, agenda, treinos, portal externo e contratos/pagamentos.

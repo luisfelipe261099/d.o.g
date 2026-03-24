@@ -1,0 +1,152 @@
+"use client";
+
+import { FormEvent, useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+
+import { useAppStore, type UserRole } from "@/lib/app-store";
+
+export function LoginClient() {
+  const params = useSearchParams();
+  const router = useRouter();
+  const login = useAppStore((state) => state.login);
+  const hydrated = useAppStore((state) => state.hydrated);
+  const isAuthenticated = useAppStore((state) => state.isAuthenticated);
+
+  const [email, setEmail] = useState("treinador@dogplatform.com");
+  const [password, setPassword] = useState("123456");
+  const [userRole, setUserRole] = useState<UserRole>("trainer");
+
+  const nextPath = useMemo(() => {
+    const target = params.get("next");
+    
+    // Verificar se a rota é permitida para o usuário
+    const isAdminRoute = target?.startsWith("/admin");
+    
+    // Se é rota admin e usuário é trainer, ignorar e ir para dashboard
+    if (isAdminRoute && userRole === "trainer") {
+      return "/dashboard";
+    }
+    
+    // Se é rota protegida e o usuário tem permissão, usar
+    if (target && target.startsWith("/")) {
+      return target;
+    }
+    
+    // Default baseado no role
+    return userRole === "admin" ? "/admin" : "/dashboard";
+  }, [params, userRole]);
+
+  useEffect(() => {
+    if (hydrated && isAuthenticated) {
+      router.replace(nextPath);
+    }
+  }, [hydrated, isAuthenticated, nextPath, router]);
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!email.trim()) return;
+
+    login(email.trim().toLowerCase(), userRole);
+    router.push(nextPath);
+  }
+
+  return (
+    <main className="mx-auto grid min-h-[calc(100vh-96px)] w-full max-w-7xl gap-6 px-4 pb-16 pt-10 sm:px-6 lg:grid-cols-[1.1fr_0.9fr] lg:px-8">
+      <section className="rounded-[2rem] border border-[var(--border)] bg-slate-950 p-8 text-white shadow-[var(--shadow)] sm:p-10">
+        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-300">
+          Cérebro digital do adestrador
+        </p>
+        <h1 className="mt-4 font-display text-4xl font-semibold leading-tight sm:text-5xl">
+          Acesse o sistema de gestão.
+        </h1>
+        <p className="mt-5 text-sm leading-7 text-slate-300 sm:text-base">
+          Plataforma completa para adestradores profissionais gerenciarem clientes, cães, agenda, treinos, portal do cliente e financeiro.
+        </p>
+
+        <div className="mt-8 space-y-3">
+          {[
+            { icon: "👤", text: "Acesso para adestradores" },
+            { icon: "⚙️", text: "Painel de administrador" },
+            { icon: "📊", text: "Gestão completa da plataforma" },
+            { icon: "🔐", text: "Dados seguros e privados" },
+          ].map((item) => (
+            <div key={item.text} className="flex items-center gap-3 rounded-2xl bg-white/8 p-4">
+              <span className="text-2xl">{item.icon}</span>
+              <span className="text-sm text-slate-200">{item.text}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="rounded-[2rem] border border-[var(--border)] bg-[var(--panel)] p-8 shadow-[var(--shadow)] sm:p-10">
+        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--muted)]">
+          Acesso
+        </p>
+        <h2 className="mt-3 font-display text-3xl font-semibold">Entrar no sistema</h2>
+
+        <form onSubmit={handleSubmit} className="mt-8 space-y-5">
+          <div>
+            <label className="text-sm font-medium text-[var(--muted)]">Tipo de acesso</label>
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              {[
+                { value: "trainer", label: "👨‍🐕 Adestrador", description: "Seu painel operacional" },
+                { value: "admin", label: "⚙️ Administrador", description: "Painel administrativo" },
+              ].map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setUserRole(option.value as UserRole)}
+                  className={`rounded-2xl border-2 px-4 py-3 text-left transition ${
+                    userRole === option.value
+                      ? "border-slate-900 bg-slate-900 text-white"
+                      : "border-slate-300 bg-slate-50 text-slate-900"
+                  }`}
+                >
+                  <div className="font-semibold">{option.label}</div>
+                  <div className={`text-xs ${
+                    userRole === option.value ? "text-slate-200" : "text-slate-600"
+                  }`}>{option.description}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <label className="block">
+            <span className="text-sm font-medium text-[var(--muted)]">Email</span>
+            <input
+              type="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              className="mt-2 w-full rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none transition focus:border-sky-400"
+              placeholder="voce@adestrador.com"
+              required
+            />
+          </label>
+
+          <label className="block">
+            <span className="text-sm font-medium text-[var(--muted)]">Senha</span>
+            <input
+              type="password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              className="mt-2 w-full rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none transition focus:border-sky-400"
+              placeholder="••••••"
+              required
+            />
+          </label>
+
+          <button
+            type="submit"
+            className="mt-2 w-full rounded-full bg-[var(--foreground)] px-5 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5"
+          >
+            Entrar como {userRole === "admin" ? "Administrador" : "Adestrador"}
+          </button>
+        </form>
+
+        <p className="mt-6 text-xs leading-6 text-[var(--muted)]">
+          Use as credenciais de demonstração para acessar.
+        </p>
+      </section>
+    </main>
+  );
+}
