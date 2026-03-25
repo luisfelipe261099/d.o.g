@@ -38,7 +38,7 @@ export default function SchedulePage() {
       kicker="Agenda inteligente"
       title="Calendário, confirmações e saúde"
       description="Gerencie confirmações e novos agendamentos com visão semanal e alertas operacionais."
-      requireAuth
+      requireAuth="trainer"
     >
       <section className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
         <article className="rounded-[1.75rem] border border-[var(--border)] bg-[var(--panel)] p-6 shadow-sm">

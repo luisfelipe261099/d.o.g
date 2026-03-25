@@ -19,7 +19,7 @@ export default function FinancialPage() {
       kicker="Financeiro"
       title="Contratos, pacotes e cobranças"
       description="Acompanhe pagamentos pendentes, baixa financeira e renovação de pacotes por cliente."
-      requireAuth
+      requireAuth="trainer"
     >
       <section className="grid gap-4 md:grid-cols-3">
         <article className="rounded-[1.75rem] border border-[var(--border)] bg-white/90 p-5 shadow-sm">

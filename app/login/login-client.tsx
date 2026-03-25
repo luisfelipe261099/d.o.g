@@ -18,22 +18,34 @@ export function LoginClient() {
 
   const nextPath = useMemo(() => {
     const target = params.get("next");
-    
-    // Verificar se a rota é permitida para o usuário
+
     const isAdminRoute = target?.startsWith("/admin");
-    
-    // Se é rota admin e usuário é trainer, ignorar e ir para dashboard
-    if (isAdminRoute && userRole === "trainer") {
-      return "/dashboard";
+    const isTrainerRoute =
+      target &&
+      ["/dashboard", "/clientes", "/treinos", "/agenda", "/portal", "/financeiro"].some((path) =>
+        target.startsWith(path),
+      );
+    const isClientRoute = target?.startsWith("/portal/cliente");
+
+    if (isAdminRoute && userRole !== "admin") {
+      return userRole === "client" ? "/portal/cliente" : "/dashboard";
     }
-    
-    // Se é rota protegida e o usuário tem permissão, usar
+
+    if (isTrainerRoute && userRole === "client" && !isClientRoute) {
+      return "/portal/cliente";
+    }
+
+    if (isClientRoute && userRole === "admin") {
+      return "/admin";
+    }
+
     if (target && target.startsWith("/")) {
       return target;
     }
-    
-    // Default baseado no role
-    return userRole === "admin" ? "/admin" : "/dashboard";
+
+    if (userRole === "admin") return "/admin";
+    if (userRole === "client") return "/portal/cliente";
+    return "/dashboard";
   }, [params, userRole]);
 
   useEffect(() => {
@@ -66,6 +78,7 @@ export function LoginClient() {
         <div className="mt-8 space-y-3">
           {[
             { icon: "👤", text: "Acesso para adestradores" },
+            { icon: "🐾", text: "Acesso para clientes/tutores" },
             { icon: "⚙️", text: "Painel de administrador" },
             { icon: "📊", text: "Gestão completa da plataforma" },
             { icon: "🔐", text: "Dados seguros e privados" },
@@ -87,9 +100,10 @@ export function LoginClient() {
         <form onSubmit={handleSubmit} className="mt-8 space-y-5">
           <div>
             <label className="text-sm font-medium text-[var(--muted)]">Tipo de acesso</label>
-            <div className="mt-3 grid grid-cols-2 gap-3">
+            <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
               {[
                 { value: "trainer", label: "👨‍🐕 Adestrador", description: "Seu painel operacional" },
+                { value: "client", label: "🐾 Cliente", description: "Portal do tutor" },
                 { value: "admin", label: "⚙️ Administrador", description: "Painel administrativo" },
               ].map((option) => (
                 <button
@@ -139,7 +153,7 @@ export function LoginClient() {
             type="submit"
             className="mt-2 w-full rounded-full bg-[var(--foreground)] px-5 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5"
           >
-            Entrar como {userRole === "admin" ? "Administrador" : "Adestrador"}
+            Entrar como {userRole === "admin" ? "Administrador" : userRole === "client" ? "Cliente" : "Adestrador"}
           </button>
         </form>
 

@@ -42,7 +42,7 @@ export default function DashboardPage() {
       kicker="Visão geral"
       title={`Painel do ${trainerName || "adestrador"}`}
       description="Visão central da operação com indicadores de clientes, treinos, agenda e financeiro em tempo real."
-      requireAuth
+      requireAuth="trainer"
     >
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {metrics.map((metric) => (

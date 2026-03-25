@@ -29,11 +29,20 @@ export function SiteHeader() {
     { href: "/treinos", label: "Treinos", kicker: "Core", description: "Registro de sessões" },
     { href: "/agenda", label: "Agenda", kicker: "Calendário", description: "Agendamentos" },
     { href: "/portal", label: "Portal", kicker: "Cliente", description: "Portal do cliente" },
+    { href: "/portal/cliente", label: "Acesso Cliente", kicker: "Externo", description: "Visão do tutor" },
     { href: "/financeiro", label: "Financeiro", kicker: "Financeiro", description: "Gestão financeira" },
   ];
 
+  const clientNav = [
+    { href: "/portal/cliente", label: "Meu Portal", kicker: "Cliente", description: "Visão do tutor" },
+  ];
+
   const visibleNav = isAuthenticated
-    ? userRole === "admin" ? adminNav : trainerNav
+    ? userRole === "admin"
+      ? adminNav
+      : userRole === "trainer"
+        ? trainerNav
+        : clientNav
     : [];
 
   useEffect(() => {

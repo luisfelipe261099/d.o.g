@@ -7,7 +7,7 @@ type PageShellProps = {
   kicker: string;
   title: string;
   description: string;
-  requireAuth?: boolean | UserRole;
+  requireAuth?: boolean | UserRole | UserRole[];
   children: ReactNode;
 };
 
@@ -37,7 +37,8 @@ export function PageShell({
   );
 
   if (requireAuth) {
-    return <AuthGuard role={typeof requireAuth === "string" ? requireAuth : undefined}>{content}</AuthGuard>;
+    const role = Array.isArray(requireAuth) || typeof requireAuth === "string" ? requireAuth : undefined;
+    return <AuthGuard role={role}>{content}</AuthGuard>;
   }
 
   return content;

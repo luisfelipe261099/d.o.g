@@ -42,7 +42,7 @@ export default function ClientsPage() {
       kicker="CRM pet"
       title="Clientes e cães"
       description="Cadastre cliente e cão no formulário abaixo para testar fluxo real de onboarding e ver os dados aparecerem imediatamente na lista."
-      requireAuth
+      requireAuth="trainer"
     >
       <section className="grid gap-4 xl:grid-cols-[0.8fr_1.2fr]">
         <article className="rounded-[1.75rem] border border-[var(--border)] bg-[var(--panel)] p-6 shadow-sm">

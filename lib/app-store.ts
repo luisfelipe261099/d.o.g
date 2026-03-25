@@ -5,7 +5,7 @@ import { persist } from "zustand/middleware";
 
 type SessionStatus = "Confirmado" | "Pendente" | "Aguardando" | "Recorrente";
 type PaymentStatus = "Pago" | "Pendente";
-export type UserRole = "admin" | "trainer";
+export type UserRole = "admin" | "trainer" | "client";
 
 export type DogProfile = {
   id: string;
