@@ -56,9 +56,18 @@ export default function ClientsPage() {
                 className="rounded-3xl border border-[var(--border)] bg-white/90 p-4"
               >
                 <div className="flex items-start justify-between gap-3">
-                  <div>
+                  <div className="flex items-start gap-3">
+                    {client.dogs[0]?.photoUrl ? (
+                      <img
+                        src={client.dogs[0].photoUrl}
+                        alt={`Foto de ${client.dogs[0].name}`}
+                        className="h-14 w-14 rounded-2xl object-cover"
+                      />
+                    ) : null}
+                    <div>
                     <h2 className="font-display text-xl font-semibold">{client.name}</h2>
                     <p className="text-sm text-[var(--muted)]">{client.phone}</p>
+                    </div>
                   </div>
                   <span className="rounded-full bg-lagoon px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-sky-900">
                     {client.dogs.length} cães
@@ -121,7 +130,15 @@ export default function ClientsPage() {
               className="rounded-[1.75rem] border border-[var(--border)] bg-[var(--panel-strong)] p-6 shadow-sm"
             >
               <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                <div>
+                <div className="flex items-start gap-4">
+                  {dog.photoUrl ? (
+                    <img
+                      src={dog.photoUrl}
+                      alt={`Foto de perfil de ${dog.name}`}
+                      className="h-24 w-24 rounded-[1.5rem] object-cover shadow-sm"
+                    />
+                  ) : null}
+                  <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-800">
                     Perfil do cão
                   </p>
@@ -129,6 +146,7 @@ export default function ClientsPage() {
                   <p className="mt-1 text-sm text-[var(--muted)]">
                     {dog.breed} • {dog.age} • {dog.weight}
                   </p>
+                  </div>
                 </div>
                 <div className="flex flex-wrap gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">
                   {dog.trainingTypes.map((item) => (

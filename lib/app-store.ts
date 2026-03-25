@@ -13,6 +13,7 @@ export type DogProfile = {
   breed: string;
   age: string;
   weight: string;
+  photoUrl?: string;
   trainingTypes: string[];
 };
 
@@ -133,6 +134,7 @@ const initialClients: ClientProfile[] = [
         breed: "Border Collie",
         age: "2 anos",
         weight: "22 kg",
+        photoUrl: "https://images.unsplash.com/photo-1517849845537-4d257902454a?auto=format&fit=crop&w=900&q=80",
         trainingTypes: ["Reatividade", "Obediência", "Place"],
       },
     ],
@@ -151,6 +153,7 @@ const initialClients: ClientProfile[] = [
         breed: "Labrador",
         age: "6 meses",
         weight: "18 kg",
+        photoUrl: "https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&w=900&q=80",
         trainingTypes: ["Filhotes", "Guia"],
       },
     ],
@@ -310,6 +313,7 @@ export const useAppStore = create<AppState>()(
                   breed: payload.breed,
                   age: payload.age,
                   weight: payload.weight,
+                  photoUrl: "https://images.unsplash.com/photo-1518717758536-85ae29035b6d?auto=format&fit=crop&w=900&q=80",
                   trainingTypes: payload.trainingTypes,
                 },
               ],

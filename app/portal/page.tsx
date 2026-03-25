@@ -2,12 +2,13 @@
 
 import { PageShell } from "@/components/page-shell";
 import { useAppStore } from "@/lib/app-store";
-import { portalFeed, portalGallery } from "@/lib/mock-data";
+import { clients, portalFeed, portalGallery } from "@/lib/mock-data";
 
 export default function PortalPage() {
   const tasks = useAppStore((state) => state.portalTasks);
   const toggleTask = useAppStore((state) => state.toggleTask);
   const completed = tasks.filter((task) => task.completed).length;
+  const featuredDog = clients[0]?.dogs[0];
 
   return (
     <PageShell
@@ -22,11 +23,22 @@ export default function PortalPage() {
             Link externo
           </p>
           <div className="mt-5 rounded-3xl bg-white/7 p-5">
-            <p className="text-sm text-slate-300">app.dominio.com/cliente/canil-prime/8fd2x1</p>
-            <h2 className="mt-4 font-display text-3xl font-semibold">Portal do Thor</h2>
-            <p className="mt-2 text-sm leading-7 text-slate-300">
-              Acesso simplificado com token seguro. O cliente consegue confirmar aula, ver tarefas e acompanhar a evolução sem depender de app nativo.
-            </p>
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+              {featuredDog?.photoUrl ? (
+                <img
+                  src={featuredDog.photoUrl}
+                  alt={`Foto de ${featuredDog.name}`}
+                  className="h-24 w-24 rounded-[1.5rem] object-cover"
+                />
+              ) : null}
+              <div>
+                <p className="text-sm text-slate-300">app.dominio.com/cliente/canil-prime/8fd2x1</p>
+                <h2 className="mt-4 font-display text-3xl font-semibold">Portal do {featuredDog?.name ?? "Thor"}</h2>
+                <p className="mt-2 text-sm leading-7 text-slate-300">
+                  Acesso simplificado com token seguro. O cliente consegue confirmar aula, ver tarefas e acompanhar a evolução sem depender de app nativo.
+                </p>
+              </div>
+            </div>
             <div className="mt-6 grid gap-3 sm:grid-cols-2">
               <div className="rounded-2xl bg-white/7 p-4">
                 <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Aulas realizadas</p>
@@ -109,7 +121,11 @@ export default function PortalPage() {
               key={item.title}
               className="overflow-hidden rounded-[1.5rem] border border-[var(--border)] bg-white"
             >
-              <div className="h-44 bg-[linear-gradient(135deg,_rgba(14,165,233,0.22),_rgba(245,158,11,0.28)),linear-gradient(180deg,_rgba(255,255,255,0.4),_rgba(17,32,51,0.06))]" />
+              <img
+                src={item.imageUrl}
+                alt={item.title}
+                className="h-44 w-full object-cover"
+              />
               <div className="p-4">
                 <div className="flex items-center justify-between gap-3">
                   <h3 className="font-display text-xl font-semibold">{item.title}</h3>

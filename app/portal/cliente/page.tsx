@@ -37,10 +37,19 @@ export default function PortalClientePage() {
       <section className="mx-auto w-full max-w-5xl">
         <div className="rounded-[2rem] border border-[var(--border)] bg-[linear-gradient(150deg,_#0f172a,_#112033_45%,_#1e293b)] p-5 text-white shadow-[var(--shadow)] sm:p-6">
           <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-300">Meu pet</p>
-              <h2 className="mt-2 font-display text-3xl font-semibold">{featuredDog?.name}</h2>
-              <p className="mt-1 text-sm text-slate-300">{featuredDog?.breed} • {featuredDog?.age}</p>
+            <div className="flex items-start gap-4">
+              {featuredDog?.photoUrl ? (
+                <img
+                  src={featuredDog.photoUrl}
+                  alt={`Foto de ${featuredDog.name}`}
+                  className="h-20 w-20 rounded-[1.5rem] object-cover"
+                />
+              ) : null}
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-300">Meu pet</p>
+                <h2 className="mt-2 font-display text-3xl font-semibold">{featuredDog?.name}</h2>
+                <p className="mt-1 text-sm text-slate-300">{featuredDog?.breed} • {featuredDog?.age}</p>
+              </div>
             </div>
             <div className="rounded-2xl border border-white/20 bg-white/10 px-4 py-2 text-right">
               <p className="text-xs uppercase tracking-[0.16em] text-slate-300">Tutor</p>
@@ -128,6 +137,13 @@ export default function PortalClientePage() {
 
           <article className="rounded-[1.75rem] border border-[var(--border)] bg-[var(--panel-strong)] p-5 shadow-sm">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">Perfil do animal</p>
+            {featuredDog?.photoUrl ? (
+              <img
+                src={featuredDog.photoUrl}
+                alt={`Perfil de ${featuredDog.name}`}
+                className="mt-4 h-52 w-full rounded-[1.5rem] object-cover"
+              />
+            ) : null}
             <h3 className="mt-3 font-display text-3xl font-semibold">{featuredDog?.name}</h3>
             <p className="mt-1 text-sm text-[var(--muted)]">{featuredDog?.breed} • {featuredDog?.weight}</p>
 
@@ -185,7 +201,11 @@ export default function PortalClientePage() {
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               {portalGallery.map((item) => (
                 <article key={item.title} className="overflow-hidden rounded-2xl border border-[var(--border)] bg-white">
-                  <div className="h-28 bg-[linear-gradient(130deg,_rgba(14,165,233,0.25),_rgba(245,158,11,0.32))]" />
+                  <img
+                    src={item.imageUrl}
+                    alt={item.title}
+                    className="h-28 w-full object-cover"
+                  />
                   <div className="p-3">
                     <div className="flex items-center justify-between gap-2">
                       <h3 className="font-semibold">{item.title}</h3>

@@ -151,6 +151,7 @@ export const clients = [
         breed: "Border Collie",
         age: "2 anos",
         weight: "22 kg",
+        photoUrl: "https://images.unsplash.com/photo-1517849845537-4d257902454a?auto=format&fit=crop&w=900&q=80",
         trainingTypes: ["Reatividade", "Obediência", "Place"],
         priorityIssues: [
           "Puxa muito na guia",
@@ -172,6 +173,7 @@ export const clients = [
         breed: "SRD",
         age: "8 meses",
         weight: "11 kg",
+        photoUrl: "https://images.unsplash.com/photo-1537151625747-768eb6cf92b2?auto=format&fit=crop&w=900&q=80",
         trainingTypes: ["Filhotes", "Socialização"],
         priorityIssues: ["Morde mãos", "Ansiedade no portão", "Xixi fora do tapete"],
         health: {
@@ -198,6 +200,7 @@ export const clients = [
         breed: "Labrador",
         age: "6 meses",
         weight: "18 kg",
+        photoUrl: "https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&w=900&q=80",
         trainingTypes: ["Filhotes", "Guia"],
         priorityIssues: ["Pulando em pessoas", "Pegando objetos", "Mastigação excessiva"],
         health: {
@@ -355,16 +358,19 @@ export const portalGallery = [
     title: "Treino de guia",
     kind: "Foto",
     caption: "Comparativo antes e depois do ajuste de ritmo durante o passeio na rua.",
+    imageUrl: "https://images.unsplash.com/photo-1518717758536-85ae29035b6d?auto=format&fit=crop&w=1200&q=80",
   },
   {
     title: "Place com visita",
     kind: "Vídeo",
     caption: "Demonstração de permanência enquanto uma pessoa entra no ambiente sem contato direto.",
+    imageUrl: "https://images.unsplash.com/photo-1548199973-03cce0bbc87b?auto=format&fit=crop&w=1200&q=80",
   },
   {
     title: "Rotina em casa",
     kind: "Foto",
     caption: "Registro do setup sugerido para facilitar consistência na rotina do cliente.",
+    imageUrl: "https://images.unsplash.com/photo-1517423440428-a5a00ad493e8?auto=format&fit=crop&w=1200&q=80",
   },
 ];
 
