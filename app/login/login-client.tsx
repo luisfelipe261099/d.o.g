@@ -31,6 +31,10 @@ export function LoginClient() {
       return path === "/portal/cliente";
     }
 
+    if (path === "/portal/cliente" || path.startsWith("/portal/cliente/")) {
+      return false;
+    }
+
     return ["/dashboard", "/clientes", "/treinos", "/agenda", "/portal", "/financeiro"].some(
       (allowedPath) => path === allowedPath || path.startsWith(`${allowedPath}/`),
     );
@@ -61,36 +65,18 @@ export function LoginClient() {
   }
 
   return (
-    <main className="mx-auto grid min-h-[calc(100vh-96px)] w-full max-w-7xl gap-6 px-4 pb-16 pt-8 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:px-8">
-      <section className="rounded-[2rem] border border-[var(--border)] bg-[linear-gradient(150deg,_#0f172a,_#112033_50%,_#1e293b)] p-8 text-white shadow-[var(--shadow)] sm:p-10">
-        <h1 className="font-display text-4xl font-semibold leading-tight sm:text-5xl">
-          Acesse seu ambiente de trabalho.
-        </h1>
-        <p className="mt-5 text-sm leading-7 text-slate-300 sm:text-base">
-          Um sistema integrado para gestão de adestradores, administração e acompanhamento em tempo real.
+    <main className="mx-auto flex min-h-[calc(100vh-96px)] w-full max-w-7xl items-center justify-center px-4 pb-16 pt-8 sm:px-6 lg:px-8">
+      <section className="relative w-full max-w-2xl overflow-hidden rounded-[2.25rem] border border-[var(--border)] bg-[linear-gradient(180deg,_rgba(255,250,245,0.95),_rgba(247,239,231,0.98))] p-8 shadow-[var(--shadow)] sm:p-10">
+        <div className="pointer-events-none absolute -right-10 top-0 h-36 w-36 rounded-full bg-[rgba(181,111,76,0.14)] blur-3xl" />
+        <div className="pointer-events-none absolute bottom-0 left-0 h-32 w-32 rounded-full bg-[rgba(64,93,78,0.12)] blur-3xl" />
+        <p className="relative text-xs font-semibold uppercase tracking-[0.24em] text-[rgba(120,76,52,0.78)]">Login</p>
+        <h2 className="relative mt-3 font-display text-3xl font-semibold text-[var(--foreground)] sm:text-4xl">Entrar na plataforma</h2>
+        <p className="relative mt-3 max-w-xl text-sm leading-7 text-[var(--muted)]">
+          Escolha o perfil e acesse o ambiente correspondente sem desvio entre áreas.
         </p>
 
-        <div className="mt-8 grid gap-3 sm:grid-cols-2">
-          {[
-            { icon: "👨‍💼", text: "Painel completo para adestradores" },
-            { icon: "🐾", text: "Portal do tutor com fotos e videos" },
-            { icon: "⚙️", text: "Controle administrativo e cobrança" },
-            { icon: "📊", text: "Analítica e relatórios em tempo real" },
-          ].map((item) => (
-            <div key={item.text} className="rounded-2xl border border-white/15 bg-white/10 p-4">
-              <p className="text-2xl">{item.icon}</p>
-              <p className="mt-2 text-sm text-slate-100">{item.text}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="rounded-[2rem] border border-[var(--border)] bg-[var(--panel)] p-8 shadow-[var(--shadow)] sm:p-10">
-        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--muted)]">Login</p>
-        <h2 className="mt-3 font-display text-3xl font-semibold">Entrar na plataforma</h2>
-
-        <form onSubmit={handleSubmit} className="mt-8 space-y-5">
-          <div>
+        <form onSubmit={handleSubmit} className="relative mt-8 space-y-6">
+          <div className="rounded-[1.5rem] border border-white/70 bg-white/68 p-4 backdrop-blur-sm">
             <label className="text-sm font-medium text-[var(--muted)]">Tipo de acesso</label>
             <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
               {[
@@ -102,15 +88,15 @@ export function LoginClient() {
                   key={option.value}
                   type="button"
                   onClick={() => setUserRole(option.value as UserRole)}
-                  className={`rounded-2xl border-2 px-4 py-3 text-left transition ${
+                  className={`rounded-2xl border px-4 py-3 text-left transition ${
                     userRole === option.value
-                      ? "border-slate-900 bg-slate-900 text-white shadow-sm"
-                      : "border-slate-300 bg-slate-50 text-slate-900 hover:border-slate-500"
+                      ? "border-[#5f3421] bg-[#5f3421] text-white shadow-[0_12px_24px_rgba(95,52,33,0.2)]"
+                      : "border-[var(--border)] bg-[rgba(255,249,243,0.86)] text-[var(--foreground)] hover:border-[rgba(95,52,33,0.34)]"
                   }`}
                 >
                   <div className="font-semibold">{option.label}</div>
                   <div className={`text-xs ${
-                    userRole === option.value ? "text-slate-200" : "text-slate-600"
+                    userRole === option.value ? "text-[rgba(255,241,231,0.82)]" : "text-[var(--muted)]"
                   }`}>{option.description}</div>
                 </button>
               ))}
@@ -123,7 +109,7 @@ export function LoginClient() {
               type="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
-              className="mt-2 w-full rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none transition focus:border-sky-400"
+              className="mt-2 w-full rounded-2xl border border-[var(--border)] bg-[rgba(255,252,248,0.92)] px-4 py-3 text-sm outline-none transition focus:border-[#b56f4c]"
               placeholder="voce@adestrador.com"
               required
             />
@@ -135,7 +121,7 @@ export function LoginClient() {
               type="password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              className="mt-2 w-full rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none transition focus:border-sky-400"
+              className="mt-2 w-full rounded-2xl border border-[var(--border)] bg-[rgba(255,252,248,0.92)] px-4 py-3 text-sm outline-none transition focus:border-[#b56f4c]"
               placeholder="••••••"
               required
             />
@@ -143,13 +129,13 @@ export function LoginClient() {
 
           <button
             type="submit"
-            className="mt-2 w-full rounded-xl bg-[var(--foreground)] px-5 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5"
+            className="mt-2 w-full rounded-xl bg-[#5f3421] px-5 py-3 text-sm font-semibold text-white shadow-[0_16px_28px_rgba(95,52,33,0.22)] transition hover:-translate-y-0.5 hover:bg-[#4f2b1c]"
           >
             Entrar como {userRole === "admin" ? "Administrador" : userRole === "client" ? "Cliente" : "Adestrador"}
           </button>
         </form>
 
-        <p className="mt-6 rounded-xl border border-[var(--border)] bg-white px-4 py-3 text-xs leading-6 text-[var(--muted)]">
+        <p className="relative mt-6 rounded-xl border border-[var(--border)] bg-[rgba(255,252,248,0.9)] px-4 py-3 text-xs leading-6 text-[var(--muted)]">
           Credenciais padrão: treinador@dogplatform.com / 123456
         </p>
       </section>

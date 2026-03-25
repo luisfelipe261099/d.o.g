@@ -1,10 +1,8 @@
 "use client";
 
-import Link from "next/link";
-
 import { PageShell } from "@/components/page-shell";
 import { useAppStore } from "@/lib/app-store";
-import { quickActions, trainerAlerts } from "@/lib/mock-data";
+import { trainerAlerts } from "@/lib/mock-data";
 
 export default function DashboardPage() {
   const clients = useAppStore((state) => state.clients);
@@ -12,12 +10,6 @@ export default function DashboardPage() {
   const sessions = useAppStore((state) => state.trainingSessions);
   const payments = useAppStore((state) => state.payments);
   const trainerName = useAppStore((state) => state.trainerName);
-
-  const quickActionLinks: Record<string, { href: string; cta: string }> = {
-    "Novo cliente + novo cão": { href: "/clientes", cta: "Abrir clientes" },
-    "Novo agendamento": { href: "/agenda", cta: "Abrir agenda" },
-    "Gerar relatório em PDF": { href: "/portal", cta: "Abrir portal" },
-  };
 
   const confirmedEvents = events.filter((event) => event.status === "Confirmado").length;
   const pendingPayments = payments
@@ -63,7 +55,7 @@ export default function DashboardPage() {
         ))}
       </section>
 
-      <section className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
+      <section>
         <article className="rounded-[1.75rem] border border-[var(--border)] bg-[var(--panel)] p-6 shadow-sm">
           <div className="flex items-center justify-between gap-3">
             <div>
@@ -102,34 +94,6 @@ export default function DashboardPage() {
                 </div>
               </div>
             ))}
-          </div>
-        </article>
-
-        <article className="rounded-[1.75rem] border border-[var(--border)] bg-slate-950 p-6 text-white shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-            Ações rápidas
-          </p>
-          <div className="mt-5 space-y-3">
-            {quickActions.map((action) => (
-              <div key={action.title} className="rounded-3xl bg-white/7 p-4">
-                <h3 className="font-display text-xl font-semibold">{action.title}</h3>
-                <p className="mt-2 text-sm leading-7 text-slate-300">{action.description}</p>
-                <Link
-                  href={quickActionLinks[action.title]?.href ?? "/dashboard"}
-                  className="mt-4 inline-flex rounded-full bg-white px-4 py-2 text-sm font-semibold text-slate-900"
-                >
-                  {quickActionLinks[action.title]?.cta ?? "Abrir"}
-                </Link>
-              </div>
-            ))}
-          </div>
-          <div className="mt-5 grid gap-2 sm:grid-cols-2">
-            <Link href="/clientes" className="rounded-full bg-white px-4 py-2 text-center text-sm font-semibold text-slate-900">
-              Cadastrar cliente
-            </Link>
-            <Link href="/agenda" className="rounded-full border border-white/20 px-4 py-2 text-center text-sm font-semibold text-white">
-              Confirmar agenda
-            </Link>
           </div>
         </article>
       </section>

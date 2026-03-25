@@ -3,21 +3,21 @@
 @theme inline {
 	--font-sans: var(--font-dm-sans);
 	--font-display: var(--font-space-grotesk);
-	--color-ink: #112033;
-	--color-sand: #fff9ef;
-	--color-lagoon: #d8f1ff;
-	--color-mint: #dff8ee;
-	--color-amber-soft: #fff0cd;
+	--color-ink: #231814;
+	--color-sand: #f8f1e7;
+	--color-lagoon: #dcefeb;
+	--color-mint: #dbe8d7;
+	--color-amber-soft: #f0cf9b;
 }
 
 :root {
-	--background: #f0ebe2;
-	--foreground: #112033;
-	--panel: #faf8f4;
-	--panel-strong: #ffffff;
-	--border: rgba(17, 32, 51, 0.25);
-	--muted: rgba(17, 32, 51, 0.85);
-	--shadow: 0 24px 80px rgba(17, 32, 51, 0.15);
+	--background: #efe2d2;
+	--foreground: #231814;
+	--panel: rgba(250, 244, 236, 0.9);
+	--panel-strong: #fffaf4;
+	--border: rgba(86, 57, 39, 0.18);
+	--muted: rgba(70, 46, 33, 0.78);
+	--shadow: 0 28px 70px rgba(73, 42, 20, 0.12);
 }
 
 * {
@@ -32,9 +32,12 @@ body {
 	margin: 0;
 	min-height: 100vh;
 	background:
-		linear-gradient(180deg, rgba(255, 255, 255, 0.35), transparent 35%),
-		linear-gradient(135deg, rgba(255, 246, 220, 0.65), rgba(235, 245, 255, 0.65)),
+		radial-gradient(circle at top left, rgba(181, 111, 76, 0.2), transparent 24%),
+		radial-gradient(circle at top right, rgba(64, 93, 78, 0.16), transparent 22%),
+		linear-gradient(180deg, rgba(255, 250, 243, 0.72), transparent 28%),
+		linear-gradient(135deg, rgba(255, 241, 224, 0.86), rgba(245, 235, 224, 0.92)),
 		var(--background);
+	color: var(--foreground);
 }
 
 #__next,
@@ -54,10 +57,12 @@ body::before {
 	inset: 0;
 	pointer-events: none;
 	background-image:
-		linear-gradient(rgba(17, 32, 51, 0.04) 1px, transparent 1px),
-		linear-gradient(90deg, rgba(17, 32, 51, 0.04) 1px, transparent 1px);
-	background-size: 42px 42px;
-	mask-image: radial-gradient(circle at center, black 30%, transparent 85%);
+		radial-gradient(circle at 20% 18%, rgba(182, 120, 87, 0.12), transparent 0 18%),
+		radial-gradient(circle at 82% 22%, rgba(72, 106, 88, 0.12), transparent 0 16%),
+		linear-gradient(rgba(86, 57, 39, 0.045) 1px, transparent 1px),
+		linear-gradient(90deg, rgba(86, 57, 39, 0.045) 1px, transparent 1px);
+	background-size: auto, auto, 44px 44px, 44px 44px;
+	mask-image: radial-gradient(circle at center, black 42%, transparent 88%);
 }
 
 a {
@@ -66,5 +71,5 @@ a {
 }
 
 ::selection {
-	background: rgba(14, 165, 233, 0.22);
+	background: rgba(181, 111, 76, 0.28);
 }
