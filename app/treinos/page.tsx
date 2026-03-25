@@ -48,10 +48,10 @@ export default function TrainingPage() {
 
   return (
     <PageShell
-      kicker="Core do produto"
-      title="Timeline de treinos e evolução"
-      description="Registre sessões por bloco de treino e acompanhe evolução com notas e histórico técnico."
-        requireAuth="trainer"
+      kicker="Técnica"
+      title="Treinos e evolução"
+      description="Registre e acompanhe sessões de treino por bloco com notas técnicas, scores e progresso evolutivo."
+      requireAuth="trainer"
     >
       <section className="grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
         <article className="rounded-[1.75rem] border border-[var(--border)] bg-[var(--panel)] p-6 shadow-sm">

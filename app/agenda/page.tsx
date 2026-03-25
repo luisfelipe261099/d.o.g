@@ -35,9 +35,9 @@ export default function SchedulePage() {
 
   return (
     <PageShell
-      kicker="Agenda inteligente"
-      title="Calendário, confirmações e saúde"
-      description="Gerencie confirmações e novos agendamentos com visão semanal e alertas operacionais."
+      kicker="Calendário"
+      title="Agenda de aulas"
+      description="Agende e gerencie sessões com confirmações semanais, alertas de saúde e disponibilidade de slots."
       requireAuth="trainer"
     >
       <section className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">

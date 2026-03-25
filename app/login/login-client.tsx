@@ -65,25 +65,22 @@ export function LoginClient() {
   return (
     <main className="mx-auto grid min-h-[calc(100vh-96px)] w-full max-w-7xl gap-6 px-4 pb-16 pt-8 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:px-8">
       <section className="rounded-[2rem] border border-[var(--border)] bg-[linear-gradient(150deg,_#0f172a,_#112033_50%,_#1e293b)] p-8 text-white shadow-[var(--shadow)] sm:p-10">
-        <div className="inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-200">
-          Plataforma em modo preview
-        </div>
-        <h1 className="mt-5 font-display text-4xl font-semibold leading-tight sm:text-5xl">
+        <h1 className="font-display text-4xl font-semibold leading-tight sm:text-5xl">
           Acesse seu ambiente de trabalho.
         </h1>
         <p className="mt-5 text-sm leading-7 text-slate-300 sm:text-base">
-          Um unico sistema para operacao do adestrador, administracao da plataforma e acompanhamento do tutor em tempo real.
+          Um sistema integrado para gestão de adestradores, administração e acompanhamento em tempo real.
         </p>
 
         <div className="mt-8 grid gap-3 sm:grid-cols-2">
           {[
-            { icon: "OPERACAO", text: "Painel completo para adestradores" },
-            { icon: "CLIENTE", text: "Portal com fotos, videos e agenda" },
-            { icon: "ADMIN", text: "Controle de planos e faturamento" },
-            { icon: "DADOS", text: "Mocks prontos para validacao comercial" },
+            { icon: "👨‍💼", text: "Painel completo para adestradores" },
+            { icon: "🐾", text: "Portal do tutor com fotos e videos" },
+            { icon: "⚙️", text: "Controle administrativo e cobrança" },
+            { icon: "📊", text: "Analítica e relatórios em tempo real" },
           ].map((item) => (
             <div key={item.text} className="rounded-2xl border border-white/15 bg-white/10 p-4">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-300">{item.icon}</p>
+              <p className="text-2xl">{item.icon}</p>
               <p className="mt-2 text-sm text-slate-100">{item.text}</p>
             </div>
           ))}
@@ -155,7 +152,7 @@ export function LoginClient() {
         </form>
 
         <p className="mt-6 rounded-xl border border-[var(--border)] bg-white px-4 py-3 text-xs leading-6 text-[var(--muted)]">
-          Use as credenciais de demonstração para acessar.
+          Credenciais padrão: treinador@dogplatform.com / 123456
         </p>
       </section>
     </main>

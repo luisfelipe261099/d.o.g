@@ -24,12 +24,11 @@ export function SiteHeader() {
   ];
 
   const trainerNav = [
-    { href: "/dashboard", label: "Dashboard", kicker: "Home", description: "Home executiva" },
-    { href: "/clientes", label: "Clientes", kicker: "CRM", description: "Gestão de clientes" },
-    { href: "/treinos", label: "Treinos", kicker: "Core", description: "Registro de sessões" },
+    { href: "/dashboard", label: "Dashboard", kicker: "Home", description: "Visão geral da operação" },
+    { href: "/clientes", label: "Clientes", kicker: "Carteira", description: "Gestão de clientes" },
+    { href: "/treinos", label: "Treinos", kicker: "Técnica", description: "Registro de sessões" },
     { href: "/agenda", label: "Agenda", kicker: "Calendário", description: "Agendamentos" },
-    { href: "/portal", label: "Portal", kicker: "Cliente", description: "Portal do cliente" },
-    { href: "/portal/cliente", label: "Acesso Cliente", kicker: "Externo", description: "Visão do tutor" },
+    { href: "/portal", label: "Portal do Cliente", kicker: "Externo", description: "Gerenciar acesso do cliente" },
     { href: "/financeiro", label: "Financeiro", kicker: "Financeiro", description: "Gestão financeira" },
   ];
 

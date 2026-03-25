@@ -1,5 +1,3 @@
-import Link from "next/link";
-
 import { PageShell } from "@/components/page-shell";
 import {
   calendarEvents,
@@ -19,10 +17,10 @@ export default function PortalClientePage() {
 
   return (
     <PageShell
-      kicker="Acesso do cliente"
-      title="Portal com cara de app real"
-      description="Visao mobile-first para o tutor acompanhar dados do animal, agenda, tarefas, fotos, videos e relatorios em uma experiencia de produto."
-      requireAuth={["trainer", "client"]}
+      kicker="Portal do tutor"
+      title="Seu espaço de acompanhamento"
+      description="Acompanhe os dados do seu animal, agenda de aulas, tarefas e galeria de fotos e videos."
+      requireAuth="client"
     >
       <section className="mx-auto w-full max-w-5xl">
         <div className="rounded-[2rem] border border-[var(--border)] bg-[linear-gradient(150deg,_#0f172a,_#112033_45%,_#1e293b)] p-5 text-white shadow-[var(--shadow)] sm:p-6">
@@ -217,14 +215,7 @@ export default function PortalClientePage() {
           </div>
         </div>
 
-        <div className="mt-4 flex justify-end">
-          <Link
-            href="/portal"
-            className="inline-flex rounded-full border border-[var(--border)] bg-white px-5 py-3 text-sm font-semibold text-[var(--foreground)]"
-          >
-            Voltar para o painel do adestrador
-          </Link>
-        </div>
+
       </section>
     </PageShell>
   );

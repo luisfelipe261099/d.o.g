@@ -1,7 +1,5 @@
 "use client";
 
-import Link from "next/link";
-
 import { PageShell } from "@/components/page-shell";
 import { useAppStore } from "@/lib/app-store";
 import { portalFeed, portalGallery } from "@/lib/mock-data";
@@ -13,9 +11,9 @@ export default function PortalPage() {
 
   return (
     <PageShell
-      kicker="Experiência do cliente"
-      title="Portal externo sem login complexo"
-      description="A visualização mostra como o dono do cão acompanha tarefas, aulas, saúde e mídia em uma URL personalizada pronta para compartilhar por link ou QR Code."
+      kicker="Cliente final"
+      title="Portal do cliente"
+      description="Visualize e gerencie como seus clientes acompanham evolução, tarefas, agenda e mídia através de um link compartilhável com token seguro."
       requireAuth="trainer"
     >
       <section className="grid gap-4 lg:grid-cols-[0.95fr_1.05fr]">
@@ -126,20 +124,14 @@ export default function PortalPage() {
         </div>
       </section>
 
-      <section className="rounded-[1.75rem] border border-[var(--border)] bg-slate-950 p-6 text-white shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-          Acesso do tutor
+      <section className="rounded-[1.75rem] border border-[var(--border)] bg-emerald-950 p-6 text-white shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-300">
+          Notificação
         </p>
         <div className="mt-4 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <p className="max-w-3xl text-sm leading-7 text-slate-300">
-            Abra a visualização final que o cliente recebe com dados do animal, agenda, fotos, vídeos e relatórios.
+          <p className="max-w-3xl text-sm leading-7 text-emerald-100">
+            Este é o painel de gerenciamento do portal do cliente. Os donos de cães acessam pelo link personalizado, não por este painel.
           </p>
-          <Link
-            href="/portal/cliente"
-            className="inline-flex rounded-full bg-white px-5 py-3 text-sm font-semibold text-slate-900"
-          >
-            Ver acesso do cliente
-          </Link>
         </div>
       </section>
     </PageShell>

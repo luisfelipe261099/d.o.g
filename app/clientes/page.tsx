@@ -39,9 +39,9 @@ export default function ClientsPage() {
 
   return (
     <PageShell
-      kicker="CRM pet"
-      title="Clientes e cães"
-      description="Cadastre cliente e cão no formulário abaixo para testar fluxo real de onboarding e ver os dados aparecerem imediatamente na lista."
+      kicker="Carteira"
+      title="Meus clientes e cães"
+      description="Gerencie todos os clientes e cães cadastrados com seus dados, planos e histórico de evolução."
       requireAuth="trainer"
     >
       <section className="grid gap-4 xl:grid-cols-[0.8fr_1.2fr]">
