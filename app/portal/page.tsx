@@ -1,5 +1,7 @@
 "use client";
 
+import Image from "next/image";
+
 import { PageShell } from "@/components/page-shell";
 import { useAppStore } from "@/lib/app-store";
 import { clients, portalFeed, portalGallery } from "@/lib/mock-data";
@@ -25,9 +27,11 @@ export default function PortalPage() {
           <div className="mt-5 rounded-3xl bg-white/7 p-5">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
               {featuredDog?.photoUrl ? (
-                <img
+                <Image
                   src={featuredDog.photoUrl}
                   alt={`Foto de ${featuredDog.name}`}
+                  width={96}
+                  height={96}
                   className="h-24 w-24 rounded-[1.5rem] object-cover"
                 />
               ) : null}
@@ -121,9 +125,11 @@ export default function PortalPage() {
               key={item.title}
               className="overflow-hidden rounded-[1.5rem] border border-[var(--border)] bg-white"
             >
-              <img
+              <Image
                 src={item.imageUrl}
                 alt={item.title}
+                width={1200}
+                height={440}
                 className="h-44 w-full object-cover"
               />
               <div className="p-4">

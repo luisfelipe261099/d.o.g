@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState } from "react";
 
 import { PageShell } from "@/components/page-shell";
@@ -39,9 +40,11 @@ export default function PortalClientePage() {
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-start gap-4">
               {featuredDog?.photoUrl ? (
-                <img
+                <Image
                   src={featuredDog.photoUrl}
                   alt={`Foto de ${featuredDog.name}`}
+                  width={80}
+                  height={80}
                   className="h-20 w-20 rounded-[1.5rem] object-cover"
                 />
               ) : null}
@@ -138,9 +141,11 @@ export default function PortalClientePage() {
           <article className="rounded-[1.75rem] border border-[var(--border)] bg-[var(--panel-strong)] p-5 shadow-sm">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">Perfil do animal</p>
             {featuredDog?.photoUrl ? (
-              <img
+              <Image
                 src={featuredDog.photoUrl}
                 alt={`Perfil de ${featuredDog.name}`}
+                width={720}
+                height={416}
                 className="mt-4 h-52 w-full rounded-[1.5rem] object-cover"
               />
             ) : null}
@@ -201,9 +206,11 @@ export default function PortalClientePage() {
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               {portalGallery.map((item) => (
                 <article key={item.title} className="overflow-hidden rounded-2xl border border-[var(--border)] bg-white">
-                  <img
+                  <Image
                     src={item.imageUrl}
                     alt={item.title}
+                    width={720}
+                    height={224}
                     className="h-28 w-full object-cover"
                   />
                   <div className="p-3">

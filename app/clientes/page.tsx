@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { FormEvent, useState } from "react";
 
 import { PageShell } from "@/components/page-shell";
@@ -58,9 +59,11 @@ export default function ClientsPage() {
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-start gap-3">
                     {client.dogs[0]?.photoUrl ? (
-                      <img
+                      <Image
                         src={client.dogs[0].photoUrl}
                         alt={`Foto de ${client.dogs[0].name}`}
+                        width={56}
+                        height={56}
                         className="h-14 w-14 rounded-2xl object-cover"
                       />
                     ) : null}
@@ -132,9 +135,11 @@ export default function ClientsPage() {
               <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div className="flex items-start gap-4">
                   {dog.photoUrl ? (
-                    <img
+                    <Image
                       src={dog.photoUrl}
                       alt={`Foto de perfil de ${dog.name}`}
+                      width={96}
+                      height={96}
                       className="h-24 w-24 rounded-[1.5rem] object-cover shadow-sm"
                     />
                   ) : null}
