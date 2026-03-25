@@ -16,36 +16,34 @@ export function LoginClient() {
   const [password, setPassword] = useState("123456");
   const [userRole, setUserRole] = useState<UserRole>("trainer");
 
+  function getDefaultPath(role: UserRole) {
+    if (role === "admin") return "/admin";
+    if (role === "client") return "/portal/cliente";
+    return "/dashboard";
+  }
+
+  function isAllowedPath(role: UserRole, path: string) {
+    if (role === "admin") {
+      return path === "/admin" || path.startsWith("/admin/");
+    }
+
+    if (role === "client") {
+      return path === "/portal/cliente";
+    }
+
+    return ["/dashboard", "/clientes", "/treinos", "/agenda", "/portal", "/financeiro"].some(
+      (allowedPath) => path === allowedPath || path.startsWith(`${allowedPath}/`),
+    );
+  }
+
   const nextPath = useMemo(() => {
     const target = params.get("next");
 
-    const isAdminRoute = target?.startsWith("/admin");
-    const isTrainerRoute =
-      target &&
-      ["/dashboard", "/clientes", "/treinos", "/agenda", "/portal", "/financeiro"].some((path) =>
-        target.startsWith(path),
-      );
-    const isClientRoute = target?.startsWith("/portal/cliente");
-
-    if (isAdminRoute && userRole !== "admin") {
-      return userRole === "client" ? "/portal/cliente" : "/dashboard";
+    if (!target || !target.startsWith("/")) {
+      return getDefaultPath(userRole);
     }
 
-    if (isTrainerRoute && userRole === "client" && !isClientRoute) {
-      return "/portal/cliente";
-    }
-
-    if (isClientRoute && userRole === "admin") {
-      return "/admin";
-    }
-
-    if (target && target.startsWith("/")) {
-      return target;
-    }
-
-    if (userRole === "admin") return "/admin";
-    if (userRole === "client") return "/portal/cliente";
-    return "/dashboard";
+    return isAllowedPath(userRole, target) ? target : getDefaultPath(userRole);
   }, [params, userRole]);
 
   useEffect(() => {
@@ -59,7 +57,7 @@ export function LoginClient() {
     if (!email.trim()) return;
 
     login(email.trim().toLowerCase(), userRole);
-    router.push(nextPath);
+    router.replace(nextPath);
   }
 
   return (

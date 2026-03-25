@@ -13,6 +13,12 @@ export default function DashboardPage() {
   const payments = useAppStore((state) => state.payments);
   const trainerName = useAppStore((state) => state.trainerName);
 
+  const quickActionLinks: Record<string, { href: string; cta: string }> = {
+    "Novo cliente + novo cão": { href: "/clientes", cta: "Abrir clientes" },
+    "Novo agendamento": { href: "/agenda", cta: "Abrir agenda" },
+    "Gerar relatório em PDF": { href: "/portal", cta: "Abrir portal" },
+  };
+
   const confirmedEvents = events.filter((event) => event.status === "Confirmado").length;
   const pendingPayments = payments
     .filter((payment) => payment.status === "Pendente")
@@ -108,6 +114,12 @@ export default function DashboardPage() {
               <div key={action.title} className="rounded-3xl bg-white/7 p-4">
                 <h3 className="font-display text-xl font-semibold">{action.title}</h3>
                 <p className="mt-2 text-sm leading-7 text-slate-300">{action.description}</p>
+                <Link
+                  href={quickActionLinks[action.title]?.href ?? "/dashboard"}
+                  className="mt-4 inline-flex rounded-full bg-white px-4 py-2 text-sm font-semibold text-slate-900"
+                >
+                  {quickActionLinks[action.title]?.cta ?? "Abrir"}
+                </Link>
               </div>
             ))}
           </div>

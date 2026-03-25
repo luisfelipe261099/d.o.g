@@ -2,18 +2,27 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 import { useAppStore } from "@/lib/app-store";
 
 export function SiteHeader() {
   const pathname = usePathname();
+  const router = useRouter();
   const isLoginPage = pathname === "/login";
   const [menuOpen, setMenuOpen] = useState(false);
   const isAuthenticated = useAppStore((state) => state.isAuthenticated);
   const userRole = useAppStore((state) => state.userRole);
   const trainerName = useAppStore((state) => state.trainerName);
   const logout = useAppStore((state) => state.logout);
+
+  function handleLogout() {
+    setMenuOpen(false);
+    document.body.style.overflow = "auto";
+    document.documentElement.style.overflow = "auto";
+    logout();
+    router.replace("/login");
+  }
 
   const adminNav = [
     { href: "/admin", label: "Dashboard", kicker: "Admin", description: "Visão geral da plataforma" },
@@ -49,12 +58,15 @@ export function SiteHeader() {
   useEffect(() => {
     if (menuOpen) {
       document.body.style.overflow = "hidden";
+      document.documentElement.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "auto";
+      document.documentElement.style.overflow = "auto";
     }
 
     return () => {
       document.body.style.overflow = "auto";
+      document.documentElement.style.overflow = "auto";
     };
   }, [menuOpen]);
 
@@ -96,7 +108,7 @@ export function SiteHeader() {
             {isAuthenticated ? (
               <button
                 type="button"
-                onClick={logout}
+                onClick={handleLogout}
                 className="whitespace-nowrap rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-100"
               >
                 Sair{trainerName ? ` (${trainerName})` : ""}
@@ -179,7 +191,7 @@ export function SiteHeader() {
 
             <button
               type="button"
-              onClick={logout}
+              onClick={handleLogout}
               className="mt-6 rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 text-base font-semibold text-rose-700 w-full text-left"
             >
               Sair

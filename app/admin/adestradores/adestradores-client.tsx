@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-const mockTrainers = [
+const initialTrainers = [
   {
     id: "trainer-1",
     name: "Marina Costa",
@@ -33,9 +33,83 @@ const mockTrainers = [
 ];
 
 export function AdestradoresClient() {
+  const [trainers, setTrainers] = useState(initialTrainers);
   const [filter, setFilter] = useState("todos");
+  const [isCreating, setIsCreating] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [formName, setFormName] = useState("");
+  const [formEmail, setFormEmail] = useState("");
+  const [formPlan, setFormPlan] = useState("Essencial");
+  const [formStatus, setFormStatus] = useState("Ativo");
 
-  const filteredTrainers = filter === "todos" ? mockTrainers : mockTrainers.filter((t) => t.status === filter);
+  const filteredTrainers = filter === "todos" ? trainers : trainers.filter((t) => t.status === filter);
+
+  function planValue(planType: string) {
+    if (planType === "Premium") return "R$ 990";
+    if (planType === "Pro") return "R$ 690";
+    return "R$ 420";
+  }
+
+  function resetForm() {
+    setFormName("");
+    setFormEmail("");
+    setFormPlan("Essencial");
+    setFormStatus("Ativo");
+    setEditingId(null);
+    setIsCreating(false);
+  }
+
+  function startCreate() {
+    resetForm();
+    setIsCreating(true);
+  }
+
+  function startEdit(id: string) {
+    const trainer = trainers.find((item) => item.id === id);
+    if (!trainer) return;
+    setEditingId(id);
+    setIsCreating(false);
+    setFormName(trainer.name);
+    setFormEmail(trainer.email);
+    setFormPlan(trainer.planType);
+    setFormStatus(trainer.status);
+  }
+
+  function saveTrainer() {
+    if (!formName.trim() || !formEmail.trim()) return;
+
+    if (editingId) {
+      setTrainers((current) =>
+        current.map((trainer) =>
+          trainer.id === editingId
+            ? {
+                ...trainer,
+                name: formName.trim(),
+                email: formEmail.trim(),
+                planType: formPlan,
+                status: formStatus,
+                monthlyValue: planValue(formPlan),
+              }
+            : trainer,
+        ),
+      );
+    } else {
+      setTrainers((current) => [
+        {
+          id: `trainer-${current.length + 1}`,
+          name: formName.trim(),
+          email: formEmail.trim(),
+          joinedAt: new Date().toLocaleDateString("pt-BR"),
+          status: formStatus,
+          planType: formPlan,
+          monthlyValue: planValue(formPlan),
+        },
+        ...current,
+      ]);
+    }
+
+    resetForm();
+  }
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
@@ -59,10 +133,76 @@ export function AdestradoresClient() {
             </button>
           ))}
         </div>
-        <button className="rounded-full bg-sky-600 px-6 py-3 text-base font-bold text-white hover:bg-sky-700">
+        <button
+          type="button"
+          onClick={startCreate}
+          className="rounded-full bg-sky-600 px-6 py-3 text-base font-bold text-white hover:bg-sky-700"
+        >
           + Novo Adestrador
         </button>
       </div>
+
+      {(isCreating || editingId) ? (
+        <div className="rounded-2xl border border-[var(--border)] bg-white p-6 shadow-sm">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h3 className="font-display text-2xl font-semibold text-slate-900">
+                {editingId ? "Editar adestrador" : "Novo adestrador"}
+              </h3>
+              <p className="mt-1 text-sm text-[var(--muted)]">
+                Atualize dados básicos e plano sem sair da tela.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={resetForm}
+              className="rounded-full border border-[var(--border)] px-4 py-2 text-sm font-semibold text-slate-700"
+            >
+              Cancelar
+            </button>
+          </div>
+
+          <div className="mt-5 grid gap-3 md:grid-cols-2">
+            <input
+              value={formName}
+              onChange={(event) => setFormName(event.target.value)}
+              placeholder="Nome do adestrador"
+              className="rounded-2xl border border-[var(--border)] px-4 py-3 text-sm outline-none focus:border-sky-400"
+            />
+            <input
+              value={formEmail}
+              onChange={(event) => setFormEmail(event.target.value)}
+              placeholder="Email"
+              className="rounded-2xl border border-[var(--border)] px-4 py-3 text-sm outline-none focus:border-sky-400"
+            />
+            <select
+              value={formPlan}
+              onChange={(event) => setFormPlan(event.target.value)}
+              className="rounded-2xl border border-[var(--border)] px-4 py-3 text-sm outline-none focus:border-sky-400"
+            >
+              <option>Essencial</option>
+              <option>Pro</option>
+              <option>Premium</option>
+            </select>
+            <select
+              value={formStatus}
+              onChange={(event) => setFormStatus(event.target.value)}
+              className="rounded-2xl border border-[var(--border)] px-4 py-3 text-sm outline-none focus:border-sky-400"
+            >
+              <option>Ativo</option>
+              <option>Inativo</option>
+            </select>
+          </div>
+
+          <button
+            type="button"
+            onClick={saveTrainer}
+            className="mt-4 rounded-full bg-slate-900 px-5 py-3 text-sm font-semibold text-white"
+          >
+            {editingId ? "Salvar alterações" : "Criar adestrador"}
+          </button>
+        </div>
+      ) : null}
 
       <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel-strong)] overflow-hidden">
         <div className="overflow-x-auto">
@@ -87,12 +227,20 @@ export function AdestradoresClient() {
                   <td className="px-6 py-4 text-slate-800 font-medium">{trainer.planType}</td>
                   <td className="px-6 py-4 font-bold text-slate-900 text-base">{trainer.monthlyValue}</td>
                   <td className="px-6 py-4">
-                    <span className="inline-block rounded-full bg-emerald-100 px-3 py-1 text-sm font-bold text-emerald-800">
+                    <span className={`inline-block rounded-full px-3 py-1 text-sm font-bold ${
+                      trainer.status === "Ativo" ? "bg-emerald-100 text-emerald-800" : "bg-slate-200 text-slate-700"
+                    }`}>
                       {trainer.status}
                     </span>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <button className="text-sky-700 hover:text-sky-900 font-bold text-base">Editar</button>
+                    <button
+                      type="button"
+                      onClick={() => startEdit(trainer.id)}
+                      className="text-sky-700 hover:text-sky-900 font-bold text-base"
+                    >
+                      Editar
+                    </button>
                   </td>
                 </tr>
               ))}

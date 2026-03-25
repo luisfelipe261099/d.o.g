@@ -1,3 +1,7 @@
+"use client";
+
+import { useState } from "react";
+
 import { PageShell } from "@/components/page-shell";
 import {
   calendarEvents,
@@ -9,11 +13,19 @@ import {
 } from "@/lib/mock-data";
 
 export default function PortalClientePage() {
+  const [activeSection, setActiveSection] = useState<"resumo" | "agenda" | "tarefas" | "galeria" | "relatorios">("resumo");
   const featuredClient = clients[0];
   const featuredDog = featuredClient?.dogs[0];
   const clientAgenda = calendarEvents.filter((event) => event.client === featuredClient?.name).slice(0, 3);
   const pendingTasks = portalTasks.filter((task) => !task.completed).length;
   const doneTasks = portalTasks.length - pendingTasks;
+  const visibleSections = {
+    resumo: activeSection === "resumo",
+    agenda: activeSection === "resumo" || activeSection === "agenda",
+    tarefas: activeSection === "resumo" || activeSection === "tarefas",
+    galeria: activeSection === "resumo" || activeSection === "galeria",
+    relatorios: activeSection === "resumo" || activeSection === "relatorios",
+  };
 
   return (
     <PageShell
@@ -67,8 +79,25 @@ export default function PortalClientePage() {
             <button
               key={tab}
               type="button"
+              onClick={() =>
+                setActiveSection(
+                  tab === "Resumo"
+                    ? "resumo"
+                    : tab === "Agenda"
+                      ? "agenda"
+                      : tab === "Tarefas"
+                        ? "tarefas"
+                        : tab === "Galeria"
+                          ? "galeria"
+                          : "relatorios",
+                )
+              }
               className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
-                index === 0
+                (index === 0 && activeSection === "resumo") ||
+                (tab === "Agenda" && activeSection === "agenda") ||
+                (tab === "Tarefas" && activeSection === "tarefas") ||
+                (tab === "Galeria" && activeSection === "galeria") ||
+                (tab === "Relatorios" && activeSection === "relatorios")
                   ? "bg-slate-900 text-white"
                   : "bg-slate-100 text-slate-700 hover:bg-slate-200"
               }`}
@@ -78,6 +107,7 @@ export default function PortalClientePage() {
           ))}
         </div>
 
+        {visibleSections.agenda && (
         <div className="mt-4 grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
           <article className="rounded-[1.75rem] border border-[var(--border)] bg-[var(--panel)] p-5 shadow-sm">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">Agenda da semana</p>
@@ -122,8 +152,11 @@ export default function PortalClientePage() {
             </div>
           </article>
         </div>
+        )}
 
+        {visibleSections.tarefas || visibleSections.galeria ? (
         <div className="mt-4 grid gap-4 lg:grid-cols-[0.95fr_1.05fr]">
+          {visibleSections.tarefas ? (
           <article className="rounded-[1.75rem] border border-[var(--border)] bg-[var(--panel)] p-5 shadow-sm">
             <div className="flex items-center justify-between gap-3">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">Checklist</p>
@@ -144,7 +177,9 @@ export default function PortalClientePage() {
               ))}
             </div>
           </article>
+          ) : <div />}
 
+          {visibleSections.galeria ? (
           <article className="rounded-[1.75rem] border border-[var(--border)] bg-[var(--panel)] p-5 shadow-sm">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">Galeria</p>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -162,8 +197,11 @@ export default function PortalClientePage() {
               ))}
             </div>
           </article>
+          ) : <div />}
         </div>
+        ) : null}
 
+        {visibleSections.relatorios && (
         <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_1fr]">
           <article className="rounded-[1.75rem] border border-[var(--border)] bg-[var(--panel-strong)] p-5 shadow-sm">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">Relatorios recentes</p>
@@ -193,20 +231,22 @@ export default function PortalClientePage() {
             </div>
           </article>
         </div>
+        )}
 
         <div className="sticky bottom-3 mt-6 rounded-2xl border border-[var(--border)] bg-white/95 p-3 shadow-lg backdrop-blur md:mx-auto md:max-w-2xl">
           <div className="grid grid-cols-4 gap-2">
             {[
-              { label: "Inicio", active: true },
-              { label: "Agenda", active: false },
-              { label: "Midia", active: false },
-              { label: "Conta", active: false },
+              { label: "Inicio", value: "resumo" },
+              { label: "Agenda", value: "agenda" },
+              { label: "Midia", value: "galeria" },
+              { label: "Relatorios", value: "relatorios" },
             ].map((item) => (
               <button
                 key={item.label}
                 type="button"
+                onClick={() => setActiveSection(item.value as "resumo" | "agenda" | "galeria" | "relatorios")}
                 className={`rounded-xl px-3 py-2 text-xs font-semibold ${
-                  item.active ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-700"
+                  activeSection === item.value ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-700"
                 }`}
               >
                 {item.label}
