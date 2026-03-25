@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 
 import { PageShell } from "@/components/page-shell";
 import { useAppStore } from "@/lib/app-store";
@@ -12,14 +12,55 @@ export default function TrainingPage() {
   const calendarEvents = useAppStore((state) => state.calendarEvents);
   const addTrainingSession = useAppStore((state) => state.addTrainingSession);
 
+  const [selectedClientId, setSelectedClientId] = useState(clients[0]?.id ?? "");
+  const [selectedDogId, setSelectedDogId] = useState(clients[0]?.dogs[0]?.id ?? "");
   const [title, setTitle] = useState("Sessão prática");
   const [block, setBlock] = useState("Guia");
   const [score, setScore] = useState(7);
   const [comment, setComment] = useState("Boa evolução com reforço no timing.");
 
+  const selectedClient = useMemo(
+    () => clients.find((client) => client.id === selectedClientId) ?? clients[0],
+    [clients, selectedClientId],
+  );
+  const selectedDog = useMemo(
+    () => selectedClient?.dogs.find((dog) => dog.id === selectedDogId) ?? selectedClient?.dogs[0],
+    [selectedClient, selectedDogId],
+  );
+
+  useEffect(() => {
+    if (!selectedClient && clients[0]) {
+      setSelectedClientId(clients[0].id);
+      setSelectedDogId(clients[0].dogs[0]?.id ?? "");
+      return;
+    }
+
+    if (!selectedDog && selectedClient?.dogs[0]) {
+      setSelectedDogId(selectedClient.dogs[0].id);
+    }
+  }, [clients, selectedClient, selectedDog]);
+
+  useEffect(() => {
+    if (selectedDog?.trainingTypes[0]) {
+      setBlock(selectedDog.trainingTypes[0]);
+    }
+  }, [selectedDog?.id, selectedDog?.trainingTypes]);
+
+  const selectedSessions = useMemo(() => {
+    if (!selectedDog) return [];
+
+    return trainingSessions.filter((session) => {
+      if (session.dogId) {
+        return session.dogId === selectedDog.id;
+      }
+
+      return session.dogName === selectedDog.name;
+    });
+  }, [selectedDog, trainingSessions]);
+
   const orderedSessions = useMemo(
-    () => [...trainingSessions].sort((left, right) => right.number - left.number),
-    [trainingSessions],
+    () => [...selectedSessions].sort((left, right) => right.number - left.number),
+    [selectedSessions],
   );
 
   const blockSummaries = useMemo(() => {
@@ -51,35 +92,39 @@ export default function TrainingPage() {
       .sort((left, right) => right.averageValue - left.averageValue);
   }, [orderedSessions]);
 
-  const featuredClient = clients[0];
-  const featuredDog = featuredClient?.dogs[0];
   const latestSession = orderedSessions[0];
-  const upcomingSession = calendarEvents.find((event) => event.dog === featuredDog?.name) ?? calendarEvents[0];
+  const upcomingSession = calendarEvents.find(
+    (event) => event.dog === selectedDog?.name && event.client === selectedClient?.name,
+  );
   const allNotes = orderedSessions.flatMap((session) => session.notes);
   const averageScore = allNotes.length
     ? (allNotes.reduce((total, note) => total + note.score, 0) / allNotes.length).toFixed(1)
     : "0.0";
   const strongestBlock = blockSummaries[0];
   const attentionBlock = [...blockSummaries].sort((left, right) => left.averageValue - right.averageValue)[0];
-  const nextSessionNumber = (orderedSessions[0]?.number ?? 0) + 1;
+  const nextSessionNumber = orderedSessions.length + 1;
   const blockOptions = Array.from(
-    new Set(["Guia", "Place", "Distrações", ...(featuredDog?.trainingTypes ?? []), ...blockSummaries.map((item) => item.name)]),
+    new Set(["Guia", "Place", "Distrações", ...(selectedDog?.trainingTypes ?? []), ...blockSummaries.map((item) => item.name)]),
   );
 
   function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!title.trim() || !block.trim() || !comment.trim()) return;
+    if (!title.trim() || !block.trim() || !comment.trim() || !selectedClient || !selectedDog) return;
 
     addTrainingSession({
       title: title.trim(),
       date: new Date().toLocaleDateString("pt-BR"),
+      clientId: selectedClient.id,
+      clientName: selectedClient.name,
+      dogId: selectedDog.id,
+      dogName: selectedDog.name,
       block,
       score,
       comment: comment.trim(),
     });
 
     setTitle("Sessão prática");
-    setBlock(featuredDog?.trainingTypes[0] ?? "Guia");
+    setBlock(selectedDog.trainingTypes[0] ?? "Guia");
     setScore(7);
     setComment("Boa evolução com reforço no timing.");
   }
@@ -100,18 +145,50 @@ export default function TrainingPage() {
                   Próxima condução de treino
                 </p>
                 <h2 className="mt-3 font-display text-3xl font-semibold">
-                  {featuredDog?.name ?? "Thor"} em foco para a sessão {nextSessionNumber}
+                  {selectedDog?.name ?? "Thor"} em foco para a sessão {nextSessionNumber}
                 </h2>
                 <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-300">
                   Use esta área para alinhar o objetivo da aula antes de abrir o histórico completo.
                   O fluxo agora prioriza contexto, foco técnico e registro rápido.
                 </p>
 
+                <div className="mt-5 grid gap-3 lg:grid-cols-2">
+                  <label className="rounded-3xl border border-white/10 bg-white/7 p-4">
+                    <p className="text-xs uppercase tracking-[0.16em] text-slate-400">Cliente</p>
+                    <select
+                      value={selectedClient?.id ?? ""}
+                      onChange={(event) => setSelectedClientId(event.target.value)}
+                      className="mt-3 w-full rounded-2xl border border-white/12 bg-white/8 px-4 py-3 text-sm text-white outline-none"
+                    >
+                      {clients.map((client) => (
+                        <option key={client.id} value={client.id} className="text-slate-950">
+                          {client.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="rounded-3xl border border-white/10 bg-white/7 p-4">
+                    <p className="text-xs uppercase tracking-[0.16em] text-slate-400">Cão</p>
+                    <select
+                      value={selectedDog?.id ?? ""}
+                      onChange={(event) => setSelectedDogId(event.target.value)}
+                      className="mt-3 w-full rounded-2xl border border-white/12 bg-white/8 px-4 py-3 text-sm text-white outline-none"
+                    >
+                      {(selectedClient?.dogs ?? []).map((dog) => (
+                        <option key={dog.id} value={dog.id} className="text-slate-950">
+                          {dog.name} • {dog.breed}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+
                 <div className="mt-5 grid gap-3 sm:grid-cols-2">
                   <div className="rounded-3xl border border-white/10 bg-white/7 p-4">
                     <p className="text-xs uppercase tracking-[0.16em] text-slate-400">Cliente</p>
-                    <p className="mt-2 text-lg font-semibold">{featuredClient?.name ?? "Marina Costa"}</p>
-                    <p className="mt-1 text-sm text-slate-300">{featuredClient?.plan ?? "Plano Pro • 12 sessões"}</p>
+                    <p className="mt-2 text-lg font-semibold">{selectedClient?.name ?? "Marina Costa"}</p>
+                    <p className="mt-1 text-sm text-slate-300">{selectedClient?.plan ?? "Plano Pro • 12 sessões"}</p>
                   </div>
                   <div className="rounded-3xl border border-white/10 bg-white/7 p-4">
                     <p className="text-xs uppercase tracking-[0.16em] text-slate-400">Próximo encontro</p>
@@ -124,10 +201,10 @@ export default function TrainingPage() {
               </div>
 
               <div className="rounded-[1.5rem] border border-white/10 bg-white/7 p-4">
-                {featuredDog?.photoUrl ? (
+                {selectedDog?.photoUrl ? (
                   <Image
-                    src={featuredDog.photoUrl}
-                    alt={`Foto de ${featuredDog.name}`}
+                    src={selectedDog.photoUrl}
+                    alt={`Foto de ${selectedDog.name}`}
                     width={720}
                     height={520}
                     unoptimized
@@ -135,7 +212,7 @@ export default function TrainingPage() {
                   />
                 ) : null}
                 <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-300">
-                  {(featuredDog?.trainingTypes ?? ["Guia", "Place", "Obediência"]).map((item) => (
+                  {(selectedDog?.trainingTypes ?? ["Guia", "Place", "Obediência"]).map((item) => (
                     <span key={item} className="rounded-full border border-white/12 px-3 py-2">
                       {item}
                     </span>
@@ -149,7 +226,7 @@ export default function TrainingPage() {
             <article className="rounded-[1.5rem] border border-[var(--border)] bg-white/90 p-5 shadow-sm">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">Sessões</p>
               <p className="mt-3 font-display text-4xl font-semibold">{orderedSessions.length}</p>
-              <p className="mt-2 text-sm text-[var(--muted)]">Histórico ativo do cão em acompanhamento</p>
+              <p className="mt-2 text-sm text-[var(--muted)]">Histórico ativo de {selectedDog?.name ?? "um cão"}</p>
             </article>
             <article className="rounded-[1.5rem] border border-[var(--border)] bg-white/90 p-5 shadow-sm">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">Média geral</p>
@@ -179,10 +256,11 @@ export default function TrainingPage() {
                 </h2>
               </div>
               <span className="rounded-full border border-[var(--border)] bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">
-                {blockSummaries.length} blocos monitorados
+                {blockSummaries.length} blocos monitorados neste caso
               </span>
             </div>
 
+            {blockSummaries.length ? (
             <div className="mt-6 grid gap-4 lg:grid-cols-2">
               {blockSummaries.map((item) => (
                 <div key={item.name} className="rounded-3xl border border-[var(--border)] bg-white p-4">
@@ -215,6 +293,11 @@ export default function TrainingPage() {
                 </div>
               ))}
             </div>
+            ) : (
+            <div className="mt-6 rounded-3xl border border-dashed border-[var(--border)] bg-white/75 p-6 text-sm text-[var(--muted)]">
+              Ainda não existem sessões vinculadas a {selectedDog?.name ?? "este cão"}. Selecione o caso e registre a primeira aula para começar o histórico.
+            </div>
+            )}
           </article>
         </div>
 
@@ -280,6 +363,10 @@ export default function TrainingPage() {
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">Resumo antes de salvar</p>
               <div className="mt-3 grid gap-3 text-sm text-[var(--muted)] sm:grid-cols-2">
                 <div>
+                  <p className="font-semibold text-[var(--foreground)]">Caso selecionado</p>
+                  <p className="mt-1">{selectedClient?.name} • {selectedDog?.name}</p>
+                </div>
+                <div>
                   <p className="font-semibold text-[var(--foreground)]">Foco técnico</p>
                   <p className="mt-1">{block}</p>
                 </div>
@@ -314,6 +401,12 @@ export default function TrainingPage() {
                   Fechar a aula com uma tarefa simples e objetiva para casa, conectada ao bloco {attentionBlock?.name ?? block}.
                 </p>
               </div>
+              <div className="rounded-3xl bg-white/7 p-4">
+                <p className="font-semibold text-white">Contexto do ambiente</p>
+                <p className="mt-2">
+                  {selectedClient?.environment ?? "Ambiente ainda não descrito para este cliente."}
+                </p>
+              </div>
             </div>
           </article>
 
@@ -340,7 +433,11 @@ export default function TrainingPage() {
                     </div>
                     <p className="mt-2 text-sm leading-7 text-[var(--muted)]">{note.comment}</p>
                   </div>
-                ))}
+                )) ?? (
+                  <div className="rounded-2xl border border-dashed border-[var(--border)] p-4 text-sm text-[var(--muted)]">
+                    Nenhuma sessão registrada ainda para este cão.
+                  </div>
+                )}
               </div>
             </div>
           </article>
@@ -355,7 +452,7 @@ export default function TrainingPage() {
                 Histórico de sessões
               </p>
               <h2 className="mt-2 font-display text-2xl font-semibold">
-                Timeline limpa para revisar o que foi feito sem competir com o formulário
+                Timeline de {selectedDog?.name ?? "treinos"} para revisar o que foi feito sem competir com o formulário
               </h2>
             </div>
             <span className="rounded-full border border-[var(--border)] bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">
@@ -363,6 +460,7 @@ export default function TrainingPage() {
             </span>
           </div>
 
+          {orderedSessions.length ? (
           <div className="mt-6 space-y-4">
             {orderedSessions.map((session) => (
               <article key={session.id} className="rounded-3xl border border-[var(--border)] bg-white/90 p-5">
@@ -370,6 +468,7 @@ export default function TrainingPage() {
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-700">{session.date}</p>
                     <h3 className="mt-2 font-display text-2xl font-semibold">{session.title}</h3>
+                    <p className="mt-2 text-sm text-[var(--muted)]">{session.clientName ?? selectedClient?.name} • {session.dogName ?? selectedDog?.name}</p>
                   </div>
                   <div className="flex flex-wrap gap-2 text-xs font-semibold uppercase tracking-[0.14em]">
                     <span className="rounded-full bg-slate-900 px-3 py-2 text-white">Sessão {session.number}</span>
@@ -393,6 +492,11 @@ export default function TrainingPage() {
               </article>
             ))}
           </div>
+          ) : (
+          <div className="mt-6 rounded-3xl border border-dashed border-[var(--border)] bg-white/80 p-6 text-sm leading-7 text-[var(--muted)]">
+            Nenhuma sessão encontrada para {selectedDog?.name ?? "o cão selecionado"}. Use o formulário acima para criar o primeiro registro deste caso.
+          </div>
+          )}
         </article>
       </section>
     </PageShell>

@@ -38,6 +38,10 @@ export type TrainingSession = {
   number: number;
   date: string;
   title: string;
+  clientId?: string;
+  clientName?: string;
+  dogId?: string;
+  dogName?: string;
   notes: TrainingNote[];
 };
 
@@ -97,6 +101,10 @@ type AppState = {
   addTrainingSession: (payload: {
     title: string;
     date: string;
+    clientId?: string;
+    clientName?: string;
+    dogId?: string;
+    dogName?: string;
     block: string;
     score: number;
     comment: string;
@@ -166,6 +174,10 @@ const initialTrainingSessions: TrainingSession[] = [
     number: 1,
     date: "10/03/2026",
     title: "Visita inicial",
+    clientId: "client-marina",
+    clientName: "Marina Costa",
+    dogId: "dog-thor",
+    dogName: "Thor",
     notes: [
       {
         block: "Guia",
@@ -184,6 +196,10 @@ const initialTrainingSessions: TrainingSession[] = [
     number: 4,
     date: "25/03/2026",
     title: "Foco em guia",
+    clientId: "client-marina",
+    clientName: "Marina Costa",
+    dogId: "dog-thor",
+    dogName: "Thor",
     notes: [
       {
         block: "Guia",
@@ -194,6 +210,28 @@ const initialTrainingSessions: TrainingSession[] = [
         block: "Distrações",
         score: 5,
         comment: "Ainda reage em distância curta com outros cães.",
+      },
+    ],
+  },
+  {
+    id: "session-3",
+    number: 2,
+    date: "18/03/2026",
+    title: "Filhote e autocontrole",
+    clientId: "client-carla",
+    clientName: "Carla Nunes",
+    dogId: "dog-mel",
+    dogName: "Mel",
+    notes: [
+      {
+        block: "Guia",
+        score: 5,
+        comment: "Ainda alterna atenção, mas respondeu bem a trajetos curtos com pausa e reforço.",
+      },
+      {
+        block: "Filhotes",
+        score: 7,
+        comment: "Boa recuperação quando redirecionada para brinquedo recheável e rotina previsível.",
       },
     ],
   },
@@ -329,6 +367,10 @@ export const useAppStore = create<AppState>()(
               number: state.trainingSessions.length + 1,
               date: payload.date,
               title: payload.title,
+              clientId: payload.clientId,
+              clientName: payload.clientName,
+              dogId: payload.dogId,
+              dogName: payload.dogName,
               notes: [
                 {
                   block: payload.block,
