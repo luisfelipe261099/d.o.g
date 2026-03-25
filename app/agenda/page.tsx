@@ -1,10 +1,11 @@
 "use client";
 
+import Image from "next/image";
 import { FormEvent, useState } from "react";
 
 import { PageShell } from "@/components/page-shell";
 import { useAppStore } from "@/lib/app-store";
-import { healthAlerts } from "@/lib/mock-data";
+import { getDogPhotoUrl, healthAlerts } from "@/lib/mock-data";
 
 export default function SchedulePage() {
   const events = useAppStore((state) => state.calendarEvents);
@@ -73,6 +74,16 @@ export default function SchedulePage() {
                 <h3 className="mt-3 font-display text-xl font-semibold">{event.dog}</h3>
                 <p className="text-sm text-[var(--muted)]">{event.client}</p>
                 <p className="mt-3 text-sm leading-7 text-[var(--muted)]">{event.plan}</p>
+                <div className="mt-3">
+                  <Image
+                    src={getDogPhotoUrl(event.dog)}
+                    alt={`Foto de ${event.dog}`}
+                    width={420}
+                    height={180}
+                    unoptimized
+                    className="h-28 w-full rounded-2xl object-cover"
+                  />
+                </div>
                 <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold uppercase tracking-[0.12em]">
                   <span className="rounded-full border border-[var(--border)] px-3 py-2 text-[var(--muted)]">
                     Sessão {event.sessionNumber}

@@ -32,6 +32,7 @@ export default function PortalPage() {
                   alt={`Foto de ${featuredDog.name}`}
                   width={96}
                   height={96}
+                  unoptimized
                   className="h-24 w-24 rounded-[1.5rem] object-cover"
                 />
               ) : null}
@@ -127,6 +128,7 @@ export default function PortalPage() {
                 alt={item.title}
                 width={1200}
                 height={440}
+                unoptimized
                 className="h-44 w-full object-cover"
               />
               <div className="p-4">

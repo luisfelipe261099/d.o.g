@@ -45,6 +45,7 @@ export default function PortalClientePage() {
                   alt={`Foto de ${featuredDog.name}`}
                   width={80}
                   height={80}
+                  unoptimized
                   className="h-20 w-20 rounded-[1.5rem] object-cover"
                 />
               ) : null}
@@ -146,6 +147,7 @@ export default function PortalClientePage() {
                 alt={`Perfil de ${featuredDog.name}`}
                 width={720}
                 height={416}
+                unoptimized
                 className="mt-4 h-52 w-full rounded-[1.5rem] object-cover"
               />
             ) : null}
@@ -211,6 +213,7 @@ export default function PortalClientePage() {
                     alt={item.title}
                     width={720}
                     height={224}
+                    unoptimized
                     className="h-28 w-full object-cover"
                   />
                   <div className="p-3">

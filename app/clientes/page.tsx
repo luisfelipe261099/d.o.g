@@ -64,6 +64,7 @@ export default function ClientsPage() {
                         alt={`Foto de ${client.dogs[0].name}`}
                         width={56}
                         height={56}
+                        unoptimized
                         className="h-14 w-14 rounded-2xl object-cover"
                       />
                     ) : null}
@@ -140,6 +141,7 @@ export default function ClientsPage() {
                       alt={`Foto de perfil de ${dog.name}`}
                       width={96}
                       height={96}
+                      unoptimized
                       className="h-24 w-24 rounded-[1.5rem] object-cover shadow-sm"
                     />
                   ) : null}

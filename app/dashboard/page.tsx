@@ -1,8 +1,10 @@
 "use client";
 
+import Image from "next/image";
+
 import { PageShell } from "@/components/page-shell";
 import { useAppStore } from "@/lib/app-store";
-import { trainerAlerts } from "@/lib/mock-data";
+import { getDogPhotoUrl, trainerAlerts } from "@/lib/mock-data";
 
 export default function DashboardPage() {
   const clients = useAppStore((state) => state.clients);
@@ -83,11 +85,21 @@ export default function DashboardPage() {
                   </p>
                   <p className="mt-1 text-sm text-[var(--muted)]">Sessão {session.sessionNumber}</p>
                 </div>
-                <div>
+                <div className="flex items-center gap-3">
+                  <Image
+                    src={getDogPhotoUrl(session.dog)}
+                    alt={`Foto de ${session.dog}`}
+                    width={56}
+                    height={56}
+                    unoptimized
+                    className="h-14 w-14 rounded-2xl object-cover"
+                  />
+                  <div>
                   <h3 className="font-display text-xl font-semibold">{session.dog}</h3>
                   <p className="text-sm text-[var(--muted)]">
                     {session.client} • {session.plan}
                   </p>
+                  </div>
                 </div>
                 <div className="rounded-full border border-[var(--border)] px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">
                   {session.status}

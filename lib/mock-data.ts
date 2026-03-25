@@ -374,6 +374,20 @@ export const portalGallery = [
   },
 ];
 
+export const dogPhotoLibrary: Record<string, string> = {
+  Thor: "https://images.unsplash.com/photo-1517849845537-4d257902454a?auto=format&fit=crop&w=900&q=80",
+  Mel: "https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&w=900&q=80",
+  Pipoca: "https://images.unsplash.com/photo-1537151625747-768eb6cf92b2?auto=format&fit=crop&w=900&q=80",
+  Nina: "https://images.unsplash.com/photo-1518717758536-85ae29035b6d?auto=format&fit=crop&w=900&q=80",
+  Apolo: "https://images.unsplash.com/photo-1583512603806-077998240c7a?auto=format&fit=crop&w=900&q=80",
+  Luna: "https://images.unsplash.com/photo-1517423440428-a5a00ad493e8?auto=format&fit=crop&w=900&q=80",
+};
+
+export function getDogPhotoUrl(name?: string) {
+  if (!name) return dogPhotoLibrary.Thor;
+  return dogPhotoLibrary[name] ?? dogPhotoLibrary.Thor;
+}
+
 export const recommendedStack = [
   {
     label: "Frontend",
