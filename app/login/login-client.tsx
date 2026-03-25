@@ -71,9 +71,6 @@ export function LoginClient() {
         <div className="pointer-events-none absolute bottom-0 left-0 h-32 w-32 rounded-full bg-[rgba(64,93,78,0.12)] blur-3xl" />
         <p className="relative text-xs font-semibold uppercase tracking-[0.24em] text-[rgba(120,76,52,0.78)]">Login</p>
         <h2 className="relative mt-3 font-display text-3xl font-semibold text-[var(--foreground)] sm:text-4xl">Entrar na plataforma</h2>
-        <p className="relative mt-3 max-w-xl text-sm leading-7 text-[var(--muted)]">
-          Escolha o perfil e acesse o ambiente correspondente sem desvio entre áreas.
-        </p>
 
         <form onSubmit={handleSubmit} className="relative mt-8 space-y-6">
           <div className="rounded-[1.5rem] border border-white/70 bg-white/68 p-4 backdrop-blur-sm">
@@ -135,9 +132,6 @@ export function LoginClient() {
           </button>
         </form>
 
-        <p className="relative mt-6 rounded-xl border border-[var(--border)] bg-[rgba(255,252,248,0.9)] px-4 py-3 text-xs leading-6 text-[var(--muted)]">
-          Credenciais padrão: treinador@dogplatform.com / 123456
-        </p>
       </section>
     </main>
   );

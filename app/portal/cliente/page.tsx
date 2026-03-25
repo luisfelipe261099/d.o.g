@@ -30,9 +30,9 @@ export default function PortalClientePage() {
 
   return (
     <PageShell
-      kicker="Portal do tutor"
-      title="Seu espaço de acompanhamento"
-      description="Acompanhe os dados do seu animal, agenda de aulas, tarefas e galeria de fotos e videos."
+      kicker="Meu portal"
+      title="Acompanhamento do treinamento"
+      description="Consulte agenda, tarefas, evolução e registros do seu cão em um só lugar."
       requireAuth="client"
     >
       <section className="mx-auto w-full max-w-5xl">

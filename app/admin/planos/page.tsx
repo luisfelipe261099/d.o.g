@@ -43,9 +43,9 @@ export default function PlanosPage() {
 
   return (
     <PageShell
-      kicker="Administração"
+      kicker="Admin"
       title="Configuração de Planos"
-      description="Crie e configure os planos oferecidos na plataforma."
+      description="Defina preços, recursos e estrutura dos planos disponíveis."
       requireAuth="admin"
     >
       <div className="mx-auto max-w-7xl space-y-6">

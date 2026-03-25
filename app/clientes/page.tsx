@@ -40,9 +40,9 @@ export default function ClientsPage() {
 
   return (
     <PageShell
-      kicker="Carteira"
+      kicker="Clientes"
       title="Meus clientes e cães"
-      description="Gerencie todos os clientes e cães cadastrados com seus dados, planos e histórico de evolução."
+      description="Cadastre, atualize e acompanhe clientes e cães com histórico completo."
       requireAuth="trainer"
     >
       <section className="grid gap-4 xl:grid-cols-[0.8fr_1.2fr]">

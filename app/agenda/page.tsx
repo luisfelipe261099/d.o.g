@@ -35,9 +35,9 @@ export default function SchedulePage() {
 
   return (
     <PageShell
-      kicker="Calendário"
+      kicker="Agenda"
       title="Agenda de aulas"
-      description="Agende e gerencie sessões com confirmações semanais, alertas de saúde e disponibilidade de slots."
+      description="Organize as aulas, confirme sessões e acompanhe compromissos da semana."
       requireAuth="trainer"
     >
       <section className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">

@@ -3,9 +3,9 @@ import { PageShell } from "@/components/page-shell";
 export default function RelatoriosPage() {
   return (
     <PageShell
-      kicker="Administração"
+      kicker="Admin"
       title="Relatórios e Analytics"
-      description="Análises detalhadas do desempenho e saúde da plataforma."
+      description="Visualize métricas de uso, crescimento e desempenho da plataforma."
       requireAuth="admin"
     >
       <div className="mx-auto max-w-7xl space-y-6">

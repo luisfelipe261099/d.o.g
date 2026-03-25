@@ -37,9 +37,9 @@ export default function DashboardPage() {
 
   return (
     <PageShell
-      kicker="Visão geral"
+      kicker="Painel"
       title={`Painel do ${trainerName || "adestrador"}`}
-      description="Visão central da operação com indicadores de clientes, treinos, agenda e financeiro em tempo real."
+      description="Acompanhe clientes, agenda, treinos e financeiro em um único painel operacional."
       requireAuth="trainer"
     >
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">

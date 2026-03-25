@@ -4,9 +4,9 @@ import { AdminDashboard } from "./admin-client";
 export default function AdminPage() {
   return (
     <PageShell
-      kicker="Administração"
-      title="Dashboard da Plataforma"
-      description="Visão centralizada de usuários, planos, faturamento e saúde do sistema."
+      kicker="Admin"
+      title="Painel administrativo"
+      description="Acompanhe contas, planos, faturamento e indicadores da plataforma."
       requireAuth="admin"
     >
       <AdminDashboard />

@@ -25,7 +25,7 @@ export function PageShell({
       <section className="relative overflow-hidden rounded-[2rem] border border-[var(--border)] bg-[linear-gradient(135deg,_rgba(255,248,241,0.96),_rgba(247,236,224,0.95)_58%,_rgba(231,218,202,0.98))] shadow-[var(--shadow)]">
         <div className="pointer-events-none absolute -right-16 top-0 h-48 w-48 rounded-full bg-[rgba(181,111,76,0.16)] blur-3xl" />
         <div className="pointer-events-none absolute bottom-0 left-0 h-40 w-40 rounded-full bg-[rgba(64,93,78,0.14)] blur-3xl" />
-        <div className="grid gap-8 px-6 py-7 sm:px-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-end lg:gap-12">
+        <div className="px-6 py-7 sm:px-8">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[rgba(120,76,52,0.82)]">
             {kicker}
@@ -35,23 +35,6 @@ export function PageShell({
             </h1>
             <p className="mt-4 max-w-3xl text-base leading-8 text-[var(--muted)] sm:text-lg">
             {description}
-            </p>
-          </div>
-
-          <div className="rounded-[1.5rem] border border-white/70 bg-white/60 p-5 backdrop-blur-sm">
-            <div className="flex items-center gap-3">
-              <span className="h-3 w-3 rounded-full bg-[#b56f4c]" />
-              <span className="h-3 w-3 rounded-full bg-[#d7a04d]" />
-              <span className="h-3 w-3 rounded-full bg-[#466355]" />
-            </div>
-            <p className="mt-5 text-xs font-semibold uppercase tracking-[0.22em] text-[rgba(120,76,52,0.75)]">
-              Sistema
-            </p>
-            <p className="mt-3 font-display text-2xl font-semibold text-[var(--foreground)]">
-              Operação com presença de marca.
-            </p>
-            <p className="mt-3 text-sm leading-7 text-[var(--muted)]">
-              Interface mais quente, editorial e premium para apresentar a plataforma sem cara de demo genérica.
             </p>
           </div>
         </div>

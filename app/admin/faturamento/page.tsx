@@ -3,9 +3,9 @@ import { PageShell } from "@/components/page-shell";
 export default function FaturamentoPage() {
   return (
     <PageShell
-      kicker="Administração"
+      kicker="Admin"
       title="Faturamento e Receitas"
-      description="Monitore receitas, pagamentos e fluxo financeiro da plataforma."
+      description="Acompanhe receitas, pagamentos e desempenho financeiro da operação."
       requireAuth="admin"
     >
       <div className="mx-auto max-w-7xl space-y-6">

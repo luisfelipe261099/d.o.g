@@ -18,7 +18,7 @@ export default function FinancialPage() {
     <PageShell
       kicker="Financeiro"
       title="Pagamentos e contratos"
-      description="Monitore cobranças, pagamentos confirmados e renovações de pacotes por cliente com baixa automática."
+      description="Controle cobranças, recebimentos e contratos ativos por cliente."
       requireAuth="trainer"
     >
       <section className="grid gap-4 md:grid-cols-3">

@@ -14,9 +14,9 @@ export default function PortalPage() {
 
   return (
     <PageShell
-      kicker="Cliente final"
+      kicker="Portal"
       title="Portal do cliente"
-      description="Visualize e gerencie como seus clientes acompanham evolução, tarefas, agenda e mídia através de um link compartilhável com token seguro."
+      description="Gerencie o portal compartilhado com clientes para acompanhamento de tarefas, agenda e mídia."
       requireAuth="trainer"
     >
       <section className="grid gap-4 lg:grid-cols-[0.95fr_1.05fr]">
@@ -38,9 +38,6 @@ export default function PortalPage() {
               <div>
                 <p className="text-sm text-slate-300">app.dominio.com/cliente/canil-prime/8fd2x1</p>
                 <h2 className="mt-4 font-display text-3xl font-semibold">Portal do {featuredDog?.name ?? "Thor"}</h2>
-                <p className="mt-2 text-sm leading-7 text-slate-300">
-                  Acesso simplificado com token seguro. O cliente consegue confirmar aula, ver tarefas e acompanhar a evolução sem depender de app nativo.
-                </p>
               </div>
             </div>
             <div className="mt-6 grid gap-3 sm:grid-cols-2">
@@ -146,16 +143,6 @@ export default function PortalPage() {
         </div>
       </section>
 
-      <section className="rounded-[1.75rem] border border-[var(--border)] bg-emerald-950 p-6 text-white shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-300">
-          Notificação
-        </p>
-        <div className="mt-4 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <p className="max-w-3xl text-sm leading-7 text-emerald-100">
-            Este é o painel de gerenciamento do portal do cliente. Os donos de cães acessam pelo link personalizado, não por este painel.
-          </p>
-        </div>
-      </section>
     </PageShell>
   );
 }
