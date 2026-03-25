@@ -31,7 +31,7 @@ export default function RootLayout({
       <body
         className={`${dmSans.variable} ${spaceGrotesk.variable} min-h-screen bg-[var(--background)] font-sans text-[var(--foreground)] antialiased`}
       >
-        <div className="relative isolate min-h-screen overflow-hidden">
+        <div className="relative isolate min-h-screen overflow-x-hidden">
           <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-80 bg-[radial-gradient(circle_at_top,_rgba(234,179,8,0.22),_transparent_40%),radial-gradient(circle_at_top_right,_rgba(14,165,233,0.2),_transparent_28%)]" />
           <div className="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-96 bg-[radial-gradient(circle_at_bottom_left,_rgba(16,185,129,0.14),_transparent_30%),radial-gradient(circle_at_bottom_right,_rgba(249,115,22,0.14),_transparent_35%)]" />
           <SiteHeader />

@@ -45,6 +45,8 @@ export function SiteHeader() {
         : clientNav
     : [];
 
+  const roleLabel = userRole === "admin" ? "Administrador" : userRole === "client" ? "Cliente" : "Adestrador";
+
   useEffect(() => {
     if (menuOpen) {
       document.body.style.overflow = "hidden";
@@ -59,27 +61,33 @@ export function SiteHeader() {
 
   return (
     <>
-      <header className="sticky top-0 z-50 border-b border-[var(--border)] bg-white/95 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-4 sm:px-6 lg:px-8">
+      <header className="sticky top-0 z-50 border-b border-[var(--border)] bg-white/90 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
           <Link href="/" className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-950 font-display text-base font-semibold text-white sm:h-12 sm:w-12 sm:text-lg">
-              D
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[linear-gradient(145deg,_#0f172a,_#1f2937)] font-display text-base font-semibold text-white sm:h-12 sm:w-12 sm:text-lg">
+              DOG
             </div>
             <div>
               <p className="font-display text-lg font-semibold sm:text-xl">D.O.G Platform</p>
-              <p className="text-xs text-slate-700 sm:text-sm">Sistema de gestão para adestradores</p>
+              <p className="text-xs text-slate-700 sm:text-sm">SaaS para adestradores</p>
             </div>
           </Link>
 
           <div className="hidden items-center gap-2 lg:flex">
+            {isAuthenticated ? (
+              <span className="rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-sky-800">
+                {roleLabel}
+              </span>
+            ) : null}
+
             {visibleNav.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`whitespace-nowrap rounded-full border px-4 py-2 text-sm font-medium transition ${
+                className={`whitespace-nowrap rounded-xl border px-4 py-2 text-sm font-semibold transition ${
                   pathname === item.href
-                    ? "border-amber-500 bg-amber-300 text-slate-950 shadow-sm"
-                    : "border-slate-400 bg-white text-slate-800 hover:border-slate-700 hover:bg-slate-50"
+                    ? "border-slate-900 bg-slate-900 text-white shadow-sm"
+                    : "border-slate-300 bg-white text-slate-800 hover:border-slate-500 hover:bg-slate-50"
                 }`}
               >
                 {item.label}
@@ -90,7 +98,7 @@ export function SiteHeader() {
               <button
                 type="button"
                 onClick={logout}
-                className="whitespace-nowrap rounded-full border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-medium text-rose-700 transition hover:bg-rose-100"
+                className="whitespace-nowrap rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-100"
               >
                 Sair{trainerName ? ` (${trainerName})` : ""}
               </button>
@@ -98,7 +106,7 @@ export function SiteHeader() {
               !isLoginPage ? (
                 <Link
                   href="/login"
-                  className="whitespace-nowrap rounded-full border border-[var(--foreground)] bg-[var(--foreground)] px-4 py-2 text-sm font-semibold text-white"
+                  className="whitespace-nowrap rounded-xl border border-[var(--foreground)] bg-[var(--foreground)] px-4 py-2 text-sm font-semibold text-white"
                 >
                   Entrar
                 </Link>
@@ -111,7 +119,7 @@ export function SiteHeader() {
               <button
                 type="button"
                 onClick={() => setMenuOpen(true)}
-                className="rounded-full border-2 border-slate-900 bg-slate-900 px-5 py-3 text-base font-semibold text-white hover:bg-slate-800 transition"
+                className="rounded-xl border-2 border-slate-900 bg-slate-900 px-5 py-3 text-base font-semibold text-white transition hover:bg-slate-800"
               >
                 ☰ Menu
               </button>
