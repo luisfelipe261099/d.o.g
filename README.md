@@ -2,6 +2,10 @@
 
 Plataforma SaaS para adestradores, feita em Next.js, com foco em operacao diaria, treino, agenda, portal do cliente e financeiro.
 
+## Documentacao de uso
+
+- Manual do adestrador: `MANUAL_ADESTRADOR.md`
+
 ## Status atual
 
 - Frontend responsivo com experiencia de demo para validacao comercial.
