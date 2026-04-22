@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
-import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
 // POST /api/register – cria conta de adestrador com plano escolhido
@@ -47,7 +46,7 @@ export async function POST(request: Request) {
   const trialEndsAt = safePlan === "Trial" ? new Date(Date.now() + 90 * 24 * 60 * 60 * 1000) : null;
 
   try {
-    await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    await prisma.$transaction(async (tx) => {
       const user = await tx.user.create({
         data: {
           email,
