@@ -32,6 +32,7 @@ export default function ClientsPage() {
   const [paymentMethod, setPaymentMethod] = useState<ClientPaymentMethod>("Pix");
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
+  const [saveError, setSaveError] = useState("");
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -46,9 +47,10 @@ export default function ClientsPage() {
       .map((t) => t.trim())
       .filter(Boolean);
 
+    setSaveError("");
     setIsSaving(true);
     try {
-      await addClientWithDog({
+      const ok = await addClientWithDog({
         clientName: clientName.trim(),
         phone: phone.trim() || "(00) 00000-0000",
         propertyType: propertyType || "Apartamento",
@@ -63,20 +65,25 @@ export default function ClientsPage() {
         weight: weight.trim() || "Não informado",
         trainingTypes: trainingTypes.length > 0 ? trainingTypes : [],
       });
-      setClientName("");
-      setPhone("");
-      setDogName("");
-      setBreed("");
-      setAge("");
-      setWeight("");
-      setPropertyType("Apartamento");
-      setTrainingTypesRaw("");
-      setPlanLabel("");
-      setContractAmount("");
-      setBillingDay("10");
-      setPaymentMethod("Pix");
-      setSaveMessage("Cliente cadastrado com sucesso.");
-      window.setTimeout(() => setSaveMessage(""), 2500);
+      if (ok) {
+        setClientName("");
+        setPhone("");
+        setDogName("");
+        setBreed("");
+        setAge("");
+        setWeight("");
+        setPropertyType("Apartamento");
+        setTrainingTypesRaw("");
+        setPlanLabel("");
+        setContractAmount("");
+        setBillingDay("10");
+        setPaymentMethod("Pix");
+        setSaveMessage("Cliente cadastrado com sucesso.");
+        window.setTimeout(() => setSaveMessage(""), 3000);
+      } else {
+        setSaveError("Erro ao cadastrar. Verifique sua conexão e tente novamente.");
+        window.setTimeout(() => setSaveError(""), 4000);
+      }
     } finally {
       setIsSaving(false);
     }
@@ -251,6 +258,9 @@ export default function ClientsPage() {
               </select>
               {saveMessage ? (
                 <p className="sm:col-span-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{saveMessage}</p>
+              ) : null}
+              {saveError ? (
+                <p className="sm:col-span-2 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">{saveError}</p>
               ) : null}
               <button
                 type="submit"

@@ -173,7 +173,7 @@ type AppState = {
     age: string;
     weight: string;
     trainingTypes: string[];
-  }) => void;
+  }) => Promise<boolean>;
   addTrainingSession: (payload: {
     number?: number;
     title: string;
@@ -183,10 +183,10 @@ type AppState = {
     dogId?: string;
     dogName?: string;
     notes: TrainingNote[];
-  }) => void;
+  }) => Promise<boolean>;
   toggleTask: (taskId: string) => void;
-  addPortalTask: (title: string, description: string) => void;
-  addPortalFeedback: (message: string, author?: PortalFeedback["author"]) => void;
+  addPortalTask: (title: string, description: string) => Promise<void>;
+  addPortalFeedback: (message: string, author?: PortalFeedback["author"]) => Promise<void>;
   setEventStatus: (eventId: string, status: SessionStatus) => void;
   toggleEventStatus: (eventId: string) => void;
   addCalendarEvent: (payload: {
@@ -476,10 +476,11 @@ export const useAppStore = create<AppState>()(
             body: JSON.stringify(payload),
           });
 
-          if (!response.ok) return;
+          if (!response.ok) return false;
           await get().loadFromDB();
+          return true;
         } catch {
-          // keep current state when API fails
+          return false;
         }
       },
       addTrainingSession: async (payload) => {
@@ -490,10 +491,11 @@ export const useAppStore = create<AppState>()(
             body: JSON.stringify(payload),
           });
 
-          if (!response.ok) return;
+          if (!response.ok) return false;
           await get().loadFromDB();
+          return true;
         } catch {
-          // keep current state when API fails
+          return false;
         }
       },
       toggleTask: async (taskId) => {
@@ -516,34 +518,64 @@ export const useAppStore = create<AppState>()(
         }
       },
       addPortalTask: async (title, description) => {
+        const tempId = createId("task");
+        const tempTask: PortalTask = { id: tempId, title, description, completed: false };
+
+        // Optimistic add
+        set((state) => ({ portalTasks: [...state.portalTasks, tempTask] }));
+
         try {
           const response = await fetch("/api/portal-tasks", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ title, description }),
           });
-          if (!response.ok) return;
+          if (!response.ok) {
+            set((state) => ({ portalTasks: state.portalTasks.filter((t) => t.id !== tempId) }));
+            return;
+          }
           await get().loadFromDB();
         } catch {
-          // keep current state when API fails
+          set((state) => ({ portalTasks: state.portalTasks.filter((t) => t.id !== tempId) }));
         }
       },
       addPortalFeedback: async (message, author = "Tutor") => {
+        const tempId = createId("fb");
+        const tempFeedback: PortalFeedback = {
+          id: tempId,
+          author,
+          message,
+          createdAt: new Date().toISOString(),
+        };
+
+        // Optimistic add
+        set((state) => ({ portalFeedbacks: [...state.portalFeedbacks, tempFeedback] }));
+
         try {
           const response = await fetch("/api/portal-feedbacks", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ message, author }),
           });
-          if (!response.ok) return;
+          if (!response.ok) {
+            set((state) => ({ portalFeedbacks: state.portalFeedbacks.filter((f) => f.id !== tempId) }));
+            return;
+          }
           await get().loadFromDB();
         } catch {
-          // keep current state when API fails
+          set((state) => ({ portalFeedbacks: state.portalFeedbacks.filter((f) => f.id !== tempId) }));
         }
       },
       setEventStatus: async (eventId, status) => {
         const currentEvent = get().calendarEvents.find((event) => event.id === eventId);
         if (!currentEvent) return;
+
+        // Optimistic update — reflects immediately in UI
+        set((state) => ({
+          calendarEvents: state.calendarEvents.map((event) =>
+            event.id === eventId ? { ...event, status } : event,
+          ),
+        }));
 
         try {
           const response = await fetch("/api/events", {
@@ -552,10 +584,21 @@ export const useAppStore = create<AppState>()(
             body: JSON.stringify({ id: eventId, status }),
           });
 
-          if (!response.ok) return;
-          await get().loadFromDB();
+          if (!response.ok) {
+            // Revert on failure
+            set((state) => ({
+              calendarEvents: state.calendarEvents.map((event) =>
+                event.id === eventId ? { ...event, status: currentEvent.status } : event,
+              ),
+            }));
+          }
         } catch {
-          // keep current state when API fails
+          // Revert on error
+          set((state) => ({
+            calendarEvents: state.calendarEvents.map((event) =>
+              event.id === eventId ? { ...event, status: currentEvent.status } : event,
+            ),
+          }));
         }
       },
       toggleEventStatus: async (eventId) => {
@@ -572,6 +615,23 @@ export const useAppStore = create<AppState>()(
         await get().setEventStatus(eventId, nextStatus);
       },
       addCalendarEvent: async (payload) => {
+        const tempId = createId("evt");
+        const tempEvent: CalendarEvent = {
+          id:            tempId,
+          day:           payload.day,
+          time:          payload.time,
+          dog:           payload.dog,
+          client:        payload.client,
+          plan:          payload.plan,
+          sessionNumber: payload.sessionNumber,
+          status:        payload.status ?? "Pendente",
+        };
+
+        // Optimistic add — shows immediately in the list
+        set((state) => ({
+          calendarEvents: [tempEvent, ...state.calendarEvents],
+        }));
+
         try {
           const response = await fetch("/api/events", {
             method: "POST",
@@ -579,10 +639,20 @@ export const useAppStore = create<AppState>()(
             body: JSON.stringify(payload),
           });
 
-          if (!response.ok) return;
+          if (!response.ok) {
+            // Remove temp entry on failure
+            set((state) => ({
+              calendarEvents: state.calendarEvents.filter((e) => e.id !== tempId),
+            }));
+            return;
+          }
+          // Replace temp with real DB entry
           await get().loadFromDB();
         } catch {
-          // keep current state when API fails
+          // Remove temp entry on error
+          set((state) => ({
+            calendarEvents: state.calendarEvents.filter((e) => e.id !== tempId),
+          }));
         }
       },
       generateClientCharge: (clientId) =>

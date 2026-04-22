@@ -51,6 +51,7 @@ export default function TrainingPage() {
   const [title, setTitle] = useState("Sessão prática");
   const [draftNotes, setDraftNotes] = useState<DraftTrainingNote[]>([createDraftTrainingNote()]);
   const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
 
   const selectedClient = useMemo(
     () => clients.find((client) => client.id === selectedClientId) ?? clients[0],
@@ -196,9 +197,10 @@ export default function TrainingPage() {
 
     if (!title.trim() || !selectedClient || !selectedDog || !validNotes.length) return;
 
+    setSaveError("");
     setIsSaving(true);
     try {
-      await addTrainingSession({
+      const ok = await addTrainingSession({
         number: nextSessionNumber,
         title: title.trim(),
         date: new Date().toLocaleDateString("pt-BR"),
@@ -208,8 +210,13 @@ export default function TrainingPage() {
         dogName: selectedDog.name,
         notes: validNotes,
       });
-      setTitle("Sessão prática");
-      resetDraftNotes();
+      if (ok) {
+        setTitle("Sessão prática");
+        resetDraftNotes();
+      } else {
+        setSaveError("Erro ao salvar sessão. Verifique sua conexão e tente novamente.");
+        window.setTimeout(() => setSaveError(""), 4000);
+      }
     } finally {
       setIsSaving(false);
     }
@@ -463,6 +470,9 @@ export default function TrainingPage() {
               >
                 {isSaving ? "Salvando..." : "Salvar sess\u00e3o"}
               </button>
+              {saveError ? (
+                <p className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">{saveError}</p>
+              ) : null}
             </form>
 
             <div className="mt-5 rounded-3xl border border-[var(--border)] bg-[var(--panel)] p-4">

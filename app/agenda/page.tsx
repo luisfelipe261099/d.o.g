@@ -28,6 +28,7 @@ export default function SchedulePage() {
   const [status, setStatus] = useState<EventStatus>("Pendente");
   const [busyEventId, setBusyEventId] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
+  const [createdSuccess, setCreatedSuccess] = useState(false);
 
   const selectedClient = useMemo(
     () => clients.find((c) => c.id === selectedClientId) ?? clients[0],
@@ -69,6 +70,8 @@ export default function SchedulePage() {
         status,
       });
       setStatus("Pendente");
+      setCreatedSuccess(true);
+      setTimeout(() => setCreatedSuccess(false), 3000);
     } finally {
       setIsCreating(false);
     }
@@ -104,7 +107,7 @@ export default function SchedulePage() {
             {orderedEvents.map((event, index) => (
               <div
                 key={event.id}
-                className={`rounded-3xl border border-[var(--border)] bg-white/90 p-4 ${index > 2 ? "hidden md:block" : ""}`}
+                className="rounded-3xl border border-[var(--border)] bg-white/90 p-4"
               >
                 <div className="flex items-center justify-between gap-3">
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-700">
@@ -233,6 +236,9 @@ export default function SchedulePage() {
             <button type="submit" disabled={isCreating || clients.length === 0} className="pc-primary-action md:col-span-2 rounded-full px-5 py-3 text-sm font-semibold disabled:opacity-60">
               {isCreating ? "Criando..." : "Criar agendamento"}
             </button>
+            {createdSuccess ? (
+              <p className="md:col-span-2 text-center text-sm font-semibold text-emerald-700">Agendamento criado com sucesso.</p>
+            ) : null}
           </form>
         </article>
       </section>
