@@ -6,7 +6,7 @@ export default function AdestradoresPage() {
     <PageShell
       kicker="Admin"
       title="Gerenciamento de Adestradores"
-      description="Gerencie cadastro, status e plano dos adestradores ativos."
+      description="Gerencie cadastro, status e plano dos adestradores assinantes."
       requireAuth="admin"
     >
       <AdestradoresClient />

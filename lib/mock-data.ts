@@ -8,8 +8,8 @@ export const navigation = [
   {
     href: "/dashboard",
     label: "Dashboard",
-    kicker: "Operação",
-    description: "Home executiva com métricas, agendamentos e alertas rápidos.",
+    kicker: "Operacao",
+    description: "Visao geral com agenda, historico de treino, alertas e recomendacoes da IA.",
   },
   {
     href: "/clientes",
@@ -21,7 +21,13 @@ export const navigation = [
     href: "/treinos",
     label: "Treinos",
     kicker: "Core",
-    description: "Timeline de sessões, blocos de treino e evolução por notas.",
+    description: "Timeline de sessoes, protocolo aplicado e memoria tecnica por cao.",
+  },
+  {
+    href: "/ia",
+    label: "Assistente IA",
+    kicker: "Protocolos",
+    description: "Sugestoes por raca, objetivo e contexto para apoiar decisoes do adestrador.",
   },
   {
     href: "/agenda",
@@ -31,15 +37,15 @@ export const navigation = [
   },
   {
     href: "/portal",
-    label: "Portal Cliente",
-    kicker: "Experiência externa",
-    description: "Acompanhamento por link com tarefas, relatórios e galeria.",
+    label: "Portal Tutor",
+    kicker: "Experiencia externa",
+    description: "Acesso liberado pelo adestrador para agenda, tarefas e relatorios do tutor.",
   },
   {
     href: "/financeiro",
     label: "Financeiro",
     kicker: "Comercial",
-    description: "Precificação, stack e fases para negociar o projeto.",
+    description: "Controle de mensalidade, cobrancas e retencao dos adestradores assinantes.",
   },
 ];
 
@@ -67,6 +73,12 @@ export const highlightModules = [
     title: "Cobrança e planos",
     description:
       "Estrutura pensada para controlar quantidade de aulas, pagamentos pendentes e evolução futura para PIX, boleto e cartão.",
+  },
+  {
+    kicker: "Modulo 05",
+    title: "IA de protocolo tecnico",
+    description:
+      "A IA sugere estruturas de treino por raca, objetivo e historico do cao para apoiar decisoes no dia a dia.",
   },
 ];
 
@@ -134,6 +146,31 @@ export const trainerAlerts = [
     title: "Sessão de Nina ainda sem confirmação",
     type: "Agenda",
     detail: "Disparar lembrete automático 48h antes do horário reservado.",
+  },
+];
+
+export const aiProtocolSuggestions = [
+  {
+    title: "Guia para Pastor Alemao em area urbana",
+    confidence: "Alta",
+    summary:
+      "Comece com caminhada estruturada de 12 minutos, mudancas de direcao a cada 6 passos e reforco por contato visual.",
+    protocol: [
+      "Fase 1: guia curta em percurso calmo com reforco a cada 3 segundos de guia frouxa.",
+      "Fase 2: incluir 2 estimulos controlados e recuperar foco com comando de retorno.",
+      "Fase 3: fechar com 3 minutos de place para reduzir excitacao residual.",
+    ],
+  },
+  {
+    title: "Reatividade em portao com visitas",
+    confidence: "Media",
+    summary:
+      "Sequencia em 4 exposicoes curtas com distancia progressiva e criterio de interrupcao por latido intenso.",
+    protocol: [
+      "Preparar enriquecimento antes da visita para baixar nivel de energia.",
+      "Executar place antes da abertura do portao e liberar apenas em estado neutro.",
+      "Registrar no relatorio qual lado da guia foi usado e resposta observada.",
+    ],
   },
 ];
 

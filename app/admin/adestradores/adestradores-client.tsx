@@ -150,7 +150,7 @@ export function AdestradoresClient() {
                 {editingId ? "Editar adestrador" : "Novo adestrador"}
               </h3>
               <p className="mt-1 text-sm text-[var(--muted)]">
-                Atualize dados básicos e plano sem sair da tela.
+                Edite dados comerciais e status de assinatura sem perder contexto.
               </p>
             </div>
             <button
@@ -197,7 +197,7 @@ export function AdestradoresClient() {
           <button
             type="button"
             onClick={saveTrainer}
-            className="mt-4 rounded-full bg-slate-900 px-5 py-3 text-sm font-semibold text-white"
+            className="pc-primary-action mt-4 rounded-full px-5 py-3 text-sm font-semibold"
           >
             {editingId ? "Salvar alterações" : "Criar adestrador"}
           </button>
@@ -212,7 +212,7 @@ export function AdestradoresClient() {
                 <th className="px-6 py-4 text-left font-bold text-slate-900 text-base">Nome</th>
                 <th className="px-6 py-4 text-left font-bold text-slate-900 text-base">Email</th>
                 <th className="px-6 py-4 text-left font-bold text-slate-900 text-base">Plano</th>
-                <th className="px-6 py-4 text-left font-bold text-slate-900 text-base">Receita</th>
+                <th className="px-6 py-4 text-left font-bold text-slate-900 text-base">Mensalidade</th>
                 <th className="px-6 py-4 text-left font-bold text-slate-900 text-base">Status</th>
                 <th className="px-6 py-4 text-right font-bold text-slate-900 text-base">Ações</th>
               </tr>

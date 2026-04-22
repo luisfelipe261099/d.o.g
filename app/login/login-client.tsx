@@ -1,137 +1,106 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-
-import { useAppStore, type UserRole } from "@/lib/app-store";
+import { signIn, useSession } from "next-auth/react";
 
 export function LoginClient() {
   const params = useSearchParams();
   const router = useRouter();
-  const login = useAppStore((state) => state.login);
-  const hydrated = useAppStore((state) => state.hydrated);
-  const isAuthenticated = useAppStore((state) => state.isAuthenticated);
+  const { status } = useSession();
 
-  const [email, setEmail] = useState("treinador@dogplatform.com");
-  const [password, setPassword] = useState("123456");
-  const [userRole, setUserRole] = useState<UserRole>("trainer");
+  const [email, setEmail]       = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError]       = useState("");
+  const [loading, setLoading]   = useState(false);
 
-  function getDefaultPath(role: UserRole) {
-    if (role === "admin") return "/admin";
-    if (role === "client") return "/portal/cliente";
-    return "/dashboard";
-  }
-
-  function isAllowedPath(role: UserRole, path: string) {
-    if (role === "admin") {
-      return path === "/admin" || path.startsWith("/admin/");
-    }
-
-    if (role === "client") {
-      return path === "/portal/cliente";
-    }
-
-    if (path === "/portal/cliente" || path.startsWith("/portal/cliente/")) {
-      return false;
-    }
-
-    return ["/dashboard", "/clientes", "/treinos", "/agenda", "/portal", "/financeiro"].some(
-      (allowedPath) => path === allowedPath || path.startsWith(`${allowedPath}/`),
-    );
-  }
-
-  const nextPath = useMemo(() => {
-    const target = params.get("next");
-
-    if (!target || !target.startsWith("/")) {
-      return getDefaultPath(userRole);
-    }
-
-    return isAllowedPath(userRole, target) ? target : getDefaultPath(userRole);
-  }, [params, userRole]);
+  const next = params.get("next") ?? "/dashboard";
+  const safNext = next.startsWith("/") ? next : "/dashboard";
 
   useEffect(() => {
-    if (hydrated && isAuthenticated) {
-      router.replace(nextPath);
-    }
-  }, [hydrated, isAuthenticated, nextPath, router]);
+    if (status === "authenticated") router.replace(safNext);
+  }, [status, router, safNext]);
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!email.trim()) return;
+    setError("");
+    setLoading(true);
 
-    login(email.trim().toLowerCase(), userRole);
-    router.replace(nextPath);
+    const result = await signIn("credentials", {
+      email:    email.trim().toLowerCase(),
+      password,
+      redirect: false,
+    });
+
+    if (!result || result.error) {
+      setError("E-mail ou senha incorretos.");
+      setLoading(false);
+      return;
+    }
+
+    router.replace(safNext);
   }
 
   return (
-    <main className="mx-auto flex min-h-[calc(100vh-96px)] w-full max-w-7xl items-center justify-center px-4 pb-16 pt-8 sm:px-6 lg:px-8">
-      <section className="relative w-full max-w-2xl overflow-hidden rounded-[2.25rem] border border-[var(--border)] bg-[linear-gradient(180deg,_rgba(255,250,245,0.95),_rgba(247,239,231,0.98))] p-8 shadow-[var(--shadow)] sm:p-10">
-        <div className="pointer-events-none absolute -right-10 top-0 h-36 w-36 rounded-full bg-[rgba(181,111,76,0.14)] blur-3xl" />
-        <div className="pointer-events-none absolute bottom-0 left-0 h-32 w-32 rounded-full bg-[rgba(64,93,78,0.12)] blur-3xl" />
-        <p className="relative text-xs font-semibold uppercase tracking-[0.24em] text-[rgba(120,76,52,0.78)]">Login</p>
-        <h2 className="relative mt-3 font-display text-3xl font-semibold text-[var(--foreground)] sm:text-4xl">Entrar na plataforma</h2>
+    <main className="mx-auto flex min-h-[calc(100dvh-76px)] w-full max-w-7xl items-start justify-center px-4 pb-16 pt-4 sm:min-h-[calc(100dvh-96px)] sm:items-center sm:px-6 sm:pb-10 sm:pt-6 lg:px-8">
+      <section className="relative w-full max-w-md overflow-hidden rounded-[1.75rem] border border-[var(--border)] bg-[linear-gradient(180deg,_rgba(248,254,255,0.97),_rgba(238,249,255,0.99))] p-5 shadow-[var(--shadow)] sm:rounded-[2rem] sm:p-8">
+        <div className="pointer-events-none absolute -right-10 top-0 h-36 w-36 rounded-full bg-[rgba(34,137,190,0.14)] blur-3xl" />
+        <div className="pointer-events-none absolute bottom-0 left-0 h-32 w-32 rounded-full bg-[rgba(31,154,138,0.12)] blur-3xl" />
 
-        <form onSubmit={handleSubmit} className="relative mt-8 space-y-6">
-          <div className="rounded-[1.5rem] border border-white/70 bg-white/68 p-4 backdrop-blur-sm">
-            <label className="text-sm font-medium text-[var(--muted)]">Tipo de acesso</label>
-            <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
-              {[
-                { value: "trainer", label: "Adestrador", description: "Painel operacional" },
-                { value: "client", label: "Cliente", description: "Portal do tutor" },
-                { value: "admin", label: "Administrador", description: "Painel administrativo" },
-              ].map((option) => (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() => setUserRole(option.value as UserRole)}
-                  className={`rounded-2xl border px-4 py-3 text-left transition ${
-                    userRole === option.value
-                      ? "border-[#5f3421] bg-[#5f3421] text-white shadow-[0_12px_24px_rgba(95,52,33,0.2)]"
-                      : "border-[var(--border)] bg-[rgba(255,249,243,0.86)] text-[var(--foreground)] hover:border-[rgba(95,52,33,0.34)]"
-                  }`}
-                >
-                  <div className="font-semibold">{option.label}</div>
-                  <div className={`text-xs ${
-                    userRole === option.value ? "text-[rgba(255,241,231,0.82)]" : "text-[var(--muted)]"
-                  }`}>{option.description}</div>
-                </button>
-              ))}
-            </div>
-          </div>
+        <p className="relative text-xs font-semibold uppercase tracking-[0.22em] text-[rgba(20,90,130,0.8)]">PegadaCerta</p>
+        <h2 className="relative mt-2 font-display text-2xl font-semibold text-[var(--foreground)] sm:text-3xl">Entrar</h2>
+        <p className="relative mt-2 text-sm text-[var(--muted)]">Acesse sua conta para continuar.</p>
 
+        <form onSubmit={handleSubmit} className="relative mt-6 space-y-4">
           <label className="block">
-            <span className="text-sm font-medium text-[var(--muted)]">Email</span>
+            <span className="text-sm font-medium text-[var(--muted)]">E-mail</span>
             <input
               type="email"
               value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              className="mt-2 w-full rounded-2xl border border-[var(--border)] bg-[rgba(255,252,248,0.92)] px-4 py-3 text-sm outline-none transition focus:border-[#b56f4c]"
+              onChange={(e) => setEmail(e.target.value)}
+              className="mt-2 w-full rounded-2xl border border-[var(--border)] bg-[rgba(250,255,255,0.94)] px-4 py-3 text-sm outline-none transition focus:border-[#1b719d]"
               placeholder="voce@adestrador.com"
               required
+              autoComplete="email"
+              autoFocus
             />
           </label>
 
           <label className="block">
             <span className="text-sm font-medium text-[var(--muted)]">Senha</span>
-            <input
-              type="password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              className="mt-2 w-full rounded-2xl border border-[var(--border)] bg-[rgba(255,252,248,0.92)] px-4 py-3 text-sm outline-none transition focus:border-[#b56f4c]"
-              placeholder="••••••"
-              required
-            />
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="mt-2 w-full rounded-2xl border border-[var(--border)] bg-[rgba(250,255,255,0.94)] px-4 py-3 text-sm outline-none transition focus:border-[#1b719d]"
+                placeholder="------"
+                required
+                autoComplete="current-password"
+              />
           </label>
 
           <button
             type="submit"
-            className="mt-2 w-full rounded-xl bg-[#5f3421] px-5 py-3 text-sm font-semibold text-white shadow-[0_16px_28px_rgba(95,52,33,0.22)] transition hover:-translate-y-0.5 hover:bg-[#4f2b1c]"
+            disabled={loading}
+            className="pc-primary-action w-full rounded-2xl px-5 py-3 text-sm font-semibold disabled:opacity-60"
           >
-            Entrar como {userRole === "admin" ? "Administrador" : userRole === "client" ? "Cliente" : "Adestrador"}
+            {loading ? "Entrando..." : "Entrar"}
           </button>
+
+          {error ? (
+            <div className="rounded-2xl border border-[rgba(176,116,32,0.3)] bg-[rgba(245,186,86,0.16)] px-4 py-3 text-sm font-medium text-[#8a5b1a]">
+              {error}
+            </div>
+          ) : null}
         </form>
 
+        <p className="relative mt-6 text-center text-sm text-[var(--muted)]">
+          Ainda nao tem conta?{" "}
+          <Link href="/cadastro" className="font-semibold text-[#145a82] hover:underline">
+            Criar conta gratis
+          </Link>
+        </p>
       </section>
     </main>
   );

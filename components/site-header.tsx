@@ -3,24 +3,35 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-
-import { useAppStore } from "@/lib/app-store";
+import { signOut, useSession } from "next-auth/react";
 
 export function SiteHeader() {
   const pathname = usePathname();
   const router = useRouter();
   const isLoginPage = pathname === "/login";
   const [menuOpen, setMenuOpen] = useState(false);
-  const isAuthenticated = useAppStore((state) => state.isAuthenticated);
-  const userRole = useAppStore((state) => state.userRole);
-  const trainerName = useAppStore((state) => state.trainerName);
-  const logout = useAppStore((state) => state.logout);
+  const { data: session, status } = useSession();
 
-  function handleLogout() {
+  const isAuthenticated = status === "authenticated";
+  const userRole = ((session?.user as { role?: string } | undefined)?.role ?? "").toLowerCase();
+  const trainerName = session?.user?.name ?? "";
+
+  function setScrollLock(locked: boolean) {
+    if (locked) {
+      document.body.style.overflow = "hidden";
+      document.documentElement.style.overflow = "hidden";
+      return;
+    }
+
+    document.body.style.removeProperty("overflow");
+    document.documentElement.style.removeProperty("overflow");
+  }
+
+  async function handleLogout() {
     setMenuOpen(false);
-    document.body.style.overflow = "auto";
-    document.documentElement.style.overflow = "auto";
-    logout();
+    setScrollLock(false);
+
+    await signOut({ redirect: false });
     router.replace("/login");
   }
 
@@ -36,8 +47,10 @@ export function SiteHeader() {
     { href: "/dashboard", label: "Dashboard", kicker: "Home", description: "Visão geral da operação" },
     { href: "/clientes", label: "Clientes", kicker: "Carteira", description: "Gestão de clientes" },
     { href: "/treinos", label: "Treinos", kicker: "Técnica", description: "Registro de sessões" },
+    { href: "/ia", label: "Assistente IA", kicker: "Protocolos", description: "Sugestoes para casos complexos" },
     { href: "/agenda", label: "Agenda", kicker: "Calendário", description: "Agendamentos" },
-    { href: "/portal", label: "Portal do Cliente", kicker: "Externo", description: "Gerenciar acesso do cliente" },
+    { href: "/portal", label: "Portal do Tutor", kicker: "Externo", description: "Gerenciar acesso do cliente" },
+    { href: "/planos", label: "Meu Plano", kicker: "Assinatura", description: "Plano e pagamento" },
     { href: "/financeiro", label: "Financeiro", kicker: "Financeiro", description: "Gestão financeira" },
   ];
 
@@ -56,49 +69,40 @@ export function SiteHeader() {
   const roleLabel = userRole === "admin" ? "Administrador" : userRole === "client" ? "Cliente" : "Adestrador";
 
   useEffect(() => {
-    if (menuOpen) {
-      document.body.style.overflow = "hidden";
-      document.documentElement.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "auto";
-      document.documentElement.style.overflow = "auto";
-    }
+    setScrollLock(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    setScrollLock(menuOpen);
 
     return () => {
-      document.body.style.overflow = "auto";
-      document.documentElement.style.overflow = "auto";
+      setScrollLock(false);
     };
   }, [menuOpen]);
 
   return (
     <>
-      <header className="sticky top-0 z-50 border-b border-[var(--border)] bg-[rgba(255,247,240,0.82)] backdrop-blur-xl">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
+      <header className="sticky top-0 z-50 border-b border-[var(--border)] bg-[rgba(247,253,255,0.86)] backdrop-blur-xl">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-2.5 sm:px-6 lg:px-8">
           <Link href="/" className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/60 bg-[linear-gradient(145deg,_#5f3421,_#2f221d)] font-display text-base font-semibold text-white shadow-[0_10px_30px_rgba(95,52,33,0.24)] sm:h-12 sm:w-12 sm:text-lg">
-              DOG
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/70 bg-[linear-gradient(145deg,_#145a82,_#1f8e80)] font-display text-base font-semibold text-white shadow-[0_10px_30px_rgba(16,89,131,0.24)] sm:h-12 sm:w-12 sm:text-lg">
+              PC
             </div>
             <div>
-              <p className="font-display text-lg font-semibold sm:text-xl">D.O.G Platform</p>
-              <p className="text-xs text-[var(--muted)] sm:text-sm">SaaS para adestradores</p>
+              <p className="font-display text-lg font-semibold sm:text-xl">PegadaCerta</p>
+              <p className="hidden text-xs text-[var(--muted)] sm:block">Operacao para adestradores</p>
             </div>
           </Link>
 
           <div className="hidden items-center gap-2 lg:flex">
-            {isAuthenticated ? (
-              <span className="rounded-full border border-[rgba(181,111,76,0.22)] bg-[rgba(181,111,76,0.12)] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#7c4e35]">
-                {roleLabel}
-              </span>
-            ) : null}
-
             {visibleNav.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`whitespace-nowrap rounded-xl border px-4 py-2 text-sm font-semibold transition ${
+                className={`whitespace-nowrap rounded-xl border px-3 py-2 text-sm font-semibold transition ${
                   pathname === item.href
-                    ? "border-[#5f3421] bg-[#5f3421] text-white shadow-[0_12px_24px_rgba(95,52,33,0.24)]"
-                    : "border-[rgba(86,57,39,0.14)] bg-[rgba(255,250,245,0.92)] text-[var(--foreground)] hover:border-[rgba(95,52,33,0.32)] hover:bg-white"
+                    ? "border-[#145a82] bg-[#145a82] text-white shadow-[0_12px_24px_rgba(20,90,130,0.24)]"
+                    : "border-[rgba(20,79,116,0.18)] bg-[rgba(250,255,255,0.94)] text-[var(--foreground)] hover:border-[rgba(20,90,130,0.34)] hover:bg-white"
                 }`}
               >
                 {item.label}
@@ -109,7 +113,7 @@ export function SiteHeader() {
               <button
                 type="button"
                 onClick={handleLogout}
-                className="whitespace-nowrap rounded-xl border border-[rgba(160,76,58,0.22)] bg-[rgba(160,76,58,0.08)] px-4 py-2 text-sm font-semibold text-[#8b4637] transition hover:bg-[rgba(160,76,58,0.14)]"
+                className="whitespace-nowrap rounded-xl border border-[rgba(176,116,32,0.28)] bg-[rgba(245,186,86,0.14)] px-4 py-2 text-sm font-semibold text-[#8a5b1a] transition hover:bg-[rgba(245,186,86,0.22)]"
               >
                 Sair{trainerName ? ` (${trainerName})` : ""}
               </button>
@@ -117,7 +121,7 @@ export function SiteHeader() {
               !isLoginPage ? (
                 <Link
                   href="/login"
-                  className="whitespace-nowrap rounded-xl border border-[#5f3421] bg-[#5f3421] px-4 py-2 text-sm font-semibold text-white shadow-[0_12px_24px_rgba(95,52,33,0.22)]"
+                  className="pc-primary-action whitespace-nowrap rounded-xl border border-[#145a82] px-4 py-2 text-sm font-semibold"
                 >
                   Entrar
                 </Link>
@@ -130,15 +134,15 @@ export function SiteHeader() {
               <button
                 type="button"
                 onClick={() => setMenuOpen(true)}
-                className="rounded-xl border border-[#5f3421] bg-[#5f3421] px-5 py-3 text-base font-semibold text-white shadow-[0_12px_24px_rgba(95,52,33,0.22)] transition hover:bg-[#4f2b1c]"
+                className="pc-primary-action rounded-xl border border-[#145a82] px-4 py-2.5 text-sm font-semibold"
               >
-                ☰ Menu
+                Menu
               </button>
             ) : (
               !isLoginPage ? (
                 <Link
                   href="/login"
-                  className="rounded-full border border-[#5f3421] bg-[#5f3421] px-4 py-2 text-sm font-semibold text-white"
+                  className="pc-primary-action rounded-full border border-[#145a82] px-4 py-2 text-sm font-semibold"
                 >
                   Entrar
                 </Link>
@@ -157,11 +161,11 @@ export function SiteHeader() {
             onClick={() => setMenuOpen(false)}
           />
 
-          <aside className="absolute right-0 top-0 flex h-full w-[92%] max-w-sm flex-col border-l border-[var(--border)] bg-[rgba(255,248,242,0.98)] p-6 shadow-2xl backdrop-blur-xl">
+          <aside className="absolute right-0 top-0 flex h-full w-[92%] max-w-sm flex-col overflow-y-auto border-l border-[var(--border)] bg-[rgba(246,253,255,0.98)] p-6 shadow-2xl backdrop-blur-xl">
             <div className="mb-6 flex items-center justify-between gap-3">
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[rgba(120,76,52,0.78)]">Navegação</p>
-                <p className="mt-1 truncate font-display text-xl font-semibold text-[var(--foreground)]">{trainerName || "Adestrador"}</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[rgba(20,90,130,0.74)]">Navegacao</p>
+                <p className="mt-1 truncate font-display text-lg font-semibold text-[var(--foreground)]">{roleLabel}</p>
               </div>
               <button
                 type="button"
@@ -172,7 +176,7 @@ export function SiteHeader() {
               </button>
             </div>
 
-            <nav className="flex flex-1 flex-col gap-3">
+            <nav className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto pb-4">
               {visibleNav.map((item) => (
                 <Link
                   key={item.href}
@@ -180,7 +184,7 @@ export function SiteHeader() {
                   onClick={() => setMenuOpen(false)}
                   className={`rounded-2xl border px-5 py-4 text-base font-semibold transition break-words ${
                     pathname === item.href
-                      ? "border-[#b56f4c] bg-[rgba(181,111,76,0.16)] text-[var(--foreground)]"
+                      ? "border-[#1b719d] bg-[rgba(36,140,196,0.14)] text-[var(--foreground)]"
                       : "border-[var(--border)] bg-white text-[var(--foreground)]"
                   }`}
                 >
@@ -192,7 +196,7 @@ export function SiteHeader() {
             <button
               type="button"
               onClick={handleLogout}
-              className="mt-6 w-full rounded-2xl border border-[rgba(160,76,58,0.18)] bg-[rgba(160,76,58,0.08)] px-5 py-4 text-left text-base font-semibold text-[#8b4637]"
+              className="mt-6 w-full rounded-2xl border border-[rgba(176,116,32,0.22)] bg-[rgba(245,186,86,0.16)] px-5 py-4 text-left text-base font-semibold text-[#8a5b1a]"
             >
               Sair
             </button>

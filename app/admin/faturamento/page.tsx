@@ -4,8 +4,8 @@ export default function FaturamentoPage() {
   return (
     <PageShell
       kicker="Admin"
-      title="Faturamento e Receitas"
-      description="Acompanhe receitas, pagamentos e desempenho financeiro da operação."
+      title="Faturamento e receita recorrente"
+      description="Acompanhe assinaturas, pagamentos e desempenho financeiro da operacao."
       requireAuth="admin"
     >
       <div className="mx-auto max-w-7xl space-y-6">
@@ -21,7 +21,7 @@ export default function FaturamentoPage() {
                 <div className="flex-1">
                   <p className="text-base font-bold text-slate-900">{stat.label}</p>
                   <p className="mt-2 text-3xl font-bold text-slate-900">{stat.value}</p>
-                  <p className="mt-1 text-base font-bold text-emerald-700">{stat.change} vs mês anterior</p>
+                  <p className="mt-1 text-base font-bold text-emerald-700">{stat.change} vs ciclo anterior</p>
                 </div>
                 <span className="text-4xl">{stat.icon}</span>
               </div>
@@ -30,7 +30,7 @@ export default function FaturamentoPage() {
         </div>
 
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel-strong)] p-6">
-          <h3 className="mb-4 font-display text-xl font-semibold">Transações Recentes</h3>
+          <h3 className="mb-4 font-display text-xl font-semibold">Transações recentes de assinaturas</h3>
           <div className="space-y-3">
             {[
               { adestrador: "Marina Costa", plano: "Pro", valor: "R$ 690", data: "24/03/2026", status: "Pendente" },

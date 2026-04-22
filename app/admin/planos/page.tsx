@@ -44,14 +44,15 @@ export default function PlanosPage() {
   return (
     <PageShell
       kicker="Admin"
-      title="Configuração de Planos"
-      description="Defina preços, recursos e estrutura dos planos disponíveis."
+      title="Configuracao de planos"
+      description="Defina precos, recursos e estrutura dos planos de assinatura da plataforma."
       requireAuth="admin"
     >
       <div className="mx-auto max-w-7xl space-y-6">
         <div className="grid gap-6 xl:grid-cols-[1.3fr_0.7fr]">
           <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel-strong)] p-6">
           <h3 className="mb-6 font-display text-xl font-semibold">Planos Disponíveis</h3>
+          <p className="mb-6 text-sm text-[var(--muted)]">Estruture ofertas para diferentes estágios de operação do adestrador.</p>
           
           <div className="grid gap-6 md:grid-cols-3">
             {plans.map((plan) => (
@@ -86,7 +87,7 @@ export default function PlanosPage() {
               {selectedPlan?.name}
             </h3>
             <p className="mt-2 text-sm leading-7 text-[var(--muted)]">
-              Ajuste preço e benefícios do plano sem sair da tela.
+              Ajuste posicionamento, preço e benefícios sem sair da tela.
             </p>
 
             <div className="mt-5 space-y-4">
@@ -112,7 +113,7 @@ export default function PlanosPage() {
               <button
                 type="button"
                 onClick={savePlan}
-                className="w-full rounded-full bg-slate-900 px-5 py-3 text-sm font-semibold text-white"
+                className="pc-primary-action w-full rounded-full px-5 py-3 text-sm font-semibold"
               >
                 Salvar plano
               </button>

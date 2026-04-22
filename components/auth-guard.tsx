@@ -3,23 +3,28 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 
-import { useAppStore, type UserRole } from "@/lib/app-store";
+import type { UserRole } from "@/lib/app-store";
+
+function isUserRole(value: string): value is UserRole {
+  return value === "admin" || value === "trainer" || value === "client";
+}
 
 export function AuthGuard({ children, role }: { children: React.ReactNode; role?: UserRole | UserRole[] }) {
   const pathname = usePathname();
   const router = useRouter();
-  const hydrated = useAppStore((state) => state.hydrated);
-  const isAuthenticated = useAppStore((state) => state.isAuthenticated);
-  const userRole = useAppStore((state) => state.userRole);
+  const { data: session, status } = useSession();
+  const rawRole = ((session?.user as { role?: string } | undefined)?.role ?? "").toLowerCase();
+  const userRole: UserRole | null = isUserRole(rawRole) ? rawRole : null;
 
   useEffect(() => {
-    if (hydrated && !isAuthenticated) {
+    if (status === "unauthenticated") {
       router.replace(`/login?next=${encodeURIComponent(pathname)}`);
     }
-  }, [hydrated, isAuthenticated, pathname, router]);
+  }, [pathname, router, status]);
 
-  if (!hydrated) {
+  if (status === "loading") {
     return (
       <div className="mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         <div className="rounded-[2rem] border border-[var(--border)] bg-white/85 p-8">
@@ -30,9 +35,9 @@ export function AuthGuard({ children, role }: { children: React.ReactNode; role?
   }
 
   const hasRoleAccess =
-    !role || (Array.isArray(role) ? role.includes(userRole) : userRole === role);
+    !role || (userRole !== null && (Array.isArray(role) ? role.includes(userRole) : userRole === role));
 
-  if (!isAuthenticated || !hasRoleAccess) {
+  if (status !== "authenticated" || !hasRoleAccess) {
     return (
       <div className="mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         <div className="rounded-[2rem] border border-[var(--border)] bg-white/85 p-8">
@@ -49,7 +54,7 @@ export function AuthGuard({ children, role }: { children: React.ReactNode; role?
           </p>
           <Link
             href={`/login?next=${encodeURIComponent(pathname)}`}
-            className="mt-6 inline-flex rounded-full bg-[var(--foreground)] px-5 py-3 text-sm font-semibold text-white"
+            className="pc-primary-action mt-6 inline-flex rounded-full px-5 py-3 text-sm font-semibold"
           >
             Ir para login
           </Link>

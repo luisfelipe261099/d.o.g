@@ -5,7 +5,7 @@ export default function RelatoriosPage() {
     <PageShell
       kicker="Admin"
       title="Relatórios e Analytics"
-      description="Visualize métricas de uso, crescimento e desempenho da plataforma."
+      description="Visualize metricas de uso, crescimento e desempenho da base de adestradores da plataforma."
       requireAuth="admin"
     >
       <div className="mx-auto max-w-7xl space-y-6">
@@ -65,8 +65,8 @@ export default function RelatoriosPage() {
             <h3 className="mb-4 font-display text-xl font-semibold">Média de Cães por Adestrador</h3>
             <div className="text-center py-6">
               <p className="text-5xl font-bold text-sky-600">2.8</p>
-              <p className="mt-2 text-sm text-slate-600">cães em média</p>
-              <p className="mt-4 text-xs text-slate-500">Total de 8 cães em 3 adestradores</p>
+              <p className="mt-2 text-sm text-slate-600">casos ativos por conta</p>
+              <p className="mt-4 text-xs text-slate-500">8 cães monitorados por 3 adestradores ativos</p>
             </div>
           </div>
 
@@ -75,15 +75,15 @@ export default function RelatoriosPage() {
             <h3 className="mb-4 font-display text-xl font-semibold">Sessões Realizadas este Mês</h3>
             <div className="text-center py-6">
               <p className="text-5xl font-bold text-emerald-600">24</p>
-              <p className="mt-2 text-sm text-slate-600">sessões confirmadas</p>
-              <p className="mt-4 text-xs text-slate-500">Taxa de conclusão: 92%</p>
+              <p className="mt-2 text-sm text-slate-600">sessões confirmadas e registradas</p>
+              <p className="mt-4 text-xs text-slate-500">taxa de conclusão operacional: 92%</p>
             </div>
           </div>
         </div>
 
         {/* Tabela de Adestradores com Performance */}
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel-strong)] p-6">
-          <h3 className="mb-4 font-display text-xl font-semibold">Performance dos Adestradores</h3>
+          <h3 className="mb-4 font-display text-xl font-semibold">Performance da base de adestradores</h3>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>

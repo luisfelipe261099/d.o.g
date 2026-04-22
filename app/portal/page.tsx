@@ -1,32 +1,50 @@
 "use client";
 
 import Image from "next/image";
+import { FormEvent, useState } from "react";
 
 import { PageShell } from "@/components/page-shell";
 import { useAppStore } from "@/lib/app-store";
-import { clients, portalFeed, portalGallery } from "@/lib/mock-data";
 
 export default function PortalPage() {
   const tasks = useAppStore((state) => state.portalTasks);
   const toggleTask = useAppStore((state) => state.toggleTask);
+  const addPortalTask = useAppStore((state) => state.addPortalTask);
+
+  const [taskTitle, setTaskTitle] = useState("");
+  const [taskDesc, setTaskDesc] = useState("");
+
+  function handleAddTask(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!taskTitle.trim()) return;
+    addPortalTask(taskTitle, taskDesc);
+    setTaskTitle("");
+    setTaskDesc("");
+  }
+  const storeClients = useAppStore((state) => state.clients);
   const completed = tasks.filter((task) => task.completed).length;
-  const featuredDog = clients[0]?.dogs[0];
+  const featuredClient = storeClients[0];
+  const featuredDog = featuredClient?.dogs[0];
 
   return (
     <PageShell
       kicker="Portal"
-      title="Portal do cliente"
-      description="Gerencie o portal compartilhado com clientes para acompanhamento de tarefas, agenda e mídia."
+      title="Portal do tutor"
+      description="Gerencie o acesso do tutor e acompanhe apenas o que ele precisa receber após cada sessão."
       requireAuth="trainer"
     >
-      <section className="grid gap-4 lg:grid-cols-[0.95fr_1.05fr]">
+      <section>
         <article className="rounded-[1.75rem] border border-[var(--border)] bg-slate-950 p-6 text-white shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
             Link externo
           </p>
           <div className="mt-5 rounded-3xl bg-white/7 p-5">
+            {!featuredDog ? (
+              <p className="text-sm text-slate-300">Cadastre um cliente para gerar o link do portal.</p>
+            ) : (
+            <>
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-              {featuredDog?.photoUrl ? (
+              {featuredDog.photoUrl ? (
                 <Image
                   src={featuredDog.photoUrl}
                   alt={`Foto de ${featuredDog.name}`}
@@ -35,35 +53,42 @@ export default function PortalPage() {
                   unoptimized
                   className="h-24 w-24 rounded-[1.5rem] object-cover"
                 />
-              ) : null}
+              ) : (
+                <div className="flex h-24 w-24 items-center justify-center rounded-[1.5rem] bg-white/20 text-4xl">🐾</div>
+              )}
               <div>
-                <p className="text-sm text-slate-300">app.dominio.com/cliente/canil-prime/8fd2x1</p>
-                <h2 className="mt-4 font-display text-3xl font-semibold">Portal do {featuredDog?.name ?? "Thor"}</h2>
+                <p className="text-sm text-slate-300">app.pegadacerta.com.br/portal/{featuredDog.name.toLowerCase()}</p>
+                <h2 className="mt-4 font-display text-3xl font-semibold">Portal do {featuredDog.name}</h2>
+                <p className="mt-2 text-sm text-slate-300">Acesso individual liberado pelo adestrador com privacidade por caso.</p>
               </div>
             </div>
             <div className="mt-6 grid gap-3 sm:grid-cols-2">
               <div className="rounded-2xl bg-white/7 p-4">
-                <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Aulas realizadas</p>
-                <p className="mt-2 font-display text-4xl font-semibold">{completed + 4}/12</p>
+                <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Tarefas concluídas</p>
+                <p className="mt-2 font-display text-4xl font-semibold">{completed}/{tasks.length || 0}</p>
               </div>
               <div className="rounded-2xl bg-white/7 p-4">
-                <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Próxima aula</p>
-                <p className="mt-2 font-display text-2xl font-semibold">Qua, 18:30</p>
+                <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Tarefas pendentes</p>
+                <p className="mt-2 font-display text-2xl font-semibold">{tasks.length - completed}</p>
               </div>
             </div>
+            </>
+            )}
           </div>
         </article>
 
-        <div className="grid gap-4">
-          <article className="rounded-[1.75rem] border border-[var(--border)] bg-[var(--panel)] p-6 shadow-sm">
+        <article className="mt-4 rounded-[1.75rem] border border-[var(--border)] bg-[var(--panel)] p-6 shadow-sm">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">
-              Tarefas do cliente
+              Tarefas do tutor
             </p>
+            {tasks.length === 0 ? (
+              <p className="mt-4 text-sm text-[var(--muted)]">Nenhuma tarefa cadastrada. Adicione tarefas para o tutor acompanhar.</p>
+            ) : null}
             <div className="mt-5 space-y-3">
-              {tasks.map((task) => (
+              {tasks.map((task, index) => (
                 <div
-                  key={task.title}
-                  className="flex items-start gap-3 rounded-3xl border border-[var(--border)] bg-white/90 p-4"
+                  key={task.id}
+                  className={`items-start gap-3 rounded-3xl border border-[var(--border)] bg-white/90 p-4 ${index > 2 ? "hidden md:flex" : "flex"}`}
                 >
                   <button
                     type="button"
@@ -74,75 +99,44 @@ export default function PortalPage() {
                   />
                   <div>
                     <h3 className="font-semibold">{task.title}</h3>
-                    <p className="mt-1 text-sm leading-7 text-[var(--muted)]">{task.description}</p>
+                    <p className="mt-1 hidden text-sm leading-7 text-[var(--muted)] sm:block">{task.description}</p>
                   </div>
                 </div>
               ))}
             </div>
-          </article>
 
-          <article className="rounded-[1.75rem] border border-[var(--border)] bg-[var(--panel-strong)] p-6 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">
-              Relatórios simplificados
-            </p>
-            <div className="mt-5 space-y-3">
-              {portalFeed.map((item) => (
-                <div key={item.title} className="rounded-3xl border border-[var(--border)] bg-white p-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <h3 className="font-display text-xl font-semibold">{item.title}</h3>
-                    <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">
-                      {item.date}
-                    </span>
-                  </div>
-                  <p className="mt-2 text-sm leading-7 text-[var(--muted)]">{item.summary}</p>
-                </div>
-              ))}
+            <div className="mt-4 rounded-2xl border border-[var(--border)] bg-white p-4 md:hidden">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">Resumo rápido</p>
+              <p className="mt-2 text-sm text-[var(--muted)]">
+                Concluídas: <span className="font-semibold text-[var(--foreground)]">{completed}</span>
+              </p>
+              <p className="mt-1 text-sm text-[var(--muted)]">
+                Pendentes: <span className="font-semibold text-[var(--foreground)]">{tasks.length - completed}</span>
+              </p>
             </div>
-          </article>
-        </div>
-      </section>
 
-      <section className="rounded-[1.75rem] border border-[var(--border)] bg-[var(--panel)] p-6 shadow-sm">
-        <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">
-              Galeria compartilhável
-            </p>
-            <h2 className="mt-2 font-display text-2xl font-semibold">
-              Fotos e vídeos por sessão
-            </h2>
-          </div>
-          <p className="max-w-2xl text-sm leading-7 text-[var(--muted)]">
-            A galeria organiza fotos e vídeos por sessão com acesso controlado para o cliente.
-          </p>
-        </div>
-
-        <div className="mt-6 grid gap-4 md:grid-cols-3">
-          {portalGallery.map((item) => (
-            <article
-              key={item.title}
-              className="overflow-hidden rounded-[1.5rem] border border-[var(--border)] bg-white"
-            >
-              <Image
-                src={item.imageUrl}
-                alt={item.title}
-                width={1200}
-                height={440}
-                unoptimized
-                className="h-44 w-full object-cover"
+            <form onSubmit={handleAddTask} className="mt-5 grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
+              <input
+                value={taskTitle}
+                onChange={(e) => setTaskTitle(e.target.value)}
+                placeholder="Título da tarefa"
+                className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-sky-400"
+                required
               />
-              <div className="p-4">
-                <div className="flex items-center justify-between gap-3">
-                  <h3 className="font-display text-xl font-semibold">{item.title}</h3>
-                  <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">
-                    {item.kind}
-                  </span>
-                </div>
-                <p className="mt-2 text-sm leading-7 text-[var(--muted)]">{item.caption}</p>
-              </div>
-            </article>
-          ))}
-        </div>
+              <input
+                value={taskDesc}
+                onChange={(e) => setTaskDesc(e.target.value)}
+                placeholder="Descrição (opcional)"
+                className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-sky-400"
+              />
+              <button
+                type="submit"
+                className="pc-primary-action rounded-full px-5 py-3 text-sm font-semibold whitespace-nowrap"
+              >
+                Adicionar tarefa
+              </button>
+            </form>
+        </article>
       </section>
 
     </PageShell>
