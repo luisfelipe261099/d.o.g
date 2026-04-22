@@ -29,6 +29,7 @@ export default function SchedulePage() {
   const [busyEventId, setBusyEventId] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [createdSuccess, setCreatedSuccess] = useState(false);
+  const [agendaMessage, setAgendaMessage] = useState("");
 
   const selectedClient = useMemo(
     () => clients.find((c) => c.id === selectedClientId) ?? clients[0],
@@ -48,7 +49,11 @@ export default function SchedulePage() {
     if (busyEventId) return;
     setBusyEventId(eventId);
     try {
-      await setEventStatus(eventId, newStatus);
+      const ok = await setEventStatus(eventId, newStatus);
+      if (!ok) {
+        setAgendaMessage("Não foi possível salvar o novo status agora. Mantivemos a alteração localmente.");
+        window.setTimeout(() => setAgendaMessage(""), 3500);
+      }
     } finally {
       setBusyEventId(null);
     }
@@ -60,7 +65,7 @@ export default function SchedulePage() {
 
     setIsCreating(true);
     try {
-      await addCalendarEvent({
+      const ok = await addCalendarEvent({
         day,
         time,
         dog: selectedDog.name,
@@ -69,9 +74,14 @@ export default function SchedulePage() {
         sessionNumber: events.length + 1,
         status,
       });
-      setStatus("Pendente");
-      setCreatedSuccess(true);
-      setTimeout(() => setCreatedSuccess(false), 3000);
+      if (ok) {
+        setStatus("Pendente");
+        setCreatedSuccess(true);
+        setTimeout(() => setCreatedSuccess(false), 3000);
+      } else {
+        setAgendaMessage("Não foi possível sincronizar o novo agendamento agora. Ele ficou salvo localmente para não perder seu fluxo.");
+        window.setTimeout(() => setAgendaMessage(""), 4000);
+      }
     } finally {
       setIsCreating(false);
     }
@@ -86,6 +96,12 @@ export default function SchedulePage() {
     >
       <section>
         <article className="rounded-[1.75rem] border border-[var(--border)] bg-[var(--panel)] p-6 shadow-sm">
+          {agendaMessage ? (
+            <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              {agendaMessage}
+            </p>
+          ) : null}
+
           <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">

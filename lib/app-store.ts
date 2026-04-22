@@ -187,7 +187,7 @@ type AppState = {
   toggleTask: (taskId: string) => void;
   addPortalTask: (title: string, description: string) => Promise<void>;
   addPortalFeedback: (message: string, author?: PortalFeedback["author"]) => Promise<void>;
-  setEventStatus: (eventId: string, status: SessionStatus) => void;
+  setEventStatus: (eventId: string, status: SessionStatus) => Promise<boolean>;
   toggleEventStatus: (eventId: string) => void;
   addCalendarEvent: (payload: {
     day: string;
@@ -197,7 +197,7 @@ type AppState = {
     plan: string;
     sessionNumber: number;
     status?: SessionStatus;
-  }) => void;
+  }) => Promise<boolean>;
   generateClientCharge: (clientId: string) => void;
   markPaymentPaid: (paymentId: string) => void;
   resetDemoData: () => void;
@@ -570,7 +570,7 @@ export const useAppStore = create<AppState>()(
       },
       setEventStatus: async (eventId, status) => {
         const currentEvent = get().calendarEvents.find((event) => event.id === eventId);
-        if (!currentEvent) return;
+        if (!currentEvent) return false;
 
         // Optimistic update — reflects immediately in UI
         set((state) => ({
@@ -587,20 +587,14 @@ export const useAppStore = create<AppState>()(
           });
 
           if (!response.ok) {
-            // Revert on failure
-            set((state) => ({
-              calendarEvents: state.calendarEvents.map((event) =>
-                event.id === eventId ? { ...event, status: currentEvent.status } : event,
-              ),
-            }));
+            return false;
           }
+
+          const body = await response.json() as { ok?: boolean };
+          if (body.ok === false) return false;
+          return true;
         } catch {
-          // Revert on error
-          set((state) => ({
-            calendarEvents: state.calendarEvents.map((event) =>
-              event.id === eventId ? { ...event, status: currentEvent.status } : event,
-            ),
-          }));
+          return false;
         }
       },
       toggleEventStatus: async (eventId) => {
@@ -642,19 +636,40 @@ export const useAppStore = create<AppState>()(
           });
 
           if (!response.ok) {
-            // Remove temp entry on failure
-            set((state) => ({
-              calendarEvents: state.calendarEvents.filter((e) => e.id !== tempId),
-            }));
-            return;
+            return false;
           }
-          // Replace temp with real DB entry
-          await get().loadFromDB();
-        } catch {
-          // Remove temp entry on error
+
+          const created = await response.json() as {
+            id: string;
+            day: string;
+            time: string;
+            dog: string;
+            client: string;
+            plan?: string;
+            sessionNumber?: number;
+            status?: SessionStatus;
+          };
+
+          // Replace temp with server event without full store reload.
           set((state) => ({
-            calendarEvents: state.calendarEvents.filter((e) => e.id !== tempId),
+            calendarEvents: state.calendarEvents.map((event) =>
+              event.id === tempId
+                ? {
+                    id: created.id,
+                    day: created.day,
+                    time: created.time,
+                    dog: created.dog,
+                    client: created.client,
+                    plan: created.plan ?? "",
+                    sessionNumber: Number(created.sessionNumber ?? payload.sessionNumber),
+                    status: (created.status ?? payload.status ?? "Pendente") as SessionStatus,
+                  }
+                : event,
+            ),
           }));
+          return true;
+        } catch {
+          return false;
         }
       },
       generateClientCharge: (clientId) =>
