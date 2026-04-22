@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 import {
   PageShell,
 } from "@/components/page-shell";
@@ -62,6 +64,35 @@ export default function TrainerPlansPage() {
   const setTrainerPaymentSettings = useAppStore((state) => state.setTrainerPaymentSettings);
   const setTrainerPaymentProfile = useAppStore((state) => state.setTrainerPaymentProfile);
   const renewTrainerSubscription = useAppStore((state) => state.renewTrainerSubscription);
+  const [busyPlanName, setBusyPlanName] = useState<TrainerPlanName | null>(null);
+  const [isRenewing, setIsRenewing] = useState(false);
+  const [feedbackMessage, setFeedbackMessage] = useState("");
+
+  async function handlePlanSelection(plan: TrainerPlanName) {
+    if (busyPlanName || plan === subscription.planName) return;
+    setBusyPlanName(plan);
+    const ok = await setTrainerSubscriptionPlan(plan);
+    if (ok) {
+      setFeedbackMessage("Plano atualizado com sucesso.");
+    } else {
+      setFeedbackMessage("Não foi possível atualizar o plano agora.");
+    }
+    window.setTimeout(() => setFeedbackMessage(""), 3000);
+    setBusyPlanName(null);
+  }
+
+  async function handleRenewNow() {
+    if (isRenewing) return;
+    setIsRenewing(true);
+    const ok = await renewTrainerSubscription();
+    if (ok) {
+      setFeedbackMessage("Renovação gerada com sucesso.");
+    } else {
+      setFeedbackMessage("Não foi possível gerar renovação agora.");
+    }
+    window.setTimeout(() => setFeedbackMessage(""), 3000);
+    setIsRenewing(false);
+  }
 
   return (
     <PageShell
@@ -70,6 +101,14 @@ export default function TrainerPlansPage() {
       description="Controle plano, pagamento e quantidade de aulas do pacote sem depender de cobrança por período."
       requireAuth="trainer"
     >
+      {feedbackMessage ? (
+        <section>
+          <article className="rounded-2xl border border-[var(--border)] bg-white/90 px-4 py-3 text-sm text-[var(--foreground)] shadow-sm">
+            {feedbackMessage}
+          </article>
+        </section>
+      ) : null}
+
       <section className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
         <article className="rounded-[1.75rem] border border-[var(--border)] bg-[var(--panel)] p-6 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">Planos disponíveis</p>
@@ -99,12 +138,17 @@ export default function TrainerPlansPage() {
                   </div>
                   <button
                     type="button"
-                    onClick={() => setTrainerSubscriptionPlan(plan.name as TrainerPlanName)}
+                    onClick={() => handlePlanSelection(plan.name as TrainerPlanName)}
+                    disabled={busyPlanName !== null}
                     className={`mt-5 w-full rounded-full px-4 py-3 text-sm font-semibold ${
                       isActive ? "bg-[#145a82] text-white" : "border border-[var(--border)] bg-white text-[var(--foreground)]"
-                    }`}
+                    } disabled:opacity-60`}
                   >
-                    {isActive ? "Plano atual" : "Escolher plano"}
+                    {busyPlanName === plan.name
+                      ? "Salvando..."
+                      : isActive
+                      ? "Plano atual"
+                      : "Escolher plano"}
                   </button>
                 </article>
               );
@@ -131,10 +175,11 @@ export default function TrainerPlansPage() {
 
             <button
               type="button"
-              onClick={renewTrainerSubscription}
-              className="pc-primary-action mt-5 w-full rounded-full px-5 py-3 text-sm font-semibold"
+              onClick={handleRenewNow}
+              disabled={isRenewing}
+              className="pc-primary-action mt-5 w-full rounded-full px-5 py-3 text-sm font-semibold disabled:opacity-60"
             >
-              Renovar agora
+              {isRenewing ? "Gerando renovação..." : "Renovar agora"}
             </button>
           </article>
 

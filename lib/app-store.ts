@@ -151,14 +151,14 @@ type AppState = {
   login: (email: string, role: UserRole) => void;
   logout: () => void;
   setActivePlan: (plan: TrainerPlanName) => void;
-  setTrainerSubscriptionPlan: (plan: TrainerPlanName) => void;
+  setTrainerSubscriptionPlan: (plan: TrainerPlanName) => Promise<boolean>;
   setTrainerPaymentSettings: (payload: {
     paymentMethod: TrainerPaymentMethod;
     lessonPackage: TrainerLessonPackage;
     autoRenew: boolean;
   }) => void;
   setTrainerPaymentProfile: (payload: Partial<TrainerPaymentProfile>) => void;
-  renewTrainerSubscription: () => void;
+  renewTrainerSubscription: () => Promise<boolean>;
   addClientWithDog: (payload: {
     clientName: string;
     phone: string;
@@ -393,9 +393,9 @@ export const useAppStore = create<AppState>()(
             body: JSON.stringify({ plan: mapSubscriptionPlanToDbPlan(plan) }),
           });
 
-          if (!response.ok) return;
+          if (!response.ok) return false;
         } catch {
-          return;
+          return false;
         }
 
         set((state) => ({
@@ -407,6 +407,7 @@ export const useAppStore = create<AppState>()(
             status: "Ativa",
           },
         }));
+        return true;
       },
       setTrainerPaymentSettings: ({ paymentMethod, lessonPackage, autoRenew }) =>
         set((state) => ({
@@ -441,9 +442,9 @@ export const useAppStore = create<AppState>()(
               reference: `${trainerSubscription.planName} \u2022 ${trainerSubscription.lessonPackage}`,
             }),
           });
-          if (!response.ok) return;
+          if (!response.ok) return false;
         } catch {
-          return;
+          return false;
         }
 
         set((state) => ({
@@ -467,6 +468,7 @@ export const useAppStore = create<AppState>()(
         }));
 
         await get().loadFromDB();
+        return true;
       },
       addClientWithDog: async (payload) => {
         try {
@@ -821,13 +823,13 @@ export const useAppStore = create<AppState>()(
       loadFromDB: async () => {
         try {
           const [meRes, clientsRes, sessionsRes, eventsRes, paymentsRes, tasksRes, feedbacksRes] = await Promise.all([
-            fetch("/api/me"),
-            fetch("/api/clients"),
-            fetch("/api/sessions"),
-            fetch("/api/events"),
-            fetch("/api/payments"),
-            fetch("/api/portal-tasks"),
-            fetch("/api/portal-feedbacks"),
+            fetch("/api/me", { cache: "no-store" }),
+            fetch("/api/clients", { cache: "no-store" }),
+            fetch("/api/sessions", { cache: "no-store" }),
+            fetch("/api/events", { cache: "no-store" }),
+            fetch("/api/payments", { cache: "no-store" }),
+            fetch("/api/portal-tasks", { cache: "no-store" }),
+            fetch("/api/portal-feedbacks", { cache: "no-store" }),
           ]);
 
           if (!clientsRes.ok || !sessionsRes.ok || !eventsRes.ok || !paymentsRes.ok) return;

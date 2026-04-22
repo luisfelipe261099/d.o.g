@@ -207,8 +207,8 @@ export default function FinancialPage() {
           <h2 className="mt-2 font-display text-2xl font-semibold">Visão de recebimentos por contrato</h2>
           <p className="mt-2 text-sm text-[var(--muted)]">{clientPayments.length} cobranças de clientes ativas na carteira.</p>
           <div className="mt-4 grid gap-3 md:grid-cols-2">
-            {clientPayments.map((payment, index) => (
-              <div key={payment.id} className={`rounded-3xl border border-[var(--border)] bg-white p-4 ${index > 3 ? "hidden md:block" : ""}`}>
+            {clientPayments.map((payment) => (
+              <div key={payment.id} className="rounded-3xl border border-[var(--border)] bg-white p-4">
                 <div className="flex items-center justify-between gap-2">
                   <p className="font-semibold">{payment.clientName}</p>
                   {payment.source ? (

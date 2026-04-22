@@ -2,12 +2,33 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
+async function ensureTrainer(userId: string) {
+  const existing = await prisma.trainer.findUnique({ where: { userId } });
+  if (existing) return existing;
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { name: true, email: true },
+  });
+
+  if (!user) return null;
+
+  const fallbackName = user.email?.split("@")[0]?.trim() || "Adestrador";
+
+  return prisma.trainer.create({
+    data: {
+      userId,
+      name: user.name?.trim() || fallbackName,
+    },
+  });
+}
+
 // GET /api/events
 export async function GET() {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
-  const trainer = await prisma.trainer.findUnique({ where: { userId: session.user.id } });
+  const trainer = await ensureTrainer(session.user.id);
   if (!trainer) return NextResponse.json({ error: "Adestrador não encontrado" }, { status: 404 });
 
   const events = await prisma.calendarEvent.findMany({
@@ -23,7 +44,7 @@ export async function POST(request: Request) {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
-  const trainer = await prisma.trainer.findUnique({ where: { userId: session.user.id } });
+  const trainer = await ensureTrainer(session.user.id);
   if (!trainer) return NextResponse.json({ error: "Adestrador não encontrado" }, { status: 404 });
 
   const body = await request.json() as {
@@ -57,7 +78,7 @@ export async function PATCH(request: Request) {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
-  const trainer = await prisma.trainer.findUnique({ where: { userId: session.user.id } });
+  const trainer = await ensureTrainer(session.user.id);
   if (!trainer) return NextResponse.json({ error: "Adestrador não encontrado" }, { status: 404 });
 
   const body = await request.json() as {
