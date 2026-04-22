@@ -426,26 +426,32 @@ export const useAppStore = create<AppState>()(
             ...payload,
           },
         })),
-      renewTrainerSubscription: () =>
+      renewTrainerSubscription: async () => {
+        const { trainerSubscription } = get();
+        try {
+          const response = await fetch("/api/payments", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              clientName: `Assinatura ${trainerSubscription.planName}`,
+              amount: trainerSubscription.amount,
+              source: "Assinatura",
+              paymentMethod: trainerSubscription.paymentMethod,
+              dueDate: trainerSubscription.nextChargeDate,
+              reference: `${trainerSubscription.planName} \u2022 ${trainerSubscription.lessonPackage}`,
+            }),
+          });
+          if (!response.ok) return;
+        } catch {
+          return;
+        }
+
         set((state) => ({
           trainerSubscription: {
             ...state.trainerSubscription,
             status: "Ativa",
             nextChargeDate: getNextPackageReviewDate(state.trainerSubscription.lessonPackage),
           },
-          payments: [
-            {
-              id: createId("pay"),
-              clientName: `Assinatura ${state.trainerSubscription.planName}`,
-              amount: state.trainerSubscription.amount,
-              status: "Pendente",
-              source: "Assinatura",
-              paymentMethod: state.trainerSubscription.paymentMethod,
-              dueDate: state.trainerSubscription.nextChargeDate,
-              reference: `${state.trainerSubscription.planName} • ${state.trainerSubscription.lessonPackage}`,
-            },
-            ...state.payments,
-          ],
           trainerRenewalHistory: [
             {
               id: createId("renewal"),
@@ -458,7 +464,10 @@ export const useAppStore = create<AppState>()(
             },
             ...state.trainerRenewalHistory,
           ].slice(0, 20),
-        })),
+        }));
+
+        await get().loadFromDB();
+      },
       addClientWithDog: async (payload) => {
         try {
           const response = await fetch("/api/clients", {

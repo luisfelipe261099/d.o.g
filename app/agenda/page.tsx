@@ -13,39 +13,65 @@ const statusClassName: Record<EventStatus, string> = {
   Cancelado: "bg-rose-100 text-rose-800",
 };
 
+const daysOfWeek = ["Segunda", "Ter\u00e7a", "Quarta", "Quinta", "Sexta", "S\u00e1bado", "Domingo"];
+
 export default function SchedulePage() {
   const events = useAppStore((state) => state.calendarEvents);
+  const clients = useAppStore((state) => state.clients);
   const setEventStatus = useAppStore((state) => state.setEventStatus);
   const addCalendarEvent = useAppStore((state) => state.addCalendarEvent);
 
-  const [dog, setDog] = useState("");
-  const [client, setClient] = useState("");
+  const [selectedClientId, setSelectedClientId] = useState(clients[0]?.id ?? "");
+  const [selectedDogId, setSelectedDogId] = useState(clients[0]?.dogs[0]?.id ?? "");
   const [day, setDay] = useState("Ter\u00e7a");
-  const [time, setTime] = useState("19:00");
+  const [time, setTime] = useState("09:00");
   const [status, setStatus] = useState<EventStatus>("Pendente");
+  const [busyEventId, setBusyEventId] = useState<string | null>(null);
+  const [isCreating, setIsCreating] = useState(false);
+
+  const selectedClient = useMemo(
+    () => clients.find((c) => c.id === selectedClientId) ?? clients[0],
+    [clients, selectedClientId],
+  );
+  const selectedDog = useMemo(
+    () => selectedClient?.dogs.find((d) => d.id === selectedDogId) ?? selectedClient?.dogs[0],
+    [selectedClient, selectedDogId],
+  );
 
   const orderedEvents = useMemo(
     () => [...events].sort((a, b) => Number(b.sessionNumber) - Number(a.sessionNumber)),
     [events],
   );
 
-  function onSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSetStatus(eventId: string, newStatus: EventStatus) {
+    if (busyEventId) return;
+    setBusyEventId(eventId);
+    try {
+      await setEventStatus(eventId, newStatus);
+    } finally {
+      setBusyEventId(null);
+    }
+  }
+
+  async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!dog.trim() || !client.trim()) return;
+    if (!selectedClient || !selectedDog || isCreating) return;
 
-    addCalendarEvent({
-      day,
-      time,
-      dog: dog.trim(),
-      client: client.trim(),
-      plan: "Sess\u00e3o recorrente",
-      sessionNumber: events.length + 1,
-      status,
-    });
-
-    setDog("");
-    setClient("");
-    setStatus("Pendente");
+    setIsCreating(true);
+    try {
+      await addCalendarEvent({
+        day,
+        time,
+        dog: selectedDog.name,
+        client: selectedClient.name,
+        plan: "Sess\u00e3o recorrente",
+        sessionNumber: events.length + 1,
+        status,
+      });
+      setStatus("Pendente");
+    } finally {
+      setIsCreating(false);
+    }
   }
 
   return (
@@ -104,22 +130,25 @@ export default function SchedulePage() {
                 <div className="mt-3 grid grid-cols-3 gap-2 text-xs font-semibold uppercase tracking-[0.1em]">
                   <button
                     type="button"
-                    onClick={() => setEventStatus(event.id, "Confirmado")}
-                    className="rounded-full border border-emerald-300 bg-emerald-50 px-2 py-2 text-emerald-800"
+                    onClick={() => handleSetStatus(event.id, "Confirmado")}
+                    disabled={busyEventId === event.id}
+                    className="rounded-full border border-emerald-300 bg-emerald-50 px-2 py-2 text-emerald-800 disabled:opacity-50"
                   >
                     Confirmar
                   </button>
                   <button
                     type="button"
-                    onClick={() => setEventStatus(event.id, "Pendente")}
-                    className="rounded-full border border-amber-300 bg-amber-50 px-2 py-2 text-amber-900"
+                    onClick={() => handleSetStatus(event.id, "Pendente")}
+                    disabled={busyEventId === event.id}
+                    className="rounded-full border border-amber-300 bg-amber-50 px-2 py-2 text-amber-900 disabled:opacity-50"
                   >
                     Pendente
                   </button>
                   <button
                     type="button"
-                    onClick={() => setEventStatus(event.id, "Cancelado")}
-                    className="rounded-full border border-rose-300 bg-rose-50 px-2 py-2 text-rose-800"
+                    onClick={() => handleSetStatus(event.id, "Cancelado")}
+                    disabled={busyEventId === event.id}
+                    className="rounded-full border border-rose-300 bg-rose-50 px-2 py-2 text-rose-800 disabled:opacity-50"
                   >
                     Cancelar
                   </button>
@@ -128,44 +157,81 @@ export default function SchedulePage() {
             ))}
           </div>
 
+          {clients.length === 0 ? (
+            <div className="mt-6 rounded-3xl border border-dashed border-[var(--border)] bg-white/60 p-8 text-center">
+              <p className="text-sm font-semibold text-[var(--foreground)]">Nenhum cliente cadastrado</p>
+              <p className="mt-2 text-sm text-[var(--muted)]">Cadastre clientes primeiro na p\u00e1gina <a href="/clientes" className="underline">Clientes</a> para agendar atendimentos.</p>
+            </div>
+          ) : null}
+
           <form onSubmit={onSubmit} className="mt-6 grid gap-3 rounded-3xl border border-[var(--border)] bg-white/95 p-4 md:grid-cols-2">
-            <input
-              value={client}
-              onChange={(event) => setClient(event.target.value)}
-              placeholder="Cliente"
-              className="rounded-2xl border border-[var(--border)] px-4 py-3 text-sm outline-none focus:border-sky-400"
-              required
-            />
-            <input
-              value={dog}
-              onChange={(event) => setDog(event.target.value)}
-              placeholder="Cão"
-              className="rounded-2xl border border-[var(--border)] px-4 py-3 text-sm outline-none focus:border-sky-400"
-              required
-            />
-            <input
-              value={day}
-              onChange={(event) => setDay(event.target.value)}
-              placeholder="Dia"
-              className="rounded-2xl border border-[var(--border)] px-4 py-3 text-sm outline-none focus:border-sky-400"
-            />
-            <input
-              value={time}
-              onChange={(event) => setTime(event.target.value)}
-              placeholder="Hora"
-              className="rounded-2xl border border-[var(--border)] px-4 py-3 text-sm outline-none focus:border-sky-400"
-            />
-            <select
-              value={status}
-              onChange={(event) => setStatus(event.target.value as EventStatus)}
-              className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-sky-400 md:col-span-2"
-            >
-              <option value="Pendente">Pendente</option>
-              <option value="Confirmado">Confirmado</option>
-              <option value="Cancelado">Cancelado</option>
-            </select>
-            <button type="submit" className="pc-primary-action md:col-span-2 rounded-full px-5 py-3 text-sm font-semibold">
-              Criar agendamento
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">Cliente</label>
+              <select
+                value={selectedClient?.id ?? ""}
+                onChange={(e) => {
+                  const c = clients.find((x) => x.id === e.target.value);
+                  setSelectedClientId(e.target.value);
+                  setSelectedDogId(c?.dogs[0]?.id ?? "");
+                }}
+                disabled={clients.length === 0}
+                className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-sky-400 disabled:opacity-50"
+                required
+              >
+                {clients.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">C\u00e3o</label>
+              <select
+                value={selectedDog?.id ?? ""}
+                onChange={(e) => setSelectedDogId(e.target.value)}
+                disabled={!selectedClient?.dogs.length}
+                className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-sky-400 disabled:opacity-50"
+                required
+              >
+                {(selectedClient?.dogs ?? []).map((d) => (
+                  <option key={d.id} value={d.id}>{d.name} • {d.breed}</option>
+                ))}
+              </select>
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">Dia da semana</label>
+              <select
+                value={day}
+                onChange={(e) => setDay(e.target.value)}
+                className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-sky-400"
+              >
+                {daysOfWeek.map((d) => (
+                  <option key={d} value={d}>{d}</option>
+                ))}
+              </select>
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">Hor\u00e1rio</label>
+              <input
+                type="time"
+                value={time}
+                onChange={(e) => setTime(e.target.value)}
+                className="rounded-2xl border border-[var(--border)] px-4 py-3 text-sm outline-none focus:border-sky-400"
+              />
+            </div>
+            <div className="flex flex-col gap-1 md:col-span-2">
+              <label className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">Status inicial</label>
+              <select
+                value={status}
+                onChange={(e) => setStatus(e.target.value as EventStatus)}
+                className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-sky-400"
+              >
+                <option value="Pendente">Pendente</option>
+                <option value="Confirmado">Confirmado</option>
+                <option value="Cancelado">Cancelado</option>
+              </select>
+            </div>
+            <button type="submit" disabled={isCreating || clients.length === 0} className="pc-primary-action md:col-span-2 rounded-full px-5 py-3 text-sm font-semibold disabled:opacity-60">
+              {isCreating ? "Criando..." : "Criar agendamento"}
             </button>
           </form>
         </article>

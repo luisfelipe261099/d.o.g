@@ -47,7 +47,7 @@ export function SiteHeader() {
     { href: "/dashboard", label: "Dashboard", kicker: "Home", description: "Visão geral da operação" },
     { href: "/clientes", label: "Clientes", kicker: "Carteira", description: "Gestão de clientes" },
     { href: "/treinos", label: "Treinos", kicker: "Técnica", description: "Registro de sessões" },
-    { href: "/ia", label: "Assistente IA", kicker: "Protocolos", description: "Sugestoes para casos complexos" },
+    { href: "/ia", label: "Assistente IA", kicker: "Protocolos", description: "Sugestões para casos complexos" },
     { href: "/agenda", label: "Agenda", kicker: "Calendário", description: "Agendamentos" },
     { href: "/portal", label: "Portal do Tutor", kicker: "Externo", description: "Gerenciar acesso do cliente" },
     { href: "/planos", label: "Meu Plano", kicker: "Assinatura", description: "Plano e pagamento" },

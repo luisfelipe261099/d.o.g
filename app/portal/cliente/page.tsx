@@ -9,6 +9,7 @@ import { useAppStore } from "@/lib/app-store";
 export default function PortalClientePage() {
   const [activeSection, setActiveSection] = useState<"resumo" | "agenda" | "tarefas" | "galeria" | "relatorios">("resumo");
   const [feedbackMessage, setFeedbackMessage] = useState("");
+  const [isSendingFeedback, setIsSendingFeedback] = useState(false);
   const clients = useAppStore((state) => state.clients);
   const calendarEvents = useAppStore((state) => state.calendarEvents);
   const portalTasks = useAppStore((state) => state.portalTasks);
@@ -123,11 +124,16 @@ export default function PortalClientePage() {
     relatorios: activeSection === "relatorios",
   };
 
-  function handleFeedbackSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleFeedbackSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!feedbackMessage.trim()) return;
-    addPortalFeedback(feedbackMessage);
-    setFeedbackMessage("");
+    if (!feedbackMessage.trim() || isSendingFeedback) return;
+    setIsSendingFeedback(true);
+    try {
+      await addPortalFeedback(feedbackMessage);
+      setFeedbackMessage("");
+    } finally {
+      setIsSendingFeedback(false);
+    }
   }
 
   return (
@@ -220,9 +226,10 @@ export default function PortalClientePage() {
               />
               <button
                 type="submit"
-                className="pc-primary-action rounded-full px-5 py-3 text-sm font-semibold lg:self-start"
+                disabled={isSendingFeedback}
+                className="pc-primary-action rounded-full px-5 py-3 text-sm font-semibold lg:self-start disabled:opacity-60"
               >
-                Enviar comentário
+                {isSendingFeedback ? "Enviando..." : "Enviar comentário"}
               </button>
             </form>
 
@@ -456,7 +463,7 @@ export default function PortalClientePage() {
           </article>
 
           <article className="rounded-[1.75rem] border border-[var(--border)] bg-slate-950 p-5 text-white shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Saude e lembretes</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Saúde e lembretes</p>
             {healthAlerts.length === 0 ? (
               <p className="mt-4 text-sm text-slate-300">Nenhum alerta de saúde cadastrado.</p>
             ) : null}

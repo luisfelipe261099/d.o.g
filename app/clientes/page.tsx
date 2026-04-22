@@ -30,9 +30,12 @@ export default function ClientsPage() {
   const [contractAmount, setContractAmount] = useState("");
   const [billingDay, setBillingDay] = useState("10");
   const [paymentMethod, setPaymentMethod] = useState<ClientPaymentMethod>("Pix");
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState("");
 
-  function onSubmit(event: FormEvent<HTMLFormElement>) {
+  async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (isSaving) return;
     const parsedAmount = Number(contractAmount.replace(/[^\d.,]/g, "").replace(",", "."));
     const parsedBillingDay = Number(billingDay);
 
@@ -43,34 +46,40 @@ export default function ClientsPage() {
       .map((t) => t.trim())
       .filter(Boolean);
 
-    addClientWithDog({
-      clientName: clientName.trim(),
-      phone: phone.trim() || "(00) 00000-0000",
-      propertyType: propertyType || "Apartamento",
-      environment: "",
-      plan: planLabel.trim() || "Plano personalizado",
-      contractAmount: parsedAmount,
-      billingDay: Number.isFinite(parsedBillingDay) ? Math.min(Math.max(parsedBillingDay, 1), 28) : 10,
-      paymentMethod,
-      dogName: dogName.trim(),
-      breed: breed.trim() || "SRD",
-      age: age.trim() || "Não informado",
-      weight: weight.trim() || "Não informado",
-      trainingTypes: trainingTypes.length > 0 ? trainingTypes : [],
-    });
-
-    setClientName("");
-    setPhone("");
-    setDogName("");
-    setBreed("");
-    setAge("");
-    setWeight("");
-    setPropertyType("Apartamento");
-    setTrainingTypesRaw("");
-    setPlanLabel("");
-    setContractAmount("");
-    setBillingDay("10");
-    setPaymentMethod("Pix");
+    setIsSaving(true);
+    try {
+      await addClientWithDog({
+        clientName: clientName.trim(),
+        phone: phone.trim() || "(00) 00000-0000",
+        propertyType: propertyType || "Apartamento",
+        environment: "",
+        plan: planLabel.trim() || "Plano personalizado",
+        contractAmount: parsedAmount,
+        billingDay: Number.isFinite(parsedBillingDay) ? Math.min(Math.max(parsedBillingDay, 1), 28) : 10,
+        paymentMethod,
+        dogName: dogName.trim(),
+        breed: breed.trim() || "SRD",
+        age: age.trim() || "Não informado",
+        weight: weight.trim() || "Não informado",
+        trainingTypes: trainingTypes.length > 0 ? trainingTypes : [],
+      });
+      setClientName("");
+      setPhone("");
+      setDogName("");
+      setBreed("");
+      setAge("");
+      setWeight("");
+      setPropertyType("Apartamento");
+      setTrainingTypesRaw("");
+      setPlanLabel("");
+      setContractAmount("");
+      setBillingDay("10");
+      setPaymentMethod("Pix");
+      setSaveMessage("Cliente cadastrado com sucesso.");
+      window.setTimeout(() => setSaveMessage(""), 2500);
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   return (
@@ -240,11 +249,15 @@ export default function ClientsPage() {
                 <option value="Boleto">Boleto</option>
                 <option value="Dinheiro">Dinheiro</option>
               </select>
+              {saveMessage ? (
+                <p className="sm:col-span-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{saveMessage}</p>
+              ) : null}
               <button
                 type="submit"
-                className="pc-primary-action sm:col-span-2 rounded-full px-5 py-3 text-sm font-semibold"
+                disabled={isSaving}
+                className="pc-primary-action sm:col-span-2 rounded-full px-5 py-3 text-sm font-semibold disabled:opacity-60"
               >
-                Salvar cadastro
+                {isSaving ? "Salvando..." : "Salvar cadastro"}
               </button>
             </form>
           </article>

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { PageShell } from "@/components/page-shell";
 import { useAppStore } from "@/lib/app-store";
 
@@ -44,15 +45,35 @@ export default function DashboardPage() {
     >
       <section className="grid gap-3 sm:grid-cols-3">
         {[
-          "1. Veja os atendimentos de hoje",
-          "2. Registre o treino do caso",
-          "3. Entregue tarefa no portal do tutor",
-        ].map((step) => (
-          <article key={step} className="rounded-2xl border border-[var(--border)] bg-white/90 p-3.5 sm:p-4">
+          { step: "1. Veja os atendimentos de hoje", href: "/agenda", cta: "Abrir agenda" },
+          { step: "2. Registre o treino do caso", href: "/treinos", cta: "Registrar treino" },
+          { step: "3. Entregue tarefa no portal do tutor", href: "/portal", cta: "Abrir portal" },
+        ].map(({ step, href, cta }) => (
+          <Link
+            key={step}
+            href={href}
+            className="rounded-2xl border border-[var(--border)] bg-white/90 p-3.5 sm:p-4 flex items-center justify-between gap-3 hover:border-sky-300 hover:bg-sky-50 transition-colors"
+          >
             <p className="text-sm font-semibold leading-6 text-[var(--foreground)]">{step}</p>
-          </article>
+            <span className="shrink-0 rounded-full border border-[var(--border)] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">{cta}</span>
+          </Link>
         ))}
       </section>
+
+      {clients.length === 0 ? (
+        <section>
+          <article className="rounded-[1.75rem] border border-sky-200 bg-sky-50 p-6 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-700">Por onde come\u00e7ar</p>
+            <h2 className="mt-2 font-display text-2xl font-semibold text-[var(--foreground)]">Nenhum cliente cadastrado ainda</h2>
+            <p className="mt-2 text-sm leading-7 text-[var(--muted)]">
+              Cadastre seu primeiro cliente e o cão dele para liberar a agenda, os treinos e o portal do tutor.
+            </p>
+            <Link href="/clientes" className="mt-4 inline-flex rounded-full bg-[#145a82] px-5 py-2.5 text-sm font-semibold text-white">
+              Cadastrar primeiro cliente
+            </Link>
+          </article>
+        </section>
+      ) : null}
 
       <section className="grid gap-4 md:hidden">
         {metrics.slice(0, 2).map((metric) => (

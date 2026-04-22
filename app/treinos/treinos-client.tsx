@@ -50,6 +50,7 @@ export default function TrainingPage() {
   const [historyPeriod, setHistoryPeriod] = useState<HistoryPeriod>("all");
   const [title, setTitle] = useState("Sessão prática");
   const [draftNotes, setDraftNotes] = useState<DraftTrainingNote[]>([createDraftTrainingNote()]);
+  const [isSaving, setIsSaving] = useState(false);
 
   const selectedClient = useMemo(
     () => clients.find((client) => client.id === selectedClientId) ?? clients[0],
@@ -181,8 +182,9 @@ export default function TrainingPage() {
     });
   }
 
-  function onSubmit(event: FormEvent<HTMLFormElement>) {
+  async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (isSaving) return;
 
     const validNotes = draftNotes
       .map((note) => ({
@@ -194,25 +196,29 @@ export default function TrainingPage() {
 
     if (!title.trim() || !selectedClient || !selectedDog || !validNotes.length) return;
 
-    addTrainingSession({
-      number: nextSessionNumber,
-      title: title.trim(),
-      date: new Date().toLocaleDateString("pt-BR"),
-      clientId: selectedClient.id,
-      clientName: selectedClient.name,
-      dogId: selectedDog.id,
-      dogName: selectedDog.name,
-      notes: validNotes,
-    });
-
-    setTitle("Sessão prática");
-    resetDraftNotes();
+    setIsSaving(true);
+    try {
+      await addTrainingSession({
+        number: nextSessionNumber,
+        title: title.trim(),
+        date: new Date().toLocaleDateString("pt-BR"),
+        clientId: selectedClient.id,
+        clientName: selectedClient.name,
+        dogId: selectedDog.id,
+        dogName: selectedDog.name,
+        notes: validNotes,
+      });
+      setTitle("Sessão prática");
+      resetDraftNotes();
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   return (
     <PageShell
       kicker="Treinos"
-      title="Treinos com memoria tecnica"
+      title="Treinos com mem\u00f3ria t\u00e9cnica"
       description="Selecione o caso, registre a sessão e acompanhe apenas os sinais principais de evolução."
       requireAuth="trainer"
     >
@@ -452,9 +458,10 @@ export default function TrainingPage() {
 
               <button
                 type="submit"
-                className="pc-primary-action rounded-full px-5 py-3 text-sm font-semibold"
+                disabled={isSaving}
+                className="pc-primary-action rounded-full px-5 py-3 text-sm font-semibold disabled:opacity-60"
               >
-                Salvar sessão
+                {isSaving ? "Salvando..." : "Salvar sess\u00e3o"}
               </button>
             </form>
 

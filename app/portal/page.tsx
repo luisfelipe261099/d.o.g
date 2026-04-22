@@ -22,6 +22,7 @@ export default function PortalPage() {
   const [selectedClientId, setSelectedClientId] = useState("");
   const [selectedDogId, setSelectedDogId] = useState("");
   const [copyStatus, setCopyStatus] = useState<"idle" | "ok" | "error">("idle");
+  const [isAddingTask, setIsAddingTask] = useState(false);
 
   const selectedClient = useMemo(() => {
     if (!storeClients.length) return null;
@@ -33,12 +34,27 @@ export default function PortalPage() {
     return selectedClient.dogs.find((dog) => dog.id === selectedDogId) ?? selectedClient.dogs[0];
   }, [selectedClient, selectedDogId]);
 
-  function handleAddTask(event: FormEvent<HTMLFormElement>) {
+  async function handleAddTask(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!taskTitle.trim()) return;
-    addPortalTask(taskTitle, taskDesc);
-    setTaskTitle("");
-    setTaskDesc("");
+    if (!taskTitle.trim() || isAddingTask) return;
+    setIsAddingTask(true);
+    try {
+      await addPortalTask(taskTitle, taskDesc);
+      setTaskTitle("");
+      setTaskDesc("");
+    } finally {
+      setIsAddingTask(false);
+    }
+  }
+
+  async function handleTemplateTask(template: string) {
+    if (isAddingTask) return;
+    setIsAddingTask(true);
+    try {
+      await addPortalTask(template, "Tarefa sugerida pelo plano semanal");
+    } finally {
+      setIsAddingTask(false);
+    }
   }
   const completed = tasks.filter((task) => task.completed).length;
   const pendingTasks = tasks.length - completed;
@@ -257,8 +273,9 @@ export default function PortalPage() {
                 <button
                   key={template}
                   type="button"
-                  onClick={() => addPortalTask(template, "Tarefa sugerida pelo plano semanal")}
-                  className="rounded-full border border-[var(--border)] bg-white px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted)]"
+                  onClick={() => handleTemplateTask(template)}
+                  disabled={isAddingTask}
+                  className="rounded-full border border-[var(--border)] bg-white px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted)] disabled:opacity-50"
                 >
                   + {template}
                 </button>
@@ -281,9 +298,10 @@ export default function PortalPage() {
               />
               <button
                 type="submit"
-                className="pc-primary-action rounded-full px-5 py-3 text-sm font-semibold whitespace-nowrap"
+                disabled={isAddingTask}
+                className="pc-primary-action rounded-full px-5 py-3 text-sm font-semibold whitespace-nowrap disabled:opacity-60"
               >
-                Adicionar tarefa
+                {isAddingTask ? "Adicionando..." : "Adicionar tarefa"}
               </button>
             </form>
         </article>
