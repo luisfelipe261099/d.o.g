@@ -270,6 +270,30 @@ export async function POST(request: Request) {
       });
 
       log.push("3 pagamentos criados");
+
+      // ── 7. Tarefas do portal ──────────────────────────────────────────────
+
+      await tx.portalTask.createMany({
+        data: [
+          { trainerId, title: "Praticar guia por 10 min sem puxar", description: "Fazer o exercício de pausa toda vez que Apolo puxar a coleira.", completed: true },
+          { trainerId, title: "Sessão de place com distração",       description: "Colocar Luna no place enquanto abre e fecha a porta.", completed: false },
+          { trainerId, title: "Reforço de nome no quintal",          description: "Chamar o nome 20x ao longo do dia, sempre reforçando com petisco.", completed: false },
+        ],
+      });
+
+      log.push("3 tarefas do portal criadas");
+
+      // ── 8. Feedbacks do portal ────────────────────────────────────────────
+
+      await tx.portalFeedback.createMany({
+        data: [
+          { trainerId, author: "Tutor",      message: "O Apolo ficou bem mais calmo ontem no elevador! Conseguimos subir sem ele latir para ninguém." },
+          { trainerId, author: "Adestrador", message: "Ótimo progresso! Continue praticando o olho no olho antes de entrar no elevador. Isso ajuda a manter o foco dele." },
+          { trainerId, author: "Tutor",      message: "A Luna fez o place por 3 minutos enquanto eu cozinhava, nunca tinha conseguido tanto tempo." },
+        ],
+      });
+
+      log.push("3 feedbacks do portal criados");
     });
   } catch (err) {
     console.error("[seed] erro:", err);

@@ -1,6 +1,49 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+
 import { PageShell } from "@/components/page-shell";
 
+type OverviewResponse = {
+  metrics: {
+    totalTrainers: number;
+    activeTrainers: number;
+    trialTrainers: number;
+    totalDogs: number;
+    sessionsMonth: number;
+    averageDogsPerTrainer: number;
+  };
+  planDistribution: Record<string, number>;
+  trainers: Array<{
+    id: string;
+    name: string;
+    dogs: number;
+    sessions: number;
+    paidRevenue: number;
+  }>;
+};
+
 export default function RelatoriosPage() {
+  const [data, setData] = useState<OverviewResponse | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function load() {
+      const res = await fetch("/api/admin/overview");
+      if (!res.ok) return;
+      const json = (await res.json()) as OverviewResponse;
+      if (mounted) setData(json);
+    }
+
+    load();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const planRows = useMemo(() => Object.entries(data?.planDistribution ?? {}), [data?.planDistribution]);
+
   return (
     <PageShell
       kicker="Admin"
@@ -15,19 +58,19 @@ export default function RelatoriosPage() {
             <h3 className="mb-4 font-display text-xl font-semibold">Crescimento de Adestradores</h3>
             <div className="space-y-3">
               {[
-                { mes: "Jan", value: 8 },
-                { mes: "Fev", value: 10 },
-                { mes: "Mar", value: 3 },
-              ].map((data) => (
-                <div key={data.mes}>
+                { mes: "Ativos", value: data?.metrics.activeTrainers ?? 0 },
+                { mes: "Trial", value: data?.metrics.trialTrainers ?? 0 },
+                { mes: "Total", value: data?.metrics.totalTrainers ?? 0 },
+              ].map((row) => (
+                <div key={row.mes}>
                   <div className="flex items-center justify-between mb-1">
-                    <p className="text-sm font-medium text-slate-900">{data.mes}</p>
-                    <p className="text-sm font-semibold text-slate-900">{data.value} novos</p>
+                    <p className="text-sm font-medium text-slate-900">{row.mes}</p>
+                    <p className="text-sm font-semibold text-slate-900">{row.value}</p>
                   </div>
                   <div className="h-2 overflow-hidden rounded-full bg-slate-200">
                     <div 
                       className="h-full bg-sky-500" 
-                      style={{ width: `${(data.value / 10) * 100}%` }}
+                      style={{ width: `${data?.metrics.totalTrainers ? (row.value / data.metrics.totalTrainers) * 100 : 0}%` }}
                     />
                   </div>
                 </div>
@@ -39,24 +82,21 @@ export default function RelatoriosPage() {
           <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel-strong)] p-6">
             <h3 className="mb-4 font-display text-xl font-semibold">Taxa de Retenção por Plano</h3>
             <div className="space-y-3">
-              {[
-                { plano: "Essencial", taxa: 72 },
-                { plano: "Pro", taxa: 88 },
-                { plano: "Premium", taxa: 95 },
-              ].map((data) => (
-                <div key={data.plano}>
+              {planRows.map(([plan, count]) => (
+                <div key={plan}>
                   <div className="flex items-center justify-between mb-1">
-                    <p className="text-sm font-medium text-slate-900">{data.plano}</p>
-                    <p className="text-sm font-semibold text-slate-900">{data.taxa}%</p>
+                    <p className="text-sm font-medium text-slate-900">{plan}</p>
+                    <p className="text-sm font-semibold text-slate-900">{count}</p>
                   </div>
                   <div className="h-2 overflow-hidden rounded-full bg-slate-200">
                     <div 
                       className="h-full bg-emerald-500" 
-                      style={{ width: `${data.taxa}%` }}
+                      style={{ width: `${data?.metrics.totalTrainers ? (count / data.metrics.totalTrainers) * 100 : 0}%` }}
                     />
                   </div>
                 </div>
               ))}
+              {!planRows.length ? <p className="text-sm text-[var(--muted)]">Sem distribuição de planos disponível.</p> : null}
             </div>
           </div>
 
@@ -64,9 +104,9 @@ export default function RelatoriosPage() {
           <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel-strong)] p-6">
             <h3 className="mb-4 font-display text-xl font-semibold">Média de Cães por Adestrador</h3>
             <div className="text-center py-6">
-              <p className="text-5xl font-bold text-sky-600">2.8</p>
+              <p className="text-5xl font-bold text-sky-600">{data?.metrics.averageDogsPerTrainer ?? 0}</p>
               <p className="mt-2 text-sm text-slate-600">casos ativos por conta</p>
-              <p className="mt-4 text-xs text-slate-500">8 cães monitorados por 3 adestradores ativos</p>
+              <p className="mt-4 text-xs text-slate-500">{data?.metrics.totalDogs ?? 0} cães monitorados na base</p>
             </div>
           </div>
 
@@ -74,9 +114,9 @@ export default function RelatoriosPage() {
           <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel-strong)] p-6">
             <h3 className="mb-4 font-display text-xl font-semibold">Sessões Realizadas este Mês</h3>
             <div className="text-center py-6">
-              <p className="text-5xl font-bold text-emerald-600">24</p>
+              <p className="text-5xl font-bold text-emerald-600">{data?.metrics.sessionsMonth ?? 0}</p>
               <p className="mt-2 text-sm text-slate-600">sessões confirmadas e registradas</p>
-              <p className="mt-4 text-xs text-slate-500">taxa de conclusão operacional: 92%</p>
+              <p className="mt-4 text-xs text-slate-500">dados acumulados no mês atual</p>
             </div>
           </div>
         </div>
@@ -96,25 +136,21 @@ export default function RelatoriosPage() {
                 </tr>
               </thead>
               <tbody>
-                {[
-                  { nome: "Marina Costa", caes: 1, sessoes: 4, receita: "R$ 690", satisfacao: 92 },
-                  { nome: "Carla Nunes", caes: 1, sessoes: 3, receita: "R$ 420", satisfacao: 88 },
-                  { nome: "Rafael Prado", caes: 1, sessoes: 2, receita: "R$ 990", satisfacao: 95 },
-                ].map((trainer, idx) => (
-                  <tr key={idx} className="border-b border-slate-100 hover:bg-slate-50">
-                    <td className="px-6 py-3 text-slate-900 font-medium">{trainer.nome}</td>
-                    <td className="px-6 py-3 text-slate-600">{trainer.caes}</td>
-                    <td className="px-6 py-3 text-slate-600">{trainer.sessoes}</td>
-                    <td className="px-6 py-3 font-semibold text-slate-900">{trainer.receita}</td>
+                {(data?.trainers ?? []).slice(0, 10).map((trainer) => (
+                  <tr key={trainer.id} className="border-b border-slate-100 hover:bg-slate-50">
+                    <td className="px-6 py-3 text-slate-900 font-medium">{trainer.name}</td>
+                    <td className="px-6 py-3 text-slate-600">{trainer.dogs}</td>
+                    <td className="px-6 py-3 text-slate-600">{trainer.sessions}</td>
+                    <td className="px-6 py-3 font-semibold text-slate-900">{trainer.paidRevenue.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</td>
                     <td className="px-6 py-3">
                       <div className="flex items-center gap-2">
                         <div className="h-2 w-16 overflow-hidden rounded-full bg-slate-200">
                           <div 
                             className="h-full bg-emerald-500" 
-                            style={{ width: `${trainer.satisfacao}%` }}
+                            style={{ width: `${Math.min(100, trainer.sessions * 10)}%` }}
                           />
                         </div>
-                        <span className="text-xs font-semibold text-slate-900">{trainer.satisfacao}%</span>
+                        <span className="text-xs font-semibold text-slate-900">{Math.min(100, trainer.sessions * 10)}%</span>
                       </div>
                     </td>
                   </tr>

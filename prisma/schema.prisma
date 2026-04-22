@@ -89,6 +89,8 @@ model Trainer {
   trainingSessions TrainingSession[]
   calendarEvents  CalendarEvent[]
   payments        Payment[]
+  portalTasks     PortalTask[]
+  portalFeedbacks PortalFeedback[]
 
   @@index([userId])
 }
@@ -205,4 +207,31 @@ model Payment {
 
   @@index([trainerId])
   @@index([clientId])
+}
+
+// ─── Tarefa do portal ─────────────────────────────────────────────────────────
+
+model PortalTask {
+  id          String   @id @default(cuid())
+  trainerId   String
+  trainer     Trainer  @relation(fields: [trainerId], references: [id], onDelete: Cascade)
+  title       String
+  description String?  @db.Text
+  completed   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@index([trainerId])
+}
+
+// ─── Feedback do portal ───────────────────────────────────────────────────────
+
+model PortalFeedback {
+  id        String   @id @default(cuid())
+  trainerId String
+  trainer   Trainer  @relation(fields: [trainerId], references: [id], onDelete: Cascade)
+  author    String   @default("Tutor")
+  message   String   @db.Text
+  createdAt DateTime @default(now())
+
+  @@index([trainerId])
 }

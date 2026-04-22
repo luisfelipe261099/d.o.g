@@ -60,7 +60,7 @@ const demoSteps: DemoStep[] = [
 ];
 
 const qaScenarios: QaScenario[] = [
-  { id: 1, title: "Login de adestrador com conta demo", href: "/login", roles: ["trainer"] },
+  { id: 1, title: "Login de adestrador", href: "/login", roles: ["trainer"] },
   { id: 2, title: "Dashboard exibe agenda e metricas", href: "/dashboard", roles: ["trainer"] },
   { id: 3, title: "Cadastro de novo cliente e cao", href: "/clientes", roles: ["trainer"] },
   { id: 4, title: "Treino com multiplos blocos", href: "/treinos", roles: ["trainer"] },
@@ -74,19 +74,11 @@ const qaScenarios: QaScenario[] = [
   { id: 12, title: "Troca para perfil de admin", href: "/login", roles: ["admin"] },
   { id: 13, title: "Admin visualiza progresso do trial", href: "/admin", roles: ["admin"] },
   { id: 14, title: "Admin edita dados de adestrador", href: "/admin/adestradores", roles: ["admin"] },
-  { id: 15, title: "Simulacao avanca para 30 dias", href: "/demo", roles: ["trainer", "admin", "client"] },
+  { id: 15, title: "Conferir consistência com refresh", href: "/demo", roles: ["trainer", "admin", "client"] },
 ];
 
 export default function DemoPage() {
   const userRole = useAppStore((state) => state.userRole);
-  const resetDemoData = useAppStore((state) => state.resetDemoData);
-  const trialActive = useAppStore((state) => state.trialActive);
-  const simulationDay = useAppStore((state) => state.simulationDay);
-  const trialMaxDays = useAppStore((state) => state.trialMaxDays);
-  const demoActivities = useAppStore((state) => state.demoActivities);
-  const startTrial = useAppStore((state) => state.startTrial);
-  const advanceTrialDays = useAppStore((state) => state.advanceTrialDays);
-  const completeTrial = useAppStore((state) => state.completeTrial);
 
   const visibleSteps = demoSteps.filter((step) => step.roles.includes(userRole));
   const visibleScenarios = qaScenarios.filter((scenario) => scenario.roles.includes(userRole));
@@ -94,8 +86,8 @@ export default function DemoPage() {
   return (
     <PageShell
       kicker="Pitch"
-      title="Roteiro de demonstracao"
-      description="Fluxo guiado para apresentar o MVP da PegadaCerta em reunioes com investidores."
+      title="Roteiro operacional"
+      description="Checklist de validação com dados reais em todas as rotas principais."
       requireAuth
     >
       <section className="grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
@@ -127,7 +119,7 @@ export default function DemoPage() {
               Perfil ativo: {userRole === "admin" ? "Administrador" : userRole === "client" ? "Tutor" : "Adestrador"}
             </h2>
             <p className="mt-3 text-sm leading-7 text-slate-300">
-              Use o login com perfis demo para alternar rapidamente entre visoes do produto durante o pitch.
+              Use o login com perfis reais para alternar rapidamente entre visões do produto.
             </p>
             <Link
               href="/login"
@@ -138,78 +130,22 @@ export default function DemoPage() {
           </article>
 
           <article className="rounded-[1.75rem] border border-[var(--border)] bg-[var(--panel-strong)] p-6 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">Ambiente demo</p>
-            <h2 className="mt-2 font-display text-2xl font-semibold">Reset rapido antes de cada apresentacao</h2>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">Ambiente real</p>
+            <h2 className="mt-2 font-display text-2xl font-semibold">Sem dados mockados</h2>
             <p className="mt-3 text-sm leading-7 text-[var(--muted)]">
-              Restaura dados iniciais de clientes, agenda, treinos e financeiro para repetir a narrativa sem inconsistencias.
+              Todas as rotas operam com dados persistidos no banco. Cadastros, agenda, treinos e financeiro são recarregados do backend.
             </p>
-            <button
-              type="button"
-              onClick={resetDemoData}
-              className="pc-primary-action mt-4 rounded-full px-5 py-3 text-sm font-semibold"
-            >
-              Resetar ambiente de testes
-            </button>
           </article>
 
           <article className="rounded-[1.75rem] border border-[var(--border)] bg-[var(--panel)] p-6 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">Simulacao realista</p>
-            <h2 className="mt-2 font-display text-2xl font-semibold">Trial de 30 dias para investidor</h2>
-
-            <div className="mt-4 rounded-3xl border border-[var(--border)] bg-white p-4">
-              <div className="flex items-center justify-between gap-3">
-                <p className="text-sm font-semibold text-[var(--foreground)]">Dia {simulationDay} de {trialMaxDays}</p>
-                <span className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] ${trialActive ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-900"}`}>
-                  {trialActive ? "Ativo" : "Concluido"}
-                </span>
-              </div>
-              <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-200">
-                <div
-                  className="h-full bg-[linear-gradient(90deg,_#145a82,_#1f8e80)]"
-                  style={{ width: `${Math.min((simulationDay / trialMaxDays) * 100, 100)}%` }}
-                />
-              </div>
-            </div>
-
-            <div className="mt-4 grid gap-2 sm:grid-cols-2">
-              <button
-                type="button"
-                onClick={startTrial}
-                className="rounded-full border border-[var(--border)] bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--foreground)]"
-              >
-                Reiniciar Dia 1
-              </button>
-              <button
-                type="button"
-                onClick={() => advanceTrialDays(1)}
-                className="rounded-full border border-[var(--border)] bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--foreground)]"
-              >
-                Avancar 1 dia
-              </button>
-              <button
-                type="button"
-                onClick={() => advanceTrialDays(7)}
-                className="rounded-full border border-[var(--border)] bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--foreground)]"
-              >
-                Avancar 7 dias
-              </button>
-              <button
-                type="button"
-                onClick={completeTrial}
-                className="pc-primary-action rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.08em]"
-              >
-                Ir para Dia 30
-              </button>
-            </div>
-
-            <div className="mt-4 space-y-2">
-              {demoActivities.slice(0, 4).map((activity) => (
-                <div key={activity.id} className="rounded-2xl border border-[var(--border)] bg-white p-3">
-                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-sky-700">Dia {activity.day}</p>
-                  <p className="mt-1 text-sm font-semibold text-[var(--foreground)]">{activity.title}</p>
-                  <p className="mt-1 text-xs leading-6 text-[var(--muted)]">{activity.detail}</p>
-                </div>
-              ))}
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">Validação de consistência</p>
+            <h2 className="mt-2 font-display text-2xl font-semibold">Checklist recomendado</h2>
+            <div className="mt-4 space-y-2 text-sm text-[var(--muted)]">
+              <p>1. Criar cliente e confirmar entrada no financeiro.</p>
+              <p>2. Registrar sessão em treinos e conferir histórico após refresh.</p>
+              <p>3. Criar evento na agenda e alternar status.</p>
+              <p>4. Marcar cobrança como paga e reabrir pendência.</p>
+              <p>5. Trocar plano e validar persistência na recarga da página.</p>
             </div>
           </article>
         </div>

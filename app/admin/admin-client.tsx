@@ -1,59 +1,70 @@
 "use client";
 
-import { useMemo } from "react";
-import { useAppStore } from "@/lib/app-store";
+import { useEffect, useState } from "react";
 
-const mockTrainers = [
-  { id: "t-01", name: "Marina Costa",       email: "marina@adestramento.com.br",   joinedAt: "03/01/2026", status: "Ativo",  planType: "Pro",      monthlyValue: "R$ 690" },
-  { id: "t-02", name: "Carla Nunes",        email: "carla@k9pro.com.br",           joinedAt: "07/01/2026", status: "Ativo",  planType: "Essencial",monthlyValue: "R$ 420" },
-  { id: "t-03", name: "Rafael Prado",       email: "rafael@treinacan.com.br",      joinedAt: "10/01/2026", status: "Ativo",  planType: "Premium",  monthlyValue: "R$ 990" },
-  { id: "t-04", name: "Juliana Mendes",     email: "ju@pettraining.com.br",        joinedAt: "12/01/2026", status: "Ativo",  planType: "Pro",      monthlyValue: "R$ 690" },
-  { id: "t-05", name: "André Lima",         email: "andre@dogcare.com.br",         joinedAt: "14/01/2026", status: "Ativo",  planType: "Pro",      monthlyValue: "R$ 690" },
-  { id: "t-06", name: "Patrícia Silveira",  email: "patricia@treinarcerto.com.br", joinedAt: "18/01/2026", status: "Ativo",  planType: "Essencial",monthlyValue: "R$ 420" },
-  { id: "t-07", name: "Eduardo Rocha",      email: "edu@anicanis.com.br",          joinedAt: "21/01/2026", status: "Ativo",  planType: "Premium",  monthlyValue: "R$ 990" },
-  { id: "t-08", name: "Fernanda Torres",    email: "fe@canislab.com.br",           joinedAt: "25/01/2026", status: "Ativo",  planType: "Pro",      monthlyValue: "R$ 690" },
-  { id: "t-09", name: "Lucas Santana",      email: "lucas@treinodog.com.br",       joinedAt: "28/01/2026", status: "Ativo",  planType: "Pro",      monthlyValue: "R$ 690" },
-  { id: "t-10", name: "Beatriz Cardoso",    email: "bea@escolacanina.com.br",      joinedAt: "01/02/2026", status: "Ativo",  planType: "Premium",  monthlyValue: "R$ 990" },
-  { id: "t-11", name: "Roberto Alves",      email: "roberto@k9coach.com.br",       joinedAt: "05/02/2026", status: "Ativo",  planType: "Essencial",monthlyValue: "R$ 420" },
-  { id: "t-12", name: "Camila Ferreira",    email: "camila@dogschool.com.br",      joinedAt: "08/02/2026", status: "Ativo",  planType: "Pro",      monthlyValue: "R$ 690" },
-  { id: "t-13", name: "Diego Nascimento",   email: "diego@treinapet.com.br",       joinedAt: "10/02/2026", status: "Ativo",  planType: "Pro",      monthlyValue: "R$ 690" },
-  { id: "t-14", name: "Aline Barbosa",      email: "aline@canismaster.com.br",     joinedAt: "14/02/2026", status: "Trial", planType: "Pro",      monthlyValue: "R$ 0" },
-  { id: "t-15", name: "Thiago Oliveira",    email: "thiago@treinacerto.com.br",    joinedAt: "17/02/2026", status: "Trial", planType: "Essencial",monthlyValue: "R$ 0" },
-  { id: "t-16", name: "Sabrina Costa",      email: "sabrina@petcoach.com.br",      joinedAt: "20/02/2026", status: "Ativo",  planType: "Premium",  monthlyValue: "R$ 990" },
-  { id: "t-17", name: "Felipe Moraes",      email: "felipe@dogteam.com.br",        joinedAt: "22/02/2026", status: "Ativo",  planType: "Essencial",monthlyValue: "R$ 420" },
-  { id: "t-18", name: "Vanessa Ribeiro",    email: "vanessa@educacan.com.br",      joinedAt: "25/02/2026", status: "Ativo",  planType: "Pro",      monthlyValue: "R$ 690" },
-  { id: "t-19", name: "Marcelo Souza",      email: "marcelo@dogtreina.com.br",     joinedAt: "01/03/2026", status: "Ativo",  planType: "Pro",      monthlyValue: "R$ 690" },
-  { id: "t-20", name: "Priscila Lopes",     email: "pri@labcanis.com.br",          joinedAt: "04/03/2026", status: "Trial", planType: "Premium",  monthlyValue: "R$ 0" },
-];
+type OverviewResponse = {
+  metrics: {
+    totalTrainers: number;
+    activeTrainers: number;
+    trialTrainers: number;
+    totalDogs: number;
+    mrr: number;
+    totalPaid: number;
+    totalPending: number;
+    arr: number;
+    sessionsMonth: number;
+    averageDogsPerTrainer: number;
+  };
+  trainers: Array<{
+    id: string;
+    name: string;
+    email: string;
+    joinedAt: string;
+    status: "Ativo" | "Trial";
+    planType: string;
+    monthlyValue: number;
+    dogs: number;
+    sessions: number;
+    paidRevenue: number;
+  }>;
+  recentTransactions: Array<{
+    id: string;
+    trainer: string;
+    plan: string;
+    amount: number;
+    status: "Pago" | "Pendente";
+    date: string;
+    source: string;
+  }>;
+};
 
 export function AdminDashboard() {
-  const clients = useAppStore((state) => state.clients);
-  const payments = useAppStore((state) => state.payments);
-  const trialActive = useAppStore((state) => state.trialActive);
-  const simulationDay = useAppStore((state) => state.simulationDay);
-  const trialMaxDays = useAppStore((state) => state.trialMaxDays);
-  const demoActivities = useAppStore((state) => state.demoActivities);
+  const [data, setData] = useState<OverviewResponse | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const stats = useMemo(() => {
-    const totalTrainers = mockTrainers.length;
-    const activeTrainers = mockTrainers.filter((t) => t.status === "Ativo").length;
-    const trialTrainers = mockTrainers.filter((t) => t.status === "Trial").length;
-    const totalRevenue = mockTrainers.reduce(
-      (sum, trainer) => sum + parseInt(trainer.monthlyValue.replace(/\D/g, "") || "0"),
-      0
-    );
-    const totalDogs = clients.reduce((sum, client) => sum + client.dogs.length, 0);
-    const pendingPayments = payments.filter((p) => p.status === "Pendente").length;
+  useEffect(() => {
+    let mounted = true;
 
-    return {
-      totalTrainers,
-      activeTrainers,
-      trialTrainers,
-      totalRevenue,
-      totalDogs,
-      pendingPayments,
+    async function run() {
+      try {
+        const res = await fetch("/api/admin/overview");
+        if (!res.ok) return;
+        const json = (await res.json()) as OverviewResponse;
+        if (mounted) setData(json);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    }
+
+    run();
+    return () => {
+      mounted = false;
     };
-  }, [clients, payments]);
+  }, []);
+
+  const metrics = data?.metrics;
+  const trainers = data?.trainers ?? [];
+  const recentTransactions = data?.recentTransactions ?? [];
 
   return (
     <div className="mx-auto max-w-7xl space-y-5">
@@ -63,32 +74,32 @@ export function AdminDashboard() {
           {
             icon: "👥",
             label: "Adestradores Ativos",
-            value: stats.activeTrainers.toString(),
-            subtext: `+ ${stats.trialTrainers} em trial • ${stats.totalTrainers} contas criadas`,
+            value: String(metrics?.activeTrainers ?? 0),
+            subtext: `+ ${metrics?.trialTrainers ?? 0} em trial • ${metrics?.totalTrainers ?? 0} contas`,
           },
           {
             icon: "🐕",
             label: "Cães em Gestão",
-            value: stats.totalDogs.toString(),
+            value: String(metrics?.totalDogs ?? 0),
             subtext: "casos monitorados pela base ativa",
           },
           {
             icon: "💰",
             label: "MRR",
-            value: `R$ ${stats.totalRevenue.toLocaleString("pt-BR")}`,
+            value: (metrics?.mrr ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }),
             subtext: "receita mensal recorrente consolidada",
           },
           {
             icon: "📈",
-            label: "Crescimento",
-            value: "+34%",
-            subtext: "novos adestradores no último mês",
+            label: "Sessões do mês",
+            value: String(metrics?.sessionsMonth ?? 0),
+            subtext: "sessões registradas na plataforma",
           },
           {
             icon: "🧪",
-            label: "Trial Ativo",
-            value: `Dia ${simulationDay}`,
-            subtext: trialActive ? `de ${trialMaxDays} em andamento` : "ciclo concluido",
+            label: "Receita pendente",
+            value: (metrics?.totalPending ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }),
+            subtext: "pendências em aberto",
           },
         ].map((stat, index) => (
           <div
@@ -116,12 +127,12 @@ export function AdminDashboard() {
             <div className="mb-5 flex items-center justify-between">
               <h3 className="font-display text-xl font-semibold">Adestradores Ativos</h3>
               <span className="hidden text-sm font-medium text-slate-600 sm:block">
-                {stats.activeTrainers} ativos • {stats.trialTrainers} em trial
+                {metrics?.activeTrainers ?? 0} ativos • {metrics?.trialTrainers ?? 0} em trial
               </span>
             </div>
 
             <div className="space-y-3">
-              {mockTrainers.slice(0, 4).map((trainer) => (
+              {trainers.slice(0, 4).map((trainer) => (
                 <div
                   key={trainer.id}
                   className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 p-4 transition hover:bg-slate-100"
@@ -132,7 +143,7 @@ export function AdminDashboard() {
                     <p className="mt-1 text-xs text-slate-500">Entrou em {trainer.joinedAt}</p>
                   </div>
                   <div className="text-right">
-                    <p className="font-semibold text-slate-900">{trainer.monthlyValue}</p>
+                    <p className="font-semibold text-slate-900">{trainer.monthlyValue.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</p>
                     <p className="text-sm text-slate-600">{trainer.planType}</p>
                     <span className="mt-1 inline-block rounded-full bg-emerald-100 px-2 py-1 text-xs font-semibold text-emerald-700">
                       {trainer.status}
@@ -149,10 +160,10 @@ export function AdminDashboard() {
 
             <div className="space-y-4">
               {[
-                { label: "Penetração de planos", current: 75, total: 100 },
-                { label: "Renovação de assinaturas", current: 88, total: 100 },
-                { label: "Satisfação percebida pelos tutores", current: 92, total: 100 },
-                { label: "Retenção da base (90 dias)", current: 85, total: 100 },
+                { label: "Taxa de ativação", current: metrics?.totalTrainers ? Math.round(((metrics?.activeTrainers ?? 0) / metrics.totalTrainers) * 100) : 0, total: 100 },
+                { label: "Sessões por adestrador", current: Math.min(((metrics?.averageDogsPerTrainer ?? 0) * 20), 100), total: 100 },
+                { label: "Receita confirmada", current: metrics?.mrr ? Math.round(((metrics?.totalPaid ?? 0) / metrics.mrr) * 100) : 0, total: 100 },
+                { label: "Receita pendente", current: metrics?.mrr ? Math.round(((metrics?.totalPending ?? 0) / metrics.mrr) * 100) : 0, total: 100 },
               ].map((metric) => (
                 <div key={metric.label}>
                   <div className="mb-2 flex items-center justify-between">
@@ -202,15 +213,18 @@ export function AdminDashboard() {
             <h3 className="mb-4 font-display text-lg font-semibold">Atividades Recentes</h3>
 
             <div className="space-y-3">
-              {demoActivities.slice(0, 3).map((activity) => (
-                <div key={activity.id} className="flex gap-3 text-sm">
-                  <span className="text-xl">{activity.kind === "finance" ? "💰" : activity.kind === "agenda" ? "📅" : activity.kind === "session" ? "📝" : "📣"}</span>
+              {recentTransactions.slice(0, 3).map((tx) => (
+                <div key={tx.id} className="flex gap-3 text-sm">
+                  <span className="text-xl">{tx.status === "Pago" ? "✅" : "⏳"}</span>
                   <div className="flex-1">
-                    <p className="text-slate-900">{activity.title}</p>
-                    <p className="text-xs text-slate-500">Dia {activity.day} • {activity.detail}</p>
+                    <p className="text-slate-900">{tx.trainer} • {tx.source}</p>
+                    <p className="text-xs text-slate-500">{tx.date} • {tx.amount.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })} • {tx.status}</p>
                   </div>
                 </div>
               ))}
+              {!loading && recentTransactions.length === 0 ? (
+                <p className="text-sm text-slate-500">Sem transações recentes.</p>
+              ) : null}
             </div>
           </section>
 
@@ -239,6 +253,8 @@ export function AdminDashboard() {
           </section>
         </div>
       </div>
+
+      {loading ? <p className="text-sm text-[var(--muted)]">Carregando dados reais da base...</p> : null}
     </div>
   );
 }

@@ -23,14 +23,15 @@ export async function PATCH(request: Request) {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
-  const body = await request.json() as { id: string };
+  const body = await request.json() as { id: string; status?: "Pago" | "Pendente" };
+  const nextStatus = body.status === "Pendente" ? "Pendente" : "Pago";
 
   const trainer = await prisma.trainer.findUnique({ where: { userId: session.user.id } });
   if (!trainer) return NextResponse.json({ error: "Adestrador não encontrado" }, { status: 404 });
 
   const updated = await prisma.payment.updateMany({
     where: { id: body.id, trainerId: trainer.id },
-    data:  { status: "Pago" },
+    data:  { status: nextStatus },
   });
 
   return NextResponse.json({ ok: updated.count > 0 });

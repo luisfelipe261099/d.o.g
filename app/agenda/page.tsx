@@ -1,19 +1,33 @@
-"use client";
+﻿"use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
 
 import { PageShell } from "@/components/page-shell";
 import { useAppStore } from "@/lib/app-store";
 
+type EventStatus = "Confirmado" | "Pendente" | "Cancelado";
+
+const statusClassName: Record<EventStatus, string> = {
+  Confirmado: "bg-emerald-100 text-emerald-800",
+  Pendente: "bg-amber-100 text-amber-900",
+  Cancelado: "bg-rose-100 text-rose-800",
+};
+
 export default function SchedulePage() {
   const events = useAppStore((state) => state.calendarEvents);
-  const toggleEventStatus = useAppStore((state) => state.toggleEventStatus);
+  const setEventStatus = useAppStore((state) => state.setEventStatus);
   const addCalendarEvent = useAppStore((state) => state.addCalendarEvent);
 
   const [dog, setDog] = useState("");
   const [client, setClient] = useState("");
-  const [day, setDay] = useState("Terça");
+  const [day, setDay] = useState("Ter\u00e7a");
   const [time, setTime] = useState("19:00");
+  const [status, setStatus] = useState<EventStatus>("Pendente");
+
+  const orderedEvents = useMemo(
+    () => [...events].sort((a, b) => Number(b.sessionNumber) - Number(a.sessionNumber)),
+    [events],
+  );
 
   function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -24,19 +38,21 @@ export default function SchedulePage() {
       time,
       dog: dog.trim(),
       client: client.trim(),
-      plan: "Sessão recorrente",
+      plan: "Sess\u00e3o recorrente",
       sessionNumber: events.length + 1,
+      status,
     });
 
     setDog("");
     setClient("");
+    setStatus("Pendente");
   }
 
   return (
     <PageShell
       kicker="Agenda"
       title="Agenda de aulas"
-      description="Organize rotas, confirme sessões e mantenha tutor e adestrador alinhados em tempo real."
+      description="Organize rotas e marque cada sess\u00e3o como confirmada, pendente ou cancelada com um clique."
       requireAuth="trainer"
     >
       <section>
@@ -51,15 +67,15 @@ export default function SchedulePage() {
               </h2>
             </div>
             <span className="rounded-full border border-[var(--border)] bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">
-              {events.length} eventos
+              {orderedEvents.length} eventos
             </span>
           </div>
 
-          {events.length === 0 ? (
+          {orderedEvents.length === 0 ? (
             <p className="mt-6 text-sm text-[var(--muted)]">Nenhum evento cadastrado. Use o formulário abaixo para criar agendamentos.</p>
           ) : null}
           <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {events.map((event, index) => (
+            {orderedEvents.map((event, index) => (
               <div
                 key={event.id}
                 className={`rounded-3xl border border-[var(--border)] bg-white/90 p-4 ${index > 2 ? "hidden md:block" : ""}`}
@@ -80,16 +96,32 @@ export default function SchedulePage() {
                   <span className="rounded-full border border-[var(--border)] px-3 py-2 text-[var(--muted)]">
                     Sessão {event.sessionNumber}
                   </span>
+                  <span className={`rounded-full px-3 py-2 ${statusClassName[event.status as EventStatus] ?? "bg-slate-100 text-slate-700"}`}>
+                    {event.status}
+                  </span>
+                </div>
+
+                <div className="mt-3 grid grid-cols-3 gap-2 text-xs font-semibold uppercase tracking-[0.1em]">
                   <button
                     type="button"
-                    onClick={() => toggleEventStatus(event.id)}
-                    className={`rounded-full px-3 py-2 ${
-                      event.status === "Confirmado"
-                        ? "bg-emerald-100 text-emerald-800"
-                        : "bg-amber-100 text-amber-900"
-                    }`}
+                    onClick={() => setEventStatus(event.id, "Confirmado")}
+                    className="rounded-full border border-emerald-300 bg-emerald-50 px-2 py-2 text-emerald-800"
                   >
-                    {event.status}
+                    Confirmar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEventStatus(event.id, "Pendente")}
+                    className="rounded-full border border-amber-300 bg-amber-50 px-2 py-2 text-amber-900"
+                  >
+                    Pendente
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEventStatus(event.id, "Cancelado")}
+                    className="rounded-full border border-rose-300 bg-rose-50 px-2 py-2 text-rose-800"
+                  >
+                    Cancelar
                   </button>
                 </div>
               </div>
@@ -123,6 +155,15 @@ export default function SchedulePage() {
               placeholder="Hora"
               className="rounded-2xl border border-[var(--border)] px-4 py-3 text-sm outline-none focus:border-sky-400"
             />
+            <select
+              value={status}
+              onChange={(event) => setStatus(event.target.value as EventStatus)}
+              className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-sky-400 md:col-span-2"
+            >
+              <option value="Pendente">Pendente</option>
+              <option value="Confirmado">Confirmado</option>
+              <option value="Cancelado">Cancelado</option>
+            </select>
             <button type="submit" className="pc-primary-action md:col-span-2 rounded-full px-5 py-3 text-sm font-semibold">
               Criar agendamento
             </button>
@@ -132,3 +173,4 @@ export default function SchedulePage() {
     </PageShell>
   );
 }
+

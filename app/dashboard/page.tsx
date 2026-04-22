@@ -122,7 +122,13 @@ export default function DashboardPage() {
                     </p>
                   </div>
                 </div>
-                <div className="rounded-full border border-[var(--border)] px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">
+                <div className={`rounded-full px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] ${
+                  session.status === "Confirmado"
+                    ? "bg-emerald-100 text-emerald-800"
+                    : session.status === "Cancelado"
+                    ? "bg-rose-100 text-rose-800"
+                    : "bg-amber-100 text-amber-900"
+                }`}>
                   {session.status}
                 </div>
               </div>

@@ -1,54 +1,50 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
-const initialTrainers = [
-  {
-    id: "trainer-1",
-    name: "Marina Costa",
-    email: "marina@email.com",
-    joinedAt: "15/02/2024",
-    status: "Ativo",
-    planType: "Pro",
-    monthlyValue: "R$ 690",
-  },
-  {
-    id: "trainer-2",
-    name: "Carla Nunes",
-    email: "carla@email.com",
-    joinedAt: "10/03/2024",
-    status: "Ativo",
-    planType: "Essencial",
-    monthlyValue: "R$ 420",
-  },
-  {
-    id: "trainer-3",
-    name: "Rafael Prado",
-    email: "rafael@email.com",
-    joinedAt: "05/03/2024",
-    status: "Ativo",
-    planType: "Premium",
-    monthlyValue: "R$ 990",
-  },
-];
+type TrainerRow = {
+  id: string;
+  userId: string;
+  name: string;
+  email: string;
+  joinedAt: string;
+  status: "Ativo" | "Trial";
+  planType: "Essencial" | "Pro" | "Premium" | "Trial";
+  monthlyValue: number;
+};
 
 export function AdestradoresClient() {
-  const [trainers, setTrainers] = useState(initialTrainers);
+  const [trainers, setTrainers] = useState<TrainerRow[]>([]);
+  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("todos");
   const [isCreating, setIsCreating] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formName, setFormName] = useState("");
   const [formEmail, setFormEmail] = useState("");
-  const [formPlan, setFormPlan] = useState("Essencial");
-  const [formStatus, setFormStatus] = useState("Ativo");
+  const [formPlan, setFormPlan] = useState<"Essencial" | "Pro" | "Premium" | "Trial">("Essencial");
+  const [formStatus, setFormStatus] = useState<"Ativo" | "Trial">("Ativo");
+  const [message, setMessage] = useState("");
 
-  const filteredTrainers = filter === "todos" ? trainers : trainers.filter((t) => t.status === filter);
-
-  function planValue(planType: string) {
-    if (planType === "Premium") return "R$ 990";
-    if (planType === "Pro") return "R$ 690";
-    return "R$ 420";
+  async function loadTrainers() {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/admin/trainers");
+      if (!res.ok) return;
+      const data = (await res.json()) as TrainerRow[];
+      setTrainers(data);
+    } finally {
+      setLoading(false);
+    }
   }
+
+  useEffect(() => {
+    loadTrainers();
+  }, []);
+
+  const filteredTrainers = useMemo(
+    () => (filter === "todos" ? trainers : trainers.filter((t) => t.status === filter)),
+    [filter, trainers],
+  );
 
   function resetForm() {
     setFormName("");
@@ -75,39 +71,30 @@ export function AdestradoresClient() {
     setFormStatus(trainer.status);
   }
 
-  function saveTrainer() {
+  async function saveTrainer() {
     if (!formName.trim() || !formEmail.trim()) return;
 
-    if (editingId) {
-      setTrainers((current) =>
-        current.map((trainer) =>
-          trainer.id === editingId
-            ? {
-                ...trainer,
-                name: formName.trim(),
-                email: formEmail.trim(),
-                planType: formPlan,
-                status: formStatus,
-                monthlyValue: planValue(formPlan),
-              }
-            : trainer,
-        ),
-      );
-    } else {
-      setTrainers((current) => [
-        {
-          id: `trainer-${current.length + 1}`,
-          name: formName.trim(),
-          email: formEmail.trim(),
-          joinedAt: new Date().toLocaleDateString("pt-BR"),
-          status: formStatus,
-          planType: formPlan,
-          monthlyValue: planValue(formPlan),
-        },
-        ...current,
-      ]);
+    const payload = {
+      ...(editingId ? { id: editingId } : {}),
+      name: formName.trim(),
+      email: formEmail.trim(),
+      planType: formPlan,
+      status: formStatus,
+    };
+
+    const response = await fetch("/api/admin/trainers", {
+      method: editingId ? "PATCH" : "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      setMessage("Não foi possível salvar o adestrador.");
+      return;
     }
 
+    setMessage(editingId ? "Adestrador atualizado." : "Adestrador criado (senha padrão: 123456).");
+    await loadTrainers();
     resetForm();
   }
 
@@ -118,7 +105,7 @@ export function AdestradoresClient() {
           {[
             { value: "todos", label: "Todos" },
             { value: "Ativo", label: "Ativos" },
-            { value: "Inativo", label: "Inativos" },
+              { value: "Trial", label: "Trial" },
           ].map((option) => (
             <button
               key={option.value}
@@ -141,6 +128,9 @@ export function AdestradoresClient() {
           + Novo Adestrador
         </button>
       </div>
+
+      {message ? <p className="text-sm text-[var(--muted)]">{message}</p> : null}
+      {loading ? <p className="text-sm text-[var(--muted)]">Carregando adestradores...</p> : null}
 
       {(isCreating || editingId) ? (
         <div className="rounded-2xl border border-[var(--border)] bg-white p-6 shadow-sm">
@@ -177,20 +167,21 @@ export function AdestradoresClient() {
             />
             <select
               value={formPlan}
-              onChange={(event) => setFormPlan(event.target.value)}
+              onChange={(event) => setFormPlan(event.target.value as "Essencial" | "Pro" | "Premium" | "Trial")}
               className="rounded-2xl border border-[var(--border)] px-4 py-3 text-sm outline-none focus:border-sky-400"
             >
               <option>Essencial</option>
               <option>Pro</option>
               <option>Premium</option>
+              <option>Trial</option>
             </select>
             <select
               value={formStatus}
-              onChange={(event) => setFormStatus(event.target.value)}
+              onChange={(event) => setFormStatus(event.target.value as "Ativo" | "Trial")}
               className="rounded-2xl border border-[var(--border)] px-4 py-3 text-sm outline-none focus:border-sky-400"
             >
               <option>Ativo</option>
-              <option>Inativo</option>
+              <option>Trial</option>
             </select>
           </div>
 
@@ -225,10 +216,10 @@ export function AdestradoresClient() {
                   </td>
                   <td className="px-6 py-4 text-slate-800 font-medium">{trainer.email}</td>
                   <td className="px-6 py-4 text-slate-800 font-medium">{trainer.planType}</td>
-                  <td className="px-6 py-4 font-bold text-slate-900 text-base">{trainer.monthlyValue}</td>
+                  <td className="px-6 py-4 font-bold text-slate-900 text-base">{trainer.monthlyValue.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</td>
                   <td className="px-6 py-4">
                     <span className={`inline-block rounded-full px-3 py-1 text-sm font-bold ${
-                      trainer.status === "Ativo" ? "bg-emerald-100 text-emerald-800" : "bg-slate-200 text-slate-700"
+                      trainer.status === "Ativo" ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"
                     }`}>
                       {trainer.status}
                     </span>

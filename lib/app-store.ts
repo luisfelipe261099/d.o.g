@@ -3,7 +3,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-type SessionStatus = "Confirmado" | "Pendente" | "Aguardando" | "Recorrente";
+type SessionStatus = "Confirmado" | "Pendente" | "Aguardando" | "Recorrente" | "Cancelado";
 type PaymentStatus = "Pago" | "Pendente";
 export type UserRole = "admin" | "trainer" | "client";
 export type TrainerPlanName = "Starter" | "Pro" | "Business";
@@ -187,6 +187,7 @@ type AppState = {
   toggleTask: (taskId: string) => void;
   addPortalTask: (title: string, description: string) => void;
   addPortalFeedback: (message: string, author?: PortalFeedback["author"]) => void;
+  setEventStatus: (eventId: string, status: SessionStatus) => void;
   toggleEventStatus: (eventId: string) => void;
   addCalendarEvent: (payload: {
     day: string;
@@ -195,6 +196,7 @@ type AppState = {
     client: string;
     plan: string;
     sessionNumber: number;
+    status?: SessionStatus;
   }) => void;
   generateClientCharge: (clientId: string) => void;
   markPaymentPaid: (paymentId: string) => void;
@@ -210,222 +212,17 @@ function createId(prefix: string): string {
   return `${prefix}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
-const initialClients: ClientProfile[] = [
-  {
-    id: "client-marina",
-    name: "Marina Costa",
-    phone: "(11) 99888-1122",
-    propertyType: "Apartamento",
-    environment:
-      "Duas crianças, visitas frequentes e elevador movimentado no período da noite.",
-    plan: "Plano Pro • 12 sessões",
-    contractAmount: 690,
-    billingDay: 10,
-    paymentMethod: "Pix",
-    nextChargeDate: "10/05/2026",
-    dogs: [
-      {
-        id: "dog-thor",
-        name: "Thor",
-        breed: "Border Collie",
-        age: "2 anos",
-        weight: "22 kg",
-        photoUrl: "https://images.unsplash.com/photo-1517849845537-4d257902454a?auto=format&fit=crop&w=900&q=80",
-        trainingTypes: ["Reatividade", "Obediência", "Place"],
-      },
-    ],
-  },
-  {
-    id: "client-carla",
-    name: "Carla Nunes",
-    phone: "(21) 97777-9910",
-    propertyType: "Casa",
-    environment: "Quintal amplo, dois gatos e rotina home office.",
-    plan: "Visita inicial + 6 sessões",
-    contractAmount: 420,
-    billingDay: 12,
-    paymentMethod: "Cartao",
-    nextChargeDate: "12/05/2026",
-    dogs: [
-      {
-        id: "dog-mel",
-        name: "Mel",
-        breed: "Labrador",
-        age: "6 meses",
-        weight: "18 kg",
-        photoUrl: "https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&w=900&q=80",
-        trainingTypes: ["Filhotes", "Guia"],
-      },
-    ],
-  },
-];
+const initialClients: ClientProfile[] = [];
 
-const initialTrainingSessions: TrainingSession[] = [
-  {
-    id: "session-1",
-    number: 1,
-    date: "10/03/2026",
-    title: "Visita inicial",
-    clientId: "client-marina",
-    clientName: "Marina Costa",
-    dogId: "dog-thor",
-    dogName: "Thor",
-    notes: [
-      {
-        block: "Guia",
-        score: 6,
-        comment: "Puxava muito, respondeu melhor após ajuste de ritmo.",
-      },
-      {
-        block: "Place",
-        score: 4,
-        comment: "Primeira exposição ao comando, resistência ainda alta.",
-      },
-    ],
-  },
-  {
-    id: "session-2",
-    number: 4,
-    date: "25/03/2026",
-    title: "Foco em guia",
-    clientId: "client-marina",
-    clientName: "Marina Costa",
-    dogId: "dog-thor",
-    dogName: "Thor",
-    notes: [
-      {
-        block: "Guia",
-        score: 8,
-        comment: "Evolução consistente com menos tração em ambiente externo.",
-      },
-      {
-        block: "Distrações",
-        score: 5,
-        comment: "Ainda reage em distância curta com outros cães.",
-      },
-    ],
-  },
-  {
-    id: "session-3",
-    number: 2,
-    date: "18/03/2026",
-    title: "Filhote e autocontrole",
-    clientId: "client-carla",
-    clientName: "Carla Nunes",
-    dogId: "dog-mel",
-    dogName: "Mel",
-    notes: [
-      {
-        block: "Guia",
-        score: 5,
-        comment: "Ainda alterna atenção, mas respondeu bem a trajetos curtos com pausa e reforço.",
-      },
-      {
-        block: "Filhotes",
-        score: 7,
-        comment: "Boa recuperação quando redirecionada para brinquedo recheável e rotina previsível.",
-      },
-    ],
-  },
-];
+const initialTrainingSessions: TrainingSession[] = [];
 
-const initialCalendarEvents: CalendarEvent[] = [
-  {
-    id: "event-1",
-    day: "Segunda",
-    time: "09:00",
-    dog: "Mel",
-    client: "Carla Nunes",
-    plan: "Filhotes • caminhada com autocontrole",
-    sessionNumber: 3,
-    status: "Confirmado",
-  },
-  {
-    id: "event-2",
-    day: "Quarta",
-    time: "18:30",
-    dog: "Thor",
-    client: "Marina Costa",
-    plan: "Reatividade • rua com estímulos graduais",
-    sessionNumber: 6,
-    status: "Pendente",
-  },
-  {
-    id: "event-3",
-    day: "Sexta",
-    time: "14:30",
-    dog: "Nina",
-    client: "Rafael Prado",
-    plan: "Obediência • foco sob distração",
-    sessionNumber: 8,
-    status: "Aguardando",
-  },
-];
+const initialCalendarEvents: CalendarEvent[] = [];
 
-const initialPortalTasks: PortalTask[] = [
-  {
-    id: "task-1",
-    title: "Praticar place por 10 min",
-    description: "Antes do jantar e com reforço intermitente.",
-    completed: true,
-  },
-  {
-    id: "task-2",
-    title: "Passeio com três pausas de foco",
-    description: "Parar, pedir atenção e retomar apenas com guia frouxa.",
-    completed: false,
-  },
-  {
-    id: "task-3",
-    title: "Receber visita com comando de permanência",
-    description: "Entradas em casa sem contato imediato com o cão.",
-    completed: false,
-  },
-];
+const initialPortalTasks: PortalTask[] = [];
 
-const initialPortalFeedbacks: PortalFeedback[] = [
-  {
-    id: "feedback-1",
-    author: "Tutor",
-    message: "Thor respondeu melhor ao place na sala. Ainda ficou agitado quando o interfone tocou.",
-    createdAt: "14/04/2026 • 19:20",
-  },
-];
+const initialPortalFeedbacks: PortalFeedback[] = [];
 
-const initialPayments: PaymentItem[] = [
-  {
-    id: "pay-1",
-    clientId: "client-marina",
-    source: "Cliente",
-    clientName: "Marina Costa",
-    amount: 690,
-    status: "Pendente",
-    paymentMethod: "Pix",
-    dueDate: "10/04/2026",
-    reference: "Plano Pro • 12 sessões",
-  },
-  {
-    id: "pay-2",
-    clientId: "client-carla",
-    source: "Cliente",
-    clientName: "Carla Nunes",
-    amount: 420,
-    status: "Pago",
-    paymentMethod: "Cartao",
-    dueDate: "12/04/2026",
-    reference: "Visita inicial + 6 sessões",
-  },
-  {
-    id: "pay-3",
-    source: "Cliente",
-    clientName: "Rafael Prado",
-    amount: 490,
-    status: "Pendente",
-    paymentMethod: "Boleto",
-    dueDate: "15/04/2026",
-    reference: "Pacote de 8 aulas",
-  },
-];
+const initialPayments: PaymentItem[] = [];
 
 function cloneClients(): ClientProfile[] {
   return initialClients.map((client) => ({
@@ -457,12 +254,6 @@ function clonePayments(): PaymentItem[] {
   return initialPayments.map((payment) => ({ ...payment }));
 }
 
-function formatSimulationDate(day: number): string {
-  const base = new Date(2026, 3, 1);
-  base.setDate(base.getDate() + day - 1);
-  return base.toLocaleDateString("pt-BR");
-}
-
 function getPlanAmount(plan: TrainerPlanName, lessonPackage: TrainerLessonPackage): number {
   const lessonRate = {
     Starter: 30,
@@ -481,6 +272,22 @@ function getPlanAmount(plan: TrainerPlanName, lessonPackage: TrainerLessonPackag
   } satisfies Record<TrainerLessonPackage, number>;
 
   return Math.round(lessonRate[plan] * packageSize[lessonPackage] * packageDiscount[lessonPackage]);
+}
+
+function mapDbPlanToSubscriptionPlan(dbPlan?: string): TrainerPlanName {
+  const normalized = (dbPlan ?? "").trim().toLowerCase();
+
+  if (normalized === "pro") return "Pro";
+  if (normalized === "premium" || normalized === "business") return "Business";
+  if (normalized === "trial" || normalized === "essencial" || normalized === "starter") return "Starter";
+
+  return "Pro";
+}
+
+function mapSubscriptionPlanToDbPlan(plan: TrainerPlanName): "Trial" | "Pro" | "Premium" {
+  if (plan === "Business") return "Premium";
+  if (plan === "Starter") return "Trial";
+  return "Pro";
 }
 
 function getNextPackageReviewDate(lessonPackage: TrainerLessonPackage): string {
@@ -519,49 +326,9 @@ function shiftClientChargeDate(currentDate: string, billingDay: number): string 
   return next.toLocaleDateString("pt-BR");
 }
 
-function createSimulationActivity(day: number): DemoActivity {
-  if (day % 7 === 0) {
-    return {
-      id: createId("activity"),
-      day,
-      title: "Pacote revisado",
-      detail: "Um pacote de aulas foi renovado e a previsao financeira do adestrador foi atualizada.",
-      kind: "finance",
-    };
-  }
-
-  if (day % 3 === 0) {
-    return {
-      id: createId("activity"),
-      day,
-      title: "Sessao registrada",
-      detail: "Novo registro tecnico com notas por bloco e plano sugerido para a proxima aula.",
-      kind: "session",
-    };
-  }
-
-  if (day % 2 === 0) {
-    return {
-      id: createId("activity"),
-      day,
-      title: "Agenda atualizada",
-      detail: "Um novo atendimento entrou na semana e foi marcado como aguardando confirmacao.",
-      kind: "agenda",
-    };
-  }
-
-  return {
-    id: createId("activity"),
-    day,
-    title: "Portal do tutor acessado",
-    detail: "Tutor visualizou tarefa e relatorio, aumentando aderencia ao plano de treino.",
-    kind: "portal",
-  };
-}
-
 export const useAppStore = create<AppState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       hydrated: false,
       isAuthenticated: false,
       userRole: "trainer",
@@ -578,23 +345,13 @@ export const useAppStore = create<AppState>()(
         autoRenew: true,
       },
       trainerPaymentProfile: {
-        pixKey: "adestrador@pegadacerta.com.br",
-        cardHolder: "Marina Costa",
+        pixKey: "",
+        cardHolder: "",
         cardBrand: "Visa",
-        cardLast4: "4456",
-        boletoEmail: "adestrador@pegadacerta.com.br",
+        cardLast4: "",
+        boletoEmail: "",
       },
-      trainerRenewalHistory: [
-        {
-          id: "renewal-1",
-          date: "14/03/2026",
-          planName: "Pro",
-          lessonPackage: "8 aulas",
-          paymentMethod: "Pix",
-          amount: getPlanAmount("Pro", "8 aulas"),
-          status: "Pago",
-        },
-      ],
+      trainerRenewalHistory: [],
       clients: [],
       trainingSessions: [],
       calendarEvents: [],
@@ -628,7 +385,19 @@ export const useAppStore = create<AppState>()(
           trainerEmail: "",
         }),
       setActivePlan: (plan) => set({ activePlan: plan }),
-      setTrainerSubscriptionPlan: (plan) =>
+      setTrainerSubscriptionPlan: async (plan) => {
+        try {
+          const response = await fetch("/api/trainer/plan", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ plan: mapSubscriptionPlanToDbPlan(plan) }),
+          });
+
+          if (!response.ok) return;
+        } catch {
+          return;
+        }
+
         set((state) => ({
           activePlan: plan,
           trainerSubscription: {
@@ -637,7 +406,8 @@ export const useAppStore = create<AppState>()(
             amount: getPlanAmount(plan, state.trainerSubscription.lessonPackage),
             status: "Ativa",
           },
-        })),
+        }));
+      },
       setTrainerPaymentSettings: ({ paymentMethod, lessonPackage, autoRenew }) =>
         set((state) => ({
           trainerSubscription: {
@@ -689,136 +459,123 @@ export const useAppStore = create<AppState>()(
             ...state.trainerRenewalHistory,
           ].slice(0, 20),
         })),
-      addClientWithDog: (payload) =>
-        set((state) => {
-          const newClientId = createId("client");
-          const nextChargeDate = getNextClientChargeDate(payload.billingDay);
+      addClientWithDog: async (payload) => {
+        try {
+          const response = await fetch("/api/clients", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
 
-          return {
-            clients: [
-              {
-                id: newClientId,
-              name: payload.clientName,
-              phone: payload.phone,
-              propertyType: payload.propertyType,
-              environment: payload.environment,
-              plan: payload.plan,
-              contractAmount: payload.contractAmount,
-              billingDay: payload.billingDay,
-              paymentMethod: payload.paymentMethod,
-              nextChargeDate,
-              dogs: [
-                {
-                  id: createId("dog"),
-                  name: payload.dogName,
-                  breed: payload.breed,
-                  age: payload.age,
-                  weight: payload.weight,
-                  photoUrl: "https://images.unsplash.com/photo-1518717758536-85ae29035b6d?auto=format&fit=crop&w=900&q=80",
-                  trainingTypes: payload.trainingTypes,
-                },
-              ],
-            },
-            ...state.clients,
-          ],
-          payments: [
-            {
-              id: createId("pay"),
-              clientId: newClientId,
-              source: "Cliente",
-              clientName: payload.clientName,
-              amount: payload.contractAmount,
-              status: "Pendente",
-              paymentMethod: payload.paymentMethod,
-              dueDate: nextChargeDate,
-              reference: payload.plan,
-            },
-            ...state.payments,
-          ],
-          };
-        }),
-      addTrainingSession: (payload) =>
-        set((state) => ({
-          trainingSessions: [
-            {
-              id: createId("session"),
-              number: payload.number ?? state.trainingSessions.length + 1,
-              date: payload.date,
-              title: payload.title,
-              clientId: payload.clientId,
-              clientName: payload.clientName,
-              dogId: payload.dogId,
-              dogName: payload.dogName,
-              notes: payload.notes,
-            },
-            ...state.trainingSessions,
-          ],
-        })),
-      toggleTask: (taskId) =>
+          if (!response.ok) return;
+          await get().loadFromDB();
+        } catch {
+          // keep current state when API fails
+        }
+      },
+      addTrainingSession: async (payload) => {
+        try {
+          const response = await fetch("/api/sessions", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+
+          if (!response.ok) return;
+          await get().loadFromDB();
+        } catch {
+          // keep current state when API fails
+        }
+      },
+      toggleTask: async (taskId) => {
+        const current = get().portalTasks.find((t) => t.id === taskId);
+        if (!current) return;
+        // Optimistic update
         set((state) => ({
           portalTasks: state.portalTasks.map((task) =>
             task.id === taskId ? { ...task, completed: !task.completed } : task,
           ),
-        })),
-      addPortalTask: (title, description) =>
-        set((state) => ({
-          portalTasks: [
-            ...state.portalTasks,
-            {
-              id: createId("task"),
-              title: title.trim(),
-              description: description.trim(),
-              completed: false,
-            },
-          ],
-        })),
-      addPortalFeedback: (message, author = "Tutor") =>
-        set((state) => ({
-          portalFeedbacks: [
-            {
-              id: createId("feedback"),
-              author,
-              message: message.trim(),
-              createdAt:
-                new Date().toLocaleDateString("pt-BR") +
-                " • " +
-                new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
-            },
-            ...state.portalFeedbacks,
-          ].slice(0, 20),
-        })),
-      toggleEventStatus: (eventId) =>
-        set((state) => ({
-          calendarEvents: state.calendarEvents.map((event) =>
-            event.id === eventId
-              ? {
-                  ...event,
-                  status:
-                    event.status === "Aguardando"
-                      ? "Confirmado"
-                      : event.status === "Confirmado"
-                      ? "Pendente"
-                      : "Aguardando",
-                }
-              : event,
-          ),
-        })),
-      addCalendarEvent: (payload) =>
-        set((state) => ({
-          calendarEvents: [
-            {
-              id: createId("event"),
-              day: payload.day,
-              time: payload.time,
-              dog: payload.dog,
-              client: payload.client,
-              plan: payload.plan,
-              sessionNumber: payload.sessionNumber,
-              status: "Aguardando",
-            },
-            ...state.calendarEvents,
-          ],
-        })),
+        }));
+        try {
+          await fetch("/api/portal-tasks", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id: taskId, completed: !current.completed }),
+          });
+        } catch {
+          // keep optimistic state
+        }
+      },
+      addPortalTask: async (title, description) => {
+        try {
+          const response = await fetch("/api/portal-tasks", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ title, description }),
+          });
+          if (!response.ok) return;
+          await get().loadFromDB();
+        } catch {
+          // keep current state when API fails
+        }
+      },
+      addPortalFeedback: async (message, author = "Tutor") => {
+        try {
+          const response = await fetch("/api/portal-feedbacks", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ message, author }),
+          });
+          if (!response.ok) return;
+          await get().loadFromDB();
+        } catch {
+          // keep current state when API fails
+        }
+      },
+      setEventStatus: async (eventId, status) => {
+        const currentEvent = get().calendarEvents.find((event) => event.id === eventId);
+        if (!currentEvent) return;
+
+        try {
+          const response = await fetch("/api/events", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id: eventId, status }),
+          });
+
+          if (!response.ok) return;
+          await get().loadFromDB();
+        } catch {
+          // keep current state when API fails
+        }
+      },
+      toggleEventStatus: async (eventId) => {
+        const currentEvent = get().calendarEvents.find((event) => event.id === eventId);
+        if (!currentEvent) return;
+
+        const nextStatus =
+          currentEvent.status === "Confirmado"
+            ? "Pendente"
+            : currentEvent.status === "Pendente"
+            ? "Cancelado"
+            : "Confirmado";
+
+        await get().setEventStatus(eventId, nextStatus);
+      },
+      addCalendarEvent: async (payload) => {
+        try {
+          const response = await fetch("/api/events", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+
+          if (!response.ok) return;
+          await get().loadFromDB();
+        } catch {
+          // keep current state when API fails
+        }
+      },
       generateClientCharge: (clientId) =>
         set((state) => {
           const client = state.clients.find((item) => item.id === clientId);
@@ -956,35 +713,17 @@ export const useAppStore = create<AppState>()(
             autoRenew: true,
           },
           trainerPaymentProfile: {
-            pixKey: "adestrador@pegadacerta.com.br",
-            cardHolder: "Marina Costa",
+            pixKey: "",
+            cardHolder: "",
             cardBrand: "Visa",
-            cardLast4: "4456",
-            boletoEmail: "adestrador@pegadacerta.com.br",
+            cardLast4: "",
+            boletoEmail: "",
           },
-          trainerRenewalHistory: [
-            {
-              id: "renewal-1",
-              date: "14/03/2026",
-              planName: "Pro",
-              lessonPackage: "8 aulas",
-              paymentMethod: "Pix",
-              amount: getPlanAmount("Pro", "8 aulas"),
-              status: "Pago",
-            },
-          ],
-          trialActive: true,
+          trainerRenewalHistory: [],
+          trialActive: false,
           trialMaxDays: 30,
           simulationDay: 1,
-          demoActivities: [
-            {
-              id: "activity-day-1",
-              day: 1,
-              title: "Trial reiniciado",
-              detail: "Dados restaurados para uma nova rodada de demonstracao.",
-              kind: "portal" as const,
-            },
-          ],
+          demoActivities: [],
           userRole: state.userRole,
           isAuthenticated: state.isAuthenticated,
           trainerName: state.trainerName,
@@ -1002,21 +741,37 @@ export const useAppStore = create<AppState>()(
         }),
       loadFromDB: async () => {
         try {
-          const [clientsRes, sessionsRes, eventsRes, paymentsRes] = await Promise.all([
+          const [meRes, clientsRes, sessionsRes, eventsRes, paymentsRes, tasksRes, feedbacksRes] = await Promise.all([
+            fetch("/api/me"),
             fetch("/api/clients"),
             fetch("/api/sessions"),
             fetch("/api/events"),
             fetch("/api/payments"),
+            fetch("/api/portal-tasks"),
+            fetch("/api/portal-feedbacks"),
           ]);
 
           if (!clientsRes.ok || !sessionsRes.ok || !eventsRes.ok || !paymentsRes.ok) return;
 
-          const [rawClients, rawSessions, rawEvents, rawPayments] = await Promise.all([
+          const [rawMe, rawClients, rawSessions, rawEvents, rawPayments, rawTasks, rawFeedbacks] = await Promise.all([
+            meRes.ok ? meRes.json() : Promise.resolve(null),
             clientsRes.json(),
             sessionsRes.json(),
             eventsRes.json(),
             paymentsRes.json(),
+            tasksRes.ok ? tasksRes.json() : Promise.resolve([]),
+            feedbacksRes.ok ? feedbacksRes.json() : Promise.resolve([]),
           ]);
+
+          const dbPlanName = mapDbPlanToSubscriptionPlan(
+            (rawMe as { trainer?: { plan?: string } } | null)?.trainer?.plan,
+          );
+
+          const resolvedTrainerName = (() => {
+            const fromMe = (rawMe as { name?: string } | null)?.name;
+            if (fromMe && fromMe.trim()) return fromMe.trim();
+            return undefined;
+          })();
 
           const clients: ClientProfile[] = (rawClients as Array<Record<string, unknown>>).map((c) => ({
             id:             String(c.id),
@@ -1063,7 +818,7 @@ export const useAppStore = create<AppState>()(
             client:        String(e.client),
             plan:          String(e.plan ?? ""),
             sessionNumber: Number(e.sessionNumber ?? 1),
-            status:        (e.status ?? "Confirmado") as "Confirmado" | "Pendente" | "Aguardando" | "Recorrente",
+            status:        (e.status ?? "Confirmado") as "Confirmado" | "Pendente" | "Aguardando" | "Recorrente" | "Cancelado",
           }));
 
           const payments: PaymentItem[] = (rawPayments as Array<Record<string, unknown>>).map((p) => ({
@@ -1078,121 +833,64 @@ export const useAppStore = create<AppState>()(
             reference:     p.reference ? String(p.reference) : undefined,
           }));
 
-          set({ clients, trainingSessions, calendarEvents, payments });
+          const portalTasks: PortalTask[] = (rawTasks as Array<Record<string, unknown>>).map((t) => ({
+            id:          String(t.id),
+            title:       String(t.title),
+            description: t.description ? String(t.description) : "",
+            completed:   Boolean(t.completed),
+          }));
+
+          const portalFeedbacks: PortalFeedback[] = (rawFeedbacks as Array<Record<string, unknown>>).map((f) => ({
+            id:        String(f.id),
+            author:    (f.author ?? "Tutor") as "Tutor" | "Adestrador",
+            message:   String(f.message),
+            createdAt: (() => {
+              const d = new Date(String(f.createdAt));
+              return (
+                d.toLocaleDateString("pt-BR") +
+                " \u2022 " +
+                d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
+              );
+            })(),
+          }));
+
+          set((state) => ({
+            clients,
+            trainingSessions,
+            calendarEvents,
+            payments,
+            portalTasks,
+            portalFeedbacks,
+            activePlan: dbPlanName,
+            trainerSubscription: {
+              ...state.trainerSubscription,
+              planName: dbPlanName,
+              amount: getPlanAmount(dbPlanName, state.trainerSubscription.lessonPackage),
+              status: "Ativa",
+            },
+            trainerName: resolvedTrainerName ?? state.trainerName,
+          }));
         } catch {
           // silently fail — store keeps current state
         }
       },
       startTrial: () =>
-        set((state) => ({
-          trialActive: true,
+        set(() => ({
+          trialActive: false,
           trialMaxDays: 30,
           simulationDay: 1,
-          demoActivities: [
-            {
-              id: createId("activity"),
-              day: 1,
-              title: "Trial de 30 dias ativado",
-              detail: "A simulacao comecou no Dia 1 e sera alimentada conforme o uso.",
-              kind: "portal" as const,
-            },
-            ...state.demoActivities,
-          ].slice(0, 40),
+          demoActivities: [],
         })),
       advanceTrialDays: (days) =>
-        set((state) => {
-          if (!state.trialActive || days <= 0) {
-            return state;
-          }
-
-          let nextDay = state.simulationDay;
-          const nextTrainingSessions = [...state.trainingSessions];
-          const nextCalendarEvents = [...state.calendarEvents];
-          const nextPayments = [...state.payments];
-          const nextActivities = [...state.demoActivities];
-
-          for (let index = 0; index < days; index += 1) {
-            if (nextDay >= state.trialMaxDays) {
-              break;
-            }
-
-            nextDay += 1;
-            const leadClient = state.clients[0];
-            const leadDog = leadClient?.dogs[0];
-            const sessionCountByDog = nextTrainingSessions.filter((item) => item.dogId === leadDog?.id).length;
-
-            if (nextDay % 3 === 0 && leadClient && leadDog) {
-              nextTrainingSessions.unshift({
-                id: createId("session"),
-                number: sessionCountByDog + 1,
-                date: formatSimulationDate(nextDay),
-                title: `Sessao simulada Dia ${nextDay}`,
-                clientId: leadClient.id,
-                clientName: leadClient.name,
-                dogId: leadDog.id,
-                dogName: leadDog.name,
-                notes: [
-                  {
-                    block: "Guia",
-                    score: 6 + (nextDay % 4),
-                    comment: "Evolucao gradual registrada automaticamente para simulacao de trial.",
-                  },
-                ],
-              });
-            }
-
-            if (nextDay % 2 === 0 && leadClient && leadDog) {
-              nextCalendarEvents.unshift({
-                id: createId("event"),
-                day: "Segunda",
-                time: "17:30",
-                dog: leadDog.name,
-                client: leadClient.name,
-                plan: `Treino orientado pela IA • Dia ${nextDay}`,
-                sessionNumber: sessionCountByDog + 1,
-                status: "Aguardando",
-              });
-            }
-
-            if (nextDay % 7 === 0) {
-              const pending = nextPayments.find((payment) => payment.status === "Pendente");
-              if (pending) {
-                pending.status = "Pago";
-              }
-
-              nextPayments.unshift({
-                id: createId("pay"),
-                clientName: leadClient?.name ?? "Conta simulada",
-                amount: 490,
-                status: "Pendente",
-              });
-            }
-
-            nextActivities.unshift(createSimulationActivity(nextDay));
-          }
-
-          return {
-            simulationDay: nextDay,
-            trialActive: nextDay < state.trialMaxDays,
-            trainingSessions: nextTrainingSessions,
-            calendarEvents: nextCalendarEvents,
-            payments: nextPayments,
-            demoActivities: nextActivities.slice(0, 60),
-          };
-        }),
+        set((state) => ({
+          simulationDay: Math.min(state.trialMaxDays, Math.max(1, state.simulationDay + Math.max(0, days))),
+          trialActive: false,
+          demoActivities: state.demoActivities,
+        })),
       completeTrial: () => set((state) => ({
         simulationDay: state.trialMaxDays,
         trialActive: false,
-        demoActivities: [
-          {
-            id: createId("activity"),
-            day: state.trialMaxDays,
-            title: "Trial concluido",
-            detail: "Ciclo de 30 dias finalizado com dados completos para analise de valor do produto.",
-            kind: "finance" as const,
-          },
-          ...state.demoActivities,
-        ].slice(0, 60),
+        demoActivities: state.demoActivities,
       })),
     }),
     {

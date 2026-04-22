@@ -19,15 +19,15 @@ const pricingPlans = [
   {
     name: "Starter" as TrainerPlanName,
     price: "a partir de R$ 120 por pacote",
-    audience: "Autonomo em validacao",
+    audience: "Autônomo em validação",
     summary: "Ideal para organizar poucos casos e manter o controle comercial por quantidade de aulas.",
-    features: ["Ate 5 clientes", "Agenda basica", "Portal externo"],
+    features: ["Até 5 clientes", "Agenda básica", "Portal externo"],
     featured: false,
   },
   {
     name: "Pro" as TrainerPlanName,
     price: "a partir de R$ 168 por pacote",
-    audience: "Operacao recorrente",
+    audience: "Operação recorrente",
     summary: "Plano principal para quem trabalha com carteira recorrente e precisa controlar pacotes de atendimento.",
     features: ["Clientes ilimitados", "WhatsApp", "PDFs", "Portal completo"],
     featured: true,
@@ -36,15 +36,15 @@ const pricingPlans = [
     name: "Business" as TrainerPlanName,
     price: "a partir de R$ 220 por pacote",
     audience: "Equipe ou franquia",
-    summary: "Camada premium para operacao maior, com mais margem por pacote e previsao comercial.",
-    features: ["Multi-adestrador", "ERP basico", "White-label"],
+    summary: "Camada premium para operação maior, com mais margem por pacote e previsão comercial.",
+    features: ["Multi-adestrador", "ERP básico", "White-label"],
     featured: false,
   },
 ];
 
 function packageBenefitLabel(lessonPackage: TrainerLessonPackage) {
   if (lessonPackage === "12 aulas") return "Melhor custo por aula para casos de acompanhamento longo";
-  if (lessonPackage === "8 aulas") return "Equilibrio entre frequencia, caixa e previsao operacional";
+  if (lessonPackage === "8 aulas") return "Equilíbrio entre frequência, caixa e previsão operacional";
   return "Pacote enxuto para casos novos ou acompanhamento mais leve";
 }
 

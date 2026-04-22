@@ -1,14 +1,10 @@
 "use client";
 
 import Image from "next/image";
-import { FormEvent, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
 
 import { PageShell } from "@/components/page-shell";
 import { useAppStore } from "@/lib/app-store";
-
-const healthAlerts: { title: string; deadline: string; detail: string }[] = [];
-const portalFeed: { title: string; date: string; summary: string }[] = [];
-const portalGallery: { title: string; kind: string; caption: string; imageUrl: string }[] = [];
 
 export default function PortalClientePage() {
   const [activeSection, setActiveSection] = useState<"resumo" | "agenda" | "tarefas" | "galeria" | "relatorios">("resumo");
@@ -17,6 +13,7 @@ export default function PortalClientePage() {
   const calendarEvents = useAppStore((state) => state.calendarEvents);
   const portalTasks = useAppStore((state) => state.portalTasks);
   const portalFeedbacks = useAppStore((state) => state.portalFeedbacks);
+  const trainingSessions = useAppStore((state) => state.trainingSessions);
   const toggleTask = useAppStore((state) => state.toggleTask);
   const addPortalFeedback = useAppStore((state) => state.addPortalFeedback);
   const featuredClient = clients[0] ?? null;
@@ -24,6 +21,100 @@ export default function PortalClientePage() {
   const clientAgenda = calendarEvents.filter((event) => event.client === featuredClient?.name).slice(0, 3);
   const pendingTasks = portalTasks.filter((task) => !task.completed).length;
   const doneTasks = portalTasks.length - pendingTasks;
+
+  const clientSessions = useMemo(
+    () =>
+      trainingSessions.filter((session) => {
+        const matchesClient = session.clientName === featuredClient?.name;
+        const matchesDog = featuredDog ? session.dogId === featuredDog.id || session.dogName === featuredDog.name : true;
+        return matchesClient && matchesDog;
+      }),
+    [trainingSessions, featuredClient, featuredDog],
+  );
+
+  const portalFeed = useMemo(
+    () =>
+      clientSessions.slice(0, 6).map((session) => {
+        const scores = session.notes.map((note) => note.score).filter((score) => Number.isFinite(score));
+        const avg = scores.length
+          ? scores.reduce((sum, value) => sum + value, 0) / scores.length
+          : null;
+
+        const summary = session.notes[0]?.comment
+          ? session.notes[0].comment
+          : "Sessão registrada sem comentário detalhado.";
+
+        return {
+          title: session.title,
+          date: session.date,
+          summary: avg !== null ? `${summary} Média técnica: ${avg.toFixed(1)}/10.` : summary,
+        };
+      }),
+    [clientSessions],
+  );
+
+  const portalGallery = useMemo(() => {
+    if (!featuredDog) return [] as { title: string; kind: string; caption: string; imageUrl: string }[];
+
+    const sessionCards = clientSessions.slice(0, 4).map((session) => ({
+      title: `Sessão ${session.number}`,
+      kind: "Treino",
+      caption: `${session.date} • ${session.title}`,
+      imageUrl:
+        featuredDog.photoUrl ??
+        "https://images.unsplash.com/photo-1518717758536-85ae29035b6d?auto=format&fit=crop&w=900&q=80",
+    }));
+
+    const timelineCard = {
+      title: "Linha do caso",
+      kind: "Resumo",
+      caption: `${clientSessions.length} sessões registradas e ${clientAgenda.length} compromissos na agenda.`,
+      imageUrl:
+        featuredDog.photoUrl ??
+        "https://images.unsplash.com/photo-1518717758536-85ae29035b6d?auto=format&fit=crop&w=900&q=80",
+    };
+
+    return [timelineCard, ...sessionCards];
+  }, [featuredDog, clientSessions, clientAgenda.length]);
+
+  const healthAlerts = useMemo(() => {
+    const alerts: { title: string; deadline: string; detail: string }[] = [];
+
+    if (pendingTasks > 0) {
+      alerts.push({
+        title: "Tarefas em aberto",
+        deadline: "Próximas 24h",
+        detail: `${pendingTasks} tarefas pendentes para manter consistência do treino em casa.`,
+      });
+    }
+
+    if (clientAgenda.some((event) => event.status !== "Confirmado")) {
+      alerts.push({
+        title: "Agenda requer confirmação",
+        deadline: "Antes do próximo encontro",
+        detail: "Existe atendimento com status pendente/aguardando e precisa de confirmação com o tutor.",
+      });
+    }
+
+    if (portalFeedbacks.length === 0) {
+      alerts.push({
+        title: "Sem feedback recente",
+        deadline: "Esta semana",
+        detail: "Estimular o tutor a enviar comentários melhora ajuste fino entre sessões presenciais.",
+      });
+    }
+
+    if (alerts.length === 0) {
+      alerts.push({
+        title: "Rotina estável",
+        deadline: "Monitoramento contínuo",
+        detail: "Sem alertas críticos no momento. Continue registrando feedback e execução das tarefas.",
+      });
+    }
+
+    return alerts;
+  }, [pendingTasks, clientAgenda, portalFeedbacks.length]);
+
   const visibleSections = {
     resumo: activeSection === "resumo",
     agenda: activeSection === "agenda",
@@ -83,7 +174,7 @@ export default function PortalClientePage() {
             </div>
             <div className="rounded-2xl bg-white/10 p-4">
               <p className="text-xs uppercase tracking-[0.16em] text-slate-300">Midia</p>
-              <p className="mt-2 text-2xl font-semibold">0</p>
+              <p className="mt-2 text-2xl font-semibold">{portalGallery.length}</p>
             </div>
             <div className="rounded-2xl bg-white/10 p-4">
               <p className="text-xs uppercase tracking-[0.16em] text-slate-300">Comentários</p>
@@ -99,7 +190,7 @@ export default function PortalClientePage() {
             <div className="mt-3 space-y-2 text-sm text-[var(--muted)]">
               <p>Próximo encontro: <span className="font-semibold text-[var(--foreground)]">{clientAgenda[0]?.day ?? "Sem agenda"}{clientAgenda[0] ? ` • ${clientAgenda[0].time}` : ""}</span></p>
               <p>Tarefas pendentes: <span className="font-semibold text-[var(--foreground)]">{pendingTasks}</span></p>
-              <p>Novos relatórios: <span className="font-semibold text-[var(--foreground)]">0</span></p>
+              <p>Novos relatórios: <span className="font-semibold text-[var(--foreground)]">{portalFeed.length}</span></p>
             </div>
           </article>
           <article className="rounded-[1.5rem] border border-[var(--border)] bg-[var(--panel-strong)] p-4 shadow-sm">
@@ -136,6 +227,11 @@ export default function PortalClientePage() {
             </form>
 
             <div className="mt-4 space-y-3">
+              {portalFeedbacks.length === 0 ? (
+                <p className="rounded-2xl border border-[var(--border)] bg-[var(--panel)] p-4 text-sm text-[var(--muted)]">
+                  Nenhum comentário enviado ainda. Use o campo acima para iniciar a comunicação com o adestrador.
+                </p>
+              ) : null}
               {portalFeedbacks.slice(0, 3).map((feedback) => (
                 <div key={feedback.id} className="rounded-2xl border border-[var(--border)] bg-[var(--panel)] p-4">
                   <div className="flex items-center justify-between gap-3">
@@ -195,11 +291,22 @@ export default function PortalClientePage() {
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">Agenda da semana</p>
             <h2 className="mt-2 font-display text-2xl font-semibold">Próximos encontros com o adestrador</h2>
             <div className="mt-4 space-y-3">
+              {clientAgenda.length === 0 ? (
+                <p className="rounded-2xl border border-[var(--border)] bg-white p-4 text-sm text-[var(--muted)]">
+                  Ainda não há encontros cadastrados para este caso.
+                </p>
+              ) : null}
               {clientAgenda.map((event) => (
                 <div key={`${event.day}-${event.time}`} className="rounded-2xl border border-[var(--border)] bg-white p-4">
                   <div className="flex items-center justify-between gap-3">
                     <p className="font-semibold">{event.day} • {event.time}</p>
-                    <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-amber-900">
+                    <span className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] ${
+                      event.status === "Confirmado"
+                        ? "bg-emerald-100 text-emerald-800"
+                        : event.status === "Cancelado"
+                        ? "bg-rose-100 text-rose-800"
+                        : "bg-amber-100 text-amber-900"
+                    }`}>
                       {event.status}
                     </span>
                   </div>
@@ -261,6 +368,11 @@ export default function PortalClientePage() {
             </div>
 
             <div className="mt-4 space-y-2">
+              {portalTasks.length === 0 ? (
+                <p className="rounded-2xl border border-[var(--border)] bg-white p-3 text-sm text-[var(--muted)]">
+                  Nenhuma tarefa publicada pelo adestrador ainda.
+                </p>
+              ) : null}
               {portalTasks.map((task) => (
                 <div key={task.id} className="rounded-2xl border border-[var(--border)] bg-white p-3">
                   <div className="flex items-center justify-between gap-3">
@@ -308,6 +420,11 @@ export default function PortalClientePage() {
                 </article>
               ))}
             </div>
+            {portalGallery.length === 0 ? (
+              <div className="mt-4 rounded-2xl border border-dashed border-[var(--border)] bg-white p-4 text-sm text-[var(--muted)]">
+                A galeria será preenchida automaticamente conforme novas sessões forem registradas.
+              </div>
+            ) : null}
           </article>
           ) : <div />}
         </div>
@@ -331,6 +448,11 @@ export default function PortalClientePage() {
                 </div>
               ))}
             </div>
+            {portalFeed.length === 0 ? (
+              <div className="mt-4 rounded-2xl border border-dashed border-[var(--border)] bg-white p-4 text-sm text-[var(--muted)]">
+                Ainda não há sessões suficientes para gerar relatórios automáticos deste caso.
+              </div>
+            ) : null}
           </article>
 
           <article className="rounded-[1.75rem] border border-[var(--border)] bg-slate-950 p-5 text-white shadow-sm">

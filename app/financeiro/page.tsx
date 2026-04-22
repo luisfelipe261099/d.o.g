@@ -1,14 +1,18 @@
 "use client";
 
+import { useState } from "react";
+
 import { PageShell } from "@/components/page-shell";
 import { useAppStore } from "@/lib/app-store";
 
 export default function FinancialPage() {
   const clients = useAppStore((state) => state.clients);
   const payments = useAppStore((state) => state.payments);
-  const generateClientCharge = useAppStore((state) => state.generateClientCharge);
-  const markPaymentPaid = useAppStore((state) => state.markPaymentPaid);
+  const loadFromDB = useAppStore((state) => state.loadFromDB);
   const trainerSubscription = useAppStore((state) => state.trainerSubscription);
+  const [busyPaymentId, setBusyPaymentId] = useState<string | null>(null);
+  const [busyClientId, setBusyClientId] = useState<string | null>(null);
+  const [message, setMessage] = useState<string>("");
 
   const pendingPayments = payments.filter((payment) => payment.status === "Pendente");
   const paidPayments = payments.filter((payment) => payment.status === "Pago");
@@ -18,6 +22,90 @@ export default function FinancialPage() {
   const totalPending = pendingPayments.reduce((sum, item) => sum + item.amount, 0);
   const totalPaid = paidPayments.reduce((sum, item) => sum + item.amount, 0);
 
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const defaultDueDate = tomorrow.toLocaleDateString("pt-BR");
+
+  async function refreshFinance(messageText?: string) {
+    await loadFromDB();
+    if (messageText) {
+      setMessage(messageText);
+      window.setTimeout(() => setMessage(""), 2500);
+    }
+  }
+
+  async function handleSetPaymentStatus(paymentId: string, status: "Pago" | "Pendente") {
+    setBusyPaymentId(paymentId);
+
+    try {
+      const response = await fetch("/api/payments", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: paymentId, status }),
+      });
+
+      if (!response.ok) {
+        setMessage("Não foi possível atualizar o status agora.");
+        return;
+      }
+
+      await refreshFinance(status === "Pago" ? "Cobrança marcada como paga." : "Cobrança reaberta como pendente.");
+    } catch {
+      setMessage("Erro de conexão ao atualizar cobrança.");
+    } finally {
+      setBusyPaymentId(null);
+      window.setTimeout(() => setMessage(""), 2500);
+    }
+  }
+
+  async function handleGenerateClientCharge(clientId: string) {
+    const client = clients.find((item) => item.id === clientId);
+    if (!client) return;
+
+    const hasPendingOpen = payments.some(
+      (payment) =>
+        payment.source !== "Assinatura" &&
+        payment.clientId === client.id &&
+        payment.status === "Pendente",
+    );
+
+    if (hasPendingOpen) {
+      setMessage("Este cliente já possui cobrança pendente. Marque como paga ou reabra antes de gerar outra.");
+      window.setTimeout(() => setMessage(""), 3000);
+      return;
+    }
+
+    setBusyClientId(clientId);
+
+    try {
+      const response = await fetch("/api/payments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          clientId: client.id,
+          clientName: client.name,
+          amount: client.contractAmount ?? 0,
+          source: "Cliente",
+          paymentMethod: client.paymentMethod,
+          dueDate: client.nextChargeDate || defaultDueDate,
+          reference: client.plan,
+        }),
+      });
+
+      if (!response.ok) {
+        setMessage("Não foi possível gerar o faturamento deste cliente.");
+        return;
+      }
+
+      await refreshFinance("Faturamento gerado com sucesso.");
+    } catch {
+      setMessage("Erro de conexão ao gerar faturamento.");
+    } finally {
+      setBusyClientId(null);
+      window.setTimeout(() => setMessage(""), 2500);
+    }
+  }
+
   return (
     <PageShell
       kicker="Financeiro"
@@ -25,6 +113,14 @@ export default function FinancialPage() {
       description="Acompanhe receita prevista, pagamentos confirmados e o pacote atual usado no controle do adestrador."
       requireAuth="trainer"
     >
+      {message ? (
+        <section>
+          <article className="rounded-2xl border border-[var(--border)] bg-white/90 px-4 py-3 text-sm text-[var(--foreground)] shadow-sm">
+            {message}
+          </article>
+        </section>
+      ) : null}
+
       <section className="grid gap-4 md:grid-cols-3">
         <article className="rounded-[1.75rem] border border-[var(--border)] bg-white/90 p-5 shadow-sm">
           <p className="text-sm text-[var(--muted)]">Clientes com contrato ativo</p>
@@ -91,10 +187,11 @@ export default function FinancialPage() {
                 <p className="mt-1 text-xs text-[var(--muted)]">Próximo vencimento: {client.nextChargeDate ?? "--/--/----"}</p>
                 <button
                   type="button"
-                  onClick={() => generateClientCharge(client.id)}
+                  onClick={() => handleGenerateClientCharge(client.id)}
+                  disabled={busyClientId === client.id}
                   className="mt-3 rounded-full border border-[var(--border)] bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--foreground)]"
                 >
-                  Gerar próxima cobrança
+                  {busyClientId === client.id ? "Gerando..." : "Gerar faturamento"}
                 </button>
               </div>
             ))}
@@ -132,14 +229,21 @@ export default function FinancialPage() {
                 ) : null}
                 <button
                   type="button"
-                  onClick={() => markPaymentPaid(payment.id)}
+                  onClick={() =>
+                    handleSetPaymentStatus(payment.id, payment.status === "Pago" ? "Pendente" : "Pago")
+                  }
+                  disabled={busyPaymentId === payment.id}
                   className={`mt-4 rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] ${
                     payment.status === "Pago"
                       ? "bg-emerald-100 text-emerald-800"
                       : "bg-amber-100 text-amber-900"
                   }`}
                 >
-                  {payment.status === "Pago" ? "Pago" : "Marcar como pago"}
+                  {busyPaymentId === payment.id
+                    ? "Atualizando..."
+                    : payment.status === "Pago"
+                    ? "Reabrir pendência"
+                    : "Marcar como pago"}
                 </button>
               </div>
             ))}
@@ -159,14 +263,21 @@ export default function FinancialPage() {
                   {payment.reference ? <p className="mt-1 text-xs text-[var(--muted)]">{payment.reference}</p> : null}
                   <button
                     type="button"
-                    onClick={() => markPaymentPaid(payment.id)}
+                    onClick={() =>
+                      handleSetPaymentStatus(payment.id, payment.status === "Pago" ? "Pendente" : "Pago")
+                    }
+                    disabled={busyPaymentId === payment.id}
                     className={`mt-4 rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] ${
                       payment.status === "Pago"
                         ? "bg-emerald-100 text-emerald-800"
                         : "bg-amber-100 text-amber-900"
                     }`}
                   >
-                    {payment.status === "Pago" ? "Pago" : "Marcar como pago"}
+                    {busyPaymentId === payment.id
+                      ? "Atualizando..."
+                      : payment.status === "Pago"
+                      ? "Reabrir pendência"
+                      : "Marcar como pago"}
                   </button>
                 </div>
               ))
