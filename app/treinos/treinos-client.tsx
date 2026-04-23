@@ -476,10 +476,10 @@ export default function TrainingPage() {
             <p className="mt-2 text-sm text-[var(--muted)]">Cadastre um cliente e seu cao para comecar os registros.</p>
           </section>
         ) : (
-          <section className="rounded-[2rem] border border-[#d3e6d4] bg-[#f9fdf8] p-3.5 shadow-[0_20px_42px_rgba(24,86,35,0.08)]">
+          <section className="rounded-[2rem] border border-[var(--border)] bg-[#f7fbff] p-3.5 shadow-[var(--shadow)]">
             <header className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-2">
-                <Link href="/dashboard" className="flex h-9 w-9 items-center justify-center rounded-full border border-[#d5e8d6] bg-white text-[#2b6f3c]">
+                <Link href="/dashboard" className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border)] bg-white text-[#145a82]">
                   <TinyIcon name="back" />
                 </Link>
                 <div>
@@ -490,7 +490,7 @@ export default function TrainingPage() {
               <button
                 type="button"
                 onClick={() => setShowForm((value) => !value)}
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-[#2b6f3c] text-white"
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-[#145a82] text-white"
                 aria-label="Novo treino"
               >
                 <TinyIcon name="plus" />
@@ -498,7 +498,7 @@ export default function TrainingPage() {
             </header>
 
             <section className="mt-3 flex gap-2">
-              <label className="flex flex-1 items-center gap-2 rounded-xl border border-[#d5e8d6] bg-white px-3 py-2 text-[var(--muted)]">
+              <label className="flex flex-1 items-center gap-2 rounded-xl border border-[var(--border)] bg-white px-3 py-2 text-[var(--muted)]">
                 <TinyIcon name="search" />
                 <input
                   placeholder="Buscar por cao ou tutor..."
@@ -507,7 +507,7 @@ export default function TrainingPage() {
               </label>
               <button
                 type="button"
-                className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#d5e8d6] bg-white text-[#2b6f3c]"
+                className="flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--border)] bg-white text-[#145a82]"
                 aria-label="Filtros"
               >
                 <TinyIcon name="filter" />
@@ -527,10 +527,10 @@ export default function TrainingPage() {
                   onClick={() => setFeedFilter(option.value as FeedFilter)}
                   className={`whitespace-nowrap rounded-full px-4 py-1.5 text-[11px] font-semibold ${
                     feedFilter === option.value
-                      ? "bg-[#2b6f3c] text-white"
+                      ? "bg-[#145a82] text-white"
                       : option.value === "pending"
                       ? "bg-[#fff4df] text-[#9a6b09]"
-                      : "border border-[#d5e8d6] bg-white text-[var(--muted)]"
+                      : "border border-[var(--border)] bg-white text-[var(--muted)]"
                   }`}
                 >
                   {option.label}
@@ -539,19 +539,19 @@ export default function TrainingPage() {
             </section>
 
             <section className="mt-3 grid grid-cols-2 gap-2">
-              <article className="rounded-xl border border-[#dbead8] bg-white p-3">
+              <article className="rounded-xl border border-[var(--border)] bg-white p-3">
                 <p className="text-2xl font-semibold text-[var(--foreground)]">{filteredFeed.length}</p>
                 <p className="text-xs text-[var(--muted)]">Treinos no filtro</p>
               </article>
-              <article className="rounded-xl border border-[#dbead8] bg-white p-3">
+              <article className="rounded-xl border border-[var(--border)] bg-white p-3">
                 <p className="text-2xl font-semibold text-[var(--foreground)]">{draftNotes.length}</p>
                 <p className="text-xs text-[var(--muted)]">Em andamento</p>
               </article>
-              <article className="rounded-xl border border-[#dbead8] bg-white p-3">
+              <article className="rounded-xl border border-[var(--border)] bg-white p-3">
                 <p className="text-2xl font-semibold text-[var(--foreground)]">{trainingSessions.length}</p>
                 <p className="text-xs text-[var(--muted)]">Concluidos</p>
               </article>
-              <article className="rounded-xl border border-[#dbead8] bg-white p-3">
+              <article className="rounded-xl border border-[var(--border)] bg-white p-3">
                 <p className="text-2xl font-semibold text-[var(--foreground)]">{pendingSessionsCount}</p>
                 <p className="text-xs text-[var(--muted)]">Pendentes</p>
               </article>
@@ -559,7 +559,7 @@ export default function TrainingPage() {
 
             <section className="mt-4 flex items-center justify-between">
               <p className="text-sm font-semibold text-[var(--foreground)]">{feedTitle}</p>
-              <Link href="/agenda" className="text-[11px] font-semibold text-[#2b6f3c]">Ver agenda</Link>
+              <Link href="/agenda" className="text-[11px] font-semibold text-[#145a82]">Ver agenda</Link>
             </section>
 
             <section className="mt-2 space-y-2.5">
@@ -573,10 +573,10 @@ export default function TrainingPage() {
                 const firstNote = session.notes[0];
 
                 return (
-                  <article key={session.id} className="rounded-2xl border border-[#dbead8] bg-white p-3">
+                  <article key={session.id} className="rounded-2xl border border-[var(--border)] bg-white p-3">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-start gap-2.5">
-                        <div className="relative h-11 w-11 overflow-hidden rounded-full bg-[#edf8ed]">
+                        <div className="relative h-11 w-11 overflow-hidden rounded-full bg-sky-50">
                           {dogMeta?.photoUrl ? (
                             <Image
                               src={dogMeta.photoUrl}
@@ -587,7 +587,7 @@ export default function TrainingPage() {
                               className="object-cover"
                             />
                           ) : (
-                            <div className="flex h-full w-full items-center justify-center text-[#2b6f3c]">
+                            <div className="flex h-full w-full items-center justify-center text-[#145a82]">
                               <TinyIcon name="list" />
                             </div>
                           )}
@@ -595,7 +595,7 @@ export default function TrainingPage() {
                         <div>
                           <p className="text-sm font-semibold text-[var(--foreground)]">{dogName}</p>
                           <p className="text-[11px] text-[var(--muted)]">{clientName} • {breed}</p>
-                          <p className="mt-0.5 text-[11px] text-[#2b6f3c]">
+                          <p className="mt-0.5 text-[11px] text-[#145a82]">
                             {firstNote?.block || "Treino geral"} • {score.toFixed(1)}/10
                           </p>
                         </div>
@@ -613,21 +613,21 @@ export default function TrainingPage() {
                           if (session.dogId) setSelectedDogId(session.dogId);
                           setShowForm(true);
                         }}
-                        className="inline-flex items-center justify-center gap-1 rounded-lg border border-[#d5e8d6] bg-[#f7fcf7] px-2 py-1.5 text-[#2b6f3c]"
+                        className="inline-flex items-center justify-center gap-1 rounded-lg border border-[var(--border)] bg-[#f7fbff] px-2 py-1.5 text-[#145a82]"
                       >
                         <TinyIcon name="play" />
                         Iniciar
                       </button>
                       <button
                         type="button"
-                        className="inline-flex items-center justify-center gap-1 rounded-lg border border-[#d5e8d6] bg-[#f7fcf7] px-2 py-1.5 text-[#2b6f3c]"
+                        className="inline-flex items-center justify-center gap-1 rounded-lg border border-[var(--border)] bg-[#f7fbff] px-2 py-1.5 text-[#145a82]"
                       >
                         <TinyIcon name="list" />
                         Registro
                       </button>
                       <button
                         type="button"
-                        className="inline-flex items-center justify-center gap-1 rounded-lg border border-[#d5e8d6] bg-[#f7fcf7] px-2 py-1.5 text-[#2b6f3c]"
+                        className="inline-flex items-center justify-center gap-1 rounded-lg border border-[var(--border)] bg-[#f7fbff] px-2 py-1.5 text-[#145a82]"
                       >
                         <TinyIcon name="whats" />
                         WhatsApp
@@ -653,7 +653,7 @@ export default function TrainingPage() {
                 <button
                   type="button"
                   onClick={() => setShowForm((value) => !value)}
-                  className="rounded-full bg-[#2b6f3c] px-4 py-2 text-xs font-semibold text-white"
+                  className="rounded-full bg-[#145a82] px-4 py-2 text-xs font-semibold text-white"
                 >
                   {showForm ? "Fechar" : "Novo treino"}
                 </button>
@@ -661,7 +661,7 @@ export default function TrainingPage() {
             </section>
 
             {showForm ? (
-              <article className="mt-3 rounded-2xl border border-[#dbead8] bg-white p-3">
+              <article className="mt-3 rounded-2xl border border-[var(--border)] bg-white p-3">
                 <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">Registrar treino</p>
                 <form onSubmit={onSubmit} className="mt-3 grid gap-3">
                   <div className="grid gap-2 sm:grid-cols-2">
@@ -677,7 +677,7 @@ export default function TrainingPage() {
                           setSelectedDogId(nextDog?.id ?? "");
                           resetDraftNotes(nextDog?.trainingTypes[0] ?? "Guia");
                         }}
-                        className="rounded-xl border border-[#d5e8d6] bg-white px-3 py-2 text-sm outline-none focus:border-[#72b081]"
+                        className="rounded-xl border border-[var(--border)] bg-white px-3 py-2 text-sm outline-none focus:border-sky-400"
                       >
                         {clients.map((client) => (
                           <option key={client.id} value={client.id}>{client.name}</option>
@@ -695,7 +695,7 @@ export default function TrainingPage() {
                           setSelectedDogId(nextDogId);
                           resetDraftNotes(nextDog?.trainingTypes[0] ?? "Guia");
                         }}
-                        className="rounded-xl border border-[#d5e8d6] bg-white px-3 py-2 text-sm outline-none focus:border-[#72b081]"
+                        className="rounded-xl border border-[var(--border)] bg-white px-3 py-2 text-sm outline-none focus:border-sky-400"
                       >
                         {(selectedClient?.dogs ?? []).map((dog) => (
                           <option key={dog.id} value={dog.id}>{dog.name} • {dog.breed}</option>
@@ -707,17 +707,17 @@ export default function TrainingPage() {
                   <input
                     value={title}
                     onChange={(event) => setTitle(event.target.value)}
-                    className="rounded-xl border border-[#d5e8d6] px-3 py-2 text-sm outline-none focus:border-[#72b081]"
+                    className="rounded-xl border border-[var(--border)] px-3 py-2 text-sm outline-none focus:border-sky-400"
                     placeholder="Titulo da sessao"
                     required
                   />
 
-                  <div className="flex items-center justify-between rounded-xl border border-[#d5e8d6] bg-[#f7fcf7] px-3 py-2">
+                  <div className="flex items-center justify-between rounded-xl border border-[var(--border)] bg-[#f7fbff] px-3 py-2">
                     <p className="text-xs text-[var(--muted)]">Blocos: {draftBlocksLabel || "Sem blocos"}</p>
                     <button
                       type="button"
                       onClick={addDraftNote}
-                      className="rounded-full border border-[#d5e8d6] bg-white px-3 py-1 text-[11px] font-semibold text-[#2b6f3c]"
+                      className="rounded-full border border-[var(--border)] bg-white px-3 py-1 text-[11px] font-semibold text-[#145a82]"
                     >
                       Adicionar bloco
                     </button>
@@ -725,7 +725,7 @@ export default function TrainingPage() {
 
                   <div className="space-y-2">
                     {draftNotes.map((note, index) => (
-                      <div key={note.id} className="rounded-xl border border-[#dbead8] bg-white p-3">
+                      <div key={note.id} className="rounded-xl border border-[var(--border)] bg-white p-3">
                         <div className="flex items-center justify-between">
                           <p className="text-xs font-semibold text-[var(--foreground)]">Bloco {index + 1}</p>
                           {draftNotes.length > 1 ? (
@@ -766,10 +766,10 @@ export default function TrainingPage() {
                     ))}
                   </div>
 
-                  <div className="rounded-xl border border-[#d5e8d6] bg-[#f7fcf7] p-3">
+                  <div className="rounded-xl border border-[var(--border)] bg-[#f7fbff] p-3">
                     <div className="flex items-center justify-between gap-3">
                       <p className="text-xs text-[var(--muted)]">Imagens: {draftMedia.length}/{MAX_MEDIA_ITEMS} • {totalMediaKb}/{MAX_TOTAL_MEDIA_KB}KB</p>
-                      <label className="cursor-pointer rounded-full border border-[#d5e8d6] bg-white px-3 py-1 text-[11px] font-semibold text-[#2b6f3c]">
+                      <label className="cursor-pointer rounded-full border border-[var(--border)] bg-white px-3 py-1 text-[11px] font-semibold text-[#145a82]">
                         {isCompressingMedia ? "Comprimindo..." : "Adicionar"}
                         <input
                           type="file"
@@ -788,7 +788,7 @@ export default function TrainingPage() {
                     {draftMedia.length ? (
                       <div className="mt-2 grid grid-cols-3 gap-2">
                         {draftMedia.map((media) => (
-                          <div key={media.id} className="overflow-hidden rounded-lg border border-[#d5e8d6] bg-white">
+                          <div key={media.id} className="overflow-hidden rounded-lg border border-[var(--border)] bg-white">
                             <div className="relative h-16 w-full">
                               <Image
                                 src={media.thumbDataUrl || media.dataUrl}
@@ -802,7 +802,7 @@ export default function TrainingPage() {
                             <button
                               type="button"
                               onClick={() => removeDraftMedia(media.id)}
-                              className="w-full border-t border-[#d5e8d6] px-1 py-1 text-[10px] font-semibold text-amber-800"
+                              className="w-full border-t border-[var(--border)] px-1 py-1 text-[10px] font-semibold text-amber-800"
                             >
                               Remover
                             </button>
@@ -812,13 +812,13 @@ export default function TrainingPage() {
                     ) : null}
                   </div>
 
-                  <button type="submit" disabled={isSaving} className="rounded-full bg-[#2b6f3c] px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60">
+                  <button type="submit" disabled={isSaving} className="rounded-full bg-[#145a82] px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60">
                     {isSaving ? "Salvando..." : "Salvar sessao"}
                   </button>
 
                   {saveError ? <p className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-800">{saveError}</p> : null}
 
-                  <div className="rounded-xl border border-[#d5e8d6] bg-[#f7fcf7] px-3 py-2 text-xs text-[var(--muted)]">
+                  <div className="rounded-xl border border-[var(--border)] bg-[#f7fbff] px-3 py-2 text-xs text-[var(--muted)]">
                     Caso: {selectedClient?.name} • {selectedDog?.name} • Sessao {nextSessionNumber} • Media {averageDraftScore}/10
                   </div>
                 </form>
