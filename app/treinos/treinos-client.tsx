@@ -1,10 +1,11 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { FormEvent, useMemo, useState } from "react";
 
-import { PageShell } from "@/components/page-shell";
+import { AuthGuard } from "@/components/auth-guard";
 import { useAppStore } from "@/lib/app-store";
 
 type DraftTrainingNote = {
@@ -26,7 +27,8 @@ type DraftTrainingMedia = {
   createdAt: string;
 };
 
-type HistoryPeriod = "all" | "30d" | "90d";
+type FeedFilter = "today" | "week" | "all" | "pending";
+type FeedStatus = "confirmado" | "andamento" | "pendente";
 
 const MAX_MEDIA_ITEMS = 5;
 const TARGET_MAIN_IMAGE_KB = 115;
@@ -42,18 +44,96 @@ function createDraftTrainingNote(block = "Guia"): DraftTrainingNote {
     id: `note-${Math.random().toString(36).slice(2, 10)}`,
     block,
     score: 7,
-    comment: "Boa evolução com reforço no timing.",
+    comment: "Boa evolucao com reforco no timing.",
   };
 }
 
 function parseBrazilianDate(date: string): number {
   const [day, month, year] = date.split("/").map(Number);
+  if (!day || !month || !year) return 0;
+  return new Date(year, month - 1, day).getTime();
+}
 
-  if (!day || !month || !year) {
-    return 0;
+function averageSessionScore(notes: Array<{ score: number }>): number {
+  if (!notes.length) return 0;
+  return notes.reduce((total, note) => total + note.score, 0) / notes.length;
+}
+
+function statusFromScore(score: number): FeedStatus {
+  if (score >= 8) return "confirmado";
+  if (score >= 6) return "andamento";
+  return "pendente";
+}
+
+function statusLabel(status: FeedStatus): string {
+  if (status === "confirmado") return "Confirmado";
+  if (status === "andamento") return "Em andamento";
+  return "Pendente";
+}
+
+function statusClass(status: FeedStatus): string {
+  if (status === "confirmado") return "bg-emerald-100 text-emerald-800";
+  if (status === "andamento") return "bg-amber-100 text-amber-900";
+  return "bg-rose-100 text-rose-800";
+}
+
+function TinyIcon({ name }: { name: "search" | "filter" | "back" | "plus" | "play" | "list" | "whats" }) {
+  if (name === "search") {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden>
+        <circle cx="11" cy="11" r="6" stroke="currentColor" strokeWidth="1.8" />
+        <path d="m16 16 4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      </svg>
+    );
   }
 
-  return new Date(year, month - 1, day).getTime();
+  if (name === "filter") {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden>
+        <path d="M4 7h16M7 12h10M10 17h4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      </svg>
+    );
+  }
+
+  if (name === "back") {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden>
+        <path d="m14.5 6-6 6 6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    );
+  }
+
+  if (name === "plus") {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden>
+        <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
+      </svg>
+    );
+  }
+
+  if (name === "play") {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden>
+        <path d="m9 7 8 5-8 5V7Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+      </svg>
+    );
+  }
+
+  if (name === "list") {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden>
+        <rect x="5" y="4" width="14" height="16" rx="2.5" stroke="currentColor" strokeWidth="1.7" />
+        <path d="M8.5 9h7M8.5 13h7" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden>
+      <path d="M7 18h10a3 3 0 0 0 3-3V9a3 3 0 0 0-3-3h-1l-1.2-2H9.2L8 6H7a3 3 0 0 0-3 3v6a3 3 0 0 0 3 3Z" stroke="currentColor" strokeWidth="1.7" />
+      <circle cx="12" cy="12" r="2.2" stroke="currentColor" strokeWidth="1.7" />
+    </svg>
+  );
 }
 
 async function fileToDataUrl(file: File): Promise<string> {
@@ -138,7 +218,6 @@ export default function TrainingPage() {
   const searchParams = useSearchParams();
   const clients = useAppStore((state) => state.clients);
   const trainingSessions = useAppStore((state) => state.trainingSessions);
-  const calendarEvents = useAppStore((state) => state.calendarEvents);
   const addTrainingSession = useAppStore((state) => state.addTrainingSession);
 
   const initialClientId = searchParams.get("clientId") ?? clients[0]?.id ?? "";
@@ -146,8 +225,9 @@ export default function TrainingPage() {
 
   const [selectedClientId, setSelectedClientId] = useState(initialClientId);
   const [selectedDogId, setSelectedDogId] = useState(initialDogId);
-  const [historyPeriod, setHistoryPeriod] = useState<HistoryPeriod>("all");
-  const [title, setTitle] = useState("Sessão prática");
+  const [feedFilter, setFeedFilter] = useState<FeedFilter>("today");
+  const [showForm, setShowForm] = useState(false);
+  const [title, setTitle] = useState("Sessao pratica");
   const [draftNotes, setDraftNotes] = useState<DraftTrainingNote[]>([createDraftTrainingNote()]);
   const [draftMedia, setDraftMedia] = useState<DraftTrainingMedia[]>([]);
   const [isCompressingMedia, setIsCompressingMedia] = useState(false);
@@ -159,6 +239,7 @@ export default function TrainingPage() {
     () => clients.find((client) => client.id === selectedClientId) ?? clients[0],
     [clients, selectedClientId],
   );
+
   const selectedDog = useMemo(
     () => selectedClient?.dogs.find((dog) => dog.id === selectedDogId) ?? selectedClient?.dogs[0],
     [selectedClient, selectedDogId],
@@ -171,84 +252,85 @@ export default function TrainingPage() {
     if (!selectedDog) return [];
 
     return trainingSessions.filter((session) => {
-      if (session.dogId) {
-        return session.dogId === selectedDog.id;
-      }
-
+      if (session.dogId) return session.dogId === selectedDog.id;
       return session.dogName === selectedDog.name;
     });
   }, [selectedDog, trainingSessions]);
 
-  const orderedSessions = useMemo(
-    () => [...selectedSessions].sort((left, right) => right.number - left.number),
-    [selectedSessions],
-  );
-
-  const historySessions = useMemo(() => {
-    if (historyPeriod === "all") {
-      return orderedSessions;
-    }
-
-    const days = historyPeriod === "30d" ? 30 : 90;
-    const threshold = Date.now() - days * 24 * 60 * 60 * 1000;
-
-    return orderedSessions.filter((session) => parseBrazilianDate(session.date) >= threshold);
-  }, [historyPeriod, orderedSessions]);
-
-  const blockSummaries = useMemo(() => {
-    const map = new Map<string, number[]>();
-
-    orderedSessions.forEach((session) => {
-      session.notes.forEach((note) => {
-        const values = map.get(note.block) ?? [];
-        values.push(note.score);
-        map.set(note.block, values);
-      });
-    });
-
-    return Array.from(map.entries())
-      .map(([name, progress]) => {
-        const averageValue = progress.reduce((total, value) => total + value, 0) / progress.length;
-        const lastScore = progress[progress.length - 1];
-        const previousScore = progress.length > 1 ? progress[progress.length - 2] : lastScore;
-
-        return {
-          name,
-          average: `${averageValue.toFixed(1)}/10`,
-          averageValue,
-          progress,
-          lastScore,
-          trend: lastScore - previousScore,
-        };
-      })
-      .sort((left, right) => right.averageValue - left.averageValue);
-  }, [orderedSessions]);
-
-  const latestSession = orderedSessions[0];
-  const upcomingSession = calendarEvents.find(
-    (event) => event.dog === selectedDog?.name && event.client === selectedClient?.name,
-  );
-  const allNotes = orderedSessions.flatMap((session) => session.notes);
-  const averageScore = allNotes.length
-    ? (allNotes.reduce((total, note) => total + note.score, 0) / allNotes.length).toFixed(1)
-    : "0.0";
-  const strongestBlock = blockSummaries[0];
-  const attentionBlock = [...blockSummaries].sort((left, right) => left.averageValue - right.averageValue)[0];
   const nextSessionNumber = selectedSessions.length
     ? Math.max(...selectedSessions.map((session) => session.number)) + 1
     : 1;
+
   const blockOptions = Array.from(
     new Set([
       "Guia",
       "Place",
-      "Distrações",
+      "Distracoes",
       ...(selectedDog?.trainingTypes ?? []),
-      ...blockSummaries.map((item) => item.name),
+      ...trainingSessions.flatMap((session) => session.notes.map((note) => note.block)),
     ]),
   );
+
+  const feedSessions = useMemo(
+    () => [...trainingSessions].sort((left, right) => {
+      const byDate = parseBrazilianDate(right.date) - parseBrazilianDate(left.date);
+      if (byDate !== 0) return byDate;
+      return right.number - left.number;
+    }),
+    [trainingSessions],
+  );
+
+  const dogDirectory = useMemo(() => {
+    const map = new Map<string, { name: string; breed: string; photoUrl?: string; clientName: string }>();
+
+    clients.forEach((client) => {
+      client.dogs.forEach((dog) => {
+        map.set(dog.id, {
+          name: dog.name,
+          breed: dog.breed,
+          photoUrl: dog.photoUrl,
+          clientName: client.name,
+        });
+      });
+    });
+
+    return map;
+  }, [clients]);
+
+  const filteredFeed = useMemo(() => {
+    if (feedFilter === "all") return feedSessions;
+
+    const now = new Date();
+    const dayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const weekThreshold = dayStart - 6 * 24 * 60 * 60 * 1000;
+
+    return feedSessions.filter((session) => {
+      const dateValue = parseBrazilianDate(session.date);
+      const status = statusFromScore(averageSessionScore(session.notes));
+
+      if (feedFilter === "today") return dateValue >= dayStart;
+      if (feedFilter === "week") return dateValue >= weekThreshold;
+      return status === "pendente";
+    });
+  }, [feedFilter, feedSessions]);
+
+  const pendingSessionsCount = feedSessions.filter(
+    (session) => statusFromScore(averageSessionScore(session.notes)) === "pendente",
+  ).length;
+
+  const feedTitle =
+    feedFilter === "today"
+      ? "Treinos de hoje"
+      : feedFilter === "week"
+      ? "Treinos da semana"
+      : feedFilter === "pending"
+      ? "Treinos pendentes"
+      : "Todos os treinos";
+
   const averageDraftScore = draftNotes.length
     ? (draftNotes.reduce((total, note) => total + note.score, 0) / draftNotes.length).toFixed(1)
     : "0.0";
+
   const draftBlocksLabel = draftNotes.map((note) => note.block).join(" • ");
   const totalMediaKb = draftMedia.reduce((sum, item) => sum + item.sizeKb, 0);
 
@@ -278,10 +360,7 @@ export default function TrainingPage() {
 
   function removeDraftNote(noteId: string) {
     setDraftNotes((currentNotes) => {
-      if (currentNotes.length === 1) {
-        return currentNotes;
-      }
-
+      if (currentNotes.length === 1) return currentNotes;
       return currentNotes.filter((note) => note.id !== noteId);
     });
   }
@@ -300,12 +379,13 @@ export default function TrainingPage() {
 
     if (!title.trim() || !selectedClient || !selectedDog || !validNotes.length) return;
     if (totalMediaKb > MAX_TOTAL_MEDIA_KB) {
-      setSaveError("As imagens da sessão excedem o limite total permitido.");
+      setSaveError("As imagens da sessao excedem o limite total permitido.");
       return;
     }
 
     setSaveError("");
     setIsSaving(true);
+
     try {
       const ok = await addTrainingSession({
         number: nextSessionNumber,
@@ -318,13 +398,15 @@ export default function TrainingPage() {
         notes: validNotes,
         media: draftMedia,
       });
+
       if (ok) {
-        setTitle("Sessão prática");
+        setTitle("Sessao pratica");
         resetDraftNotes();
         setDraftMedia([]);
         setMediaError("");
+        setShowForm(false);
       } else {
-        setSaveError("Erro ao salvar sessão. Verifique sua conexão e tente novamente.");
+        setSaveError("Erro ao salvar sessao. Verifique sua conexao e tente novamente.");
         window.setTimeout(() => setSaveError(""), 4000);
       }
     } finally {
@@ -338,7 +420,7 @@ export default function TrainingPage() {
     setMediaError("");
     const room = MAX_MEDIA_ITEMS - draftMedia.length;
     if (room <= 0) {
-      setMediaError(`Limite de ${MAX_MEDIA_ITEMS} imagens por sessão atingido.`);
+      setMediaError(`Limite de ${MAX_MEDIA_ITEMS} imagens por sessao atingido.`);
       return;
     }
 
@@ -386,539 +468,365 @@ export default function TrainingPage() {
   }
 
   return (
-    <PageShell
-      kicker="Treinos"
-      title="Treinos com mem\u00f3ria t\u00e9cnica"
-      description="Selecione o caso, registre a sessão e acompanhe apenas os sinais principais de evolução."
-      requireAuth="trainer"
-    >
-      {clients.length === 0 ? (
-        <section className="flex flex-col items-center justify-center rounded-[1.75rem] border border-dashed border-[var(--border)] bg-white/80 p-12 text-center shadow-sm">
-          <p className="text-lg font-semibold text-[var(--foreground)]">Nenhum cliente cadastrado</p>
-          <p className="mt-2 text-sm text-[var(--muted)]">Cadastre um cliente e seu cão na página Clientes para começar a registrar treinos.</p>
-        </section>
-      ) : (
-      <>
-      <section className="grid gap-4 xl:grid-cols-[1.12fr_0.88fr]">
-        <div className="grid gap-4">
-          <article className="overflow-hidden rounded-[1.75rem] border border-[var(--border)] bg-slate-950 text-white shadow-sm">
-            <div className="grid gap-5 p-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-                  Próxima condução de treino
-                </p>
-                <h2 className="mt-3 font-display text-3xl font-semibold">
-                  {selectedDog ? `${selectedDog.name} em foco para a sessão ${nextSessionNumber}` : "Selecione um cliente e cão"}
-                </h2>
-                <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-300">
-                  Defina o caso e registre a aula sem excesso de informação na tela.
-                </p>
-
-                <div className="mt-5 grid gap-3 lg:grid-cols-2">
-                  <label className="rounded-3xl border border-white/10 bg-white/7 p-4">
-                    <p className="text-xs uppercase tracking-[0.16em] text-slate-400">Cliente</p>
-                    <select
-                      value={selectedClientValue}
-                      onChange={(event) => {
-                        const nextClientId = event.target.value;
-                        const nextClient = clients.find((client) => client.id === nextClientId);
-                        const nextDog = nextClient?.dogs[0];
-
-                        setSelectedClientId(nextClientId);
-                        setSelectedDogId(nextDog?.id ?? "");
-                        resetDraftNotes(nextDog?.trainingTypes[0] ?? "Guia");
-                      }}
-                      className="mt-3 w-full rounded-2xl border border-white/12 bg-white/8 px-4 py-3 text-sm text-white outline-none"
-                    >
-                      {clients.map((client) => (
-                        <option key={client.id} value={client.id} className="text-slate-950">
-                          {client.name}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-
-                  <label className="rounded-3xl border border-white/10 bg-white/7 p-4">
-                    <p className="text-xs uppercase tracking-[0.16em] text-slate-400">Cão</p>
-                    <select
-                      value={selectedDogValue}
-                      onChange={(event) => {
-                        const nextDogId = event.target.value;
-                        const nextDog = selectedClient?.dogs.find((dog) => dog.id === nextDogId);
-
-                        setSelectedDogId(nextDogId);
-                        resetDraftNotes(nextDog?.trainingTypes[0] ?? "Guia");
-                      }}
-                      className="mt-3 w-full rounded-2xl border border-white/12 bg-white/8 px-4 py-3 text-sm text-white outline-none"
-                    >
-                      {(selectedClient?.dogs ?? []).map((dog) => (
-                        <option key={dog.id} value={dog.id} className="text-slate-950">
-                          {dog.name} • {dog.breed}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                </div>
-
-                {selectedClient && (
-                  <p className="mt-5 text-sm text-slate-300">
-                    {selectedClient.name}{upcomingSession ? ` • ${upcomingSession.day} ${upcomingSession.time}` : ""}
-                  </p>
-                )}
-              </div>
-
-              <div className="rounded-[1.5rem] border border-white/10 bg-white/7 p-4">
-                {selectedDog?.photoUrl ? (
-                  <div className="relative h-64 w-full overflow-hidden rounded-[1.25rem]">
-                    <Image
-                      src={selectedDog.photoUrl}
-                      alt={`Foto de ${selectedDog.name}`}
-                      fill
-                      sizes="(min-width: 1280px) 28vw, (min-width: 1024px) 36vw, 100vw"
-                      unoptimized
-                      className="object-cover"
-                    />
-                  </div>
-                ) : null}
-                <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-300">
-                  {(selectedDog?.trainingTypes ?? []).map((item) => (
-                    <span key={item} className="rounded-full border border-white/12 px-3 py-2">
-                      {item}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </article>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <article className="rounded-[1.5rem] border border-[var(--border)] bg-white/90 p-5 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">Sessões</p>
-              <p className="mt-3 font-display text-4xl font-semibold">{orderedSessions.length}</p>
-              <p className="mt-2 text-sm text-[var(--muted)]">histórico técnico ativo{selectedDog ? ` de ${selectedDog.name}` : ""}</p>
-            </article>
-            <article className="rounded-[1.5rem] border border-[var(--border)] bg-white/90 p-5 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">Média geral</p>
-              <p className="mt-3 font-display text-4xl font-semibold">{averageScore}</p>
-              <p className="mt-2 text-sm text-emerald-700">nível consolidado de execução técnica</p>
-            </article>
-          </div>
-
-          <article className="rounded-[1.5rem] border border-[var(--border)] bg-white/90 p-5 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">Resumo rápido</p>
-            <div className="mt-3 space-y-2 text-sm text-[var(--muted)]">
-              <p>
-                Melhor bloco: <span className="font-semibold text-[var(--foreground)]">{strongestBlock?.name ?? "—"}</span>
-              </p>
-              <p>
-                Atenção imediata: <span className="font-semibold text-[var(--foreground)]">{attentionBlock?.name ?? "—"}</span>
-              </p>
-              <p>
-                Próxima sessão: <span className="font-semibold text-[var(--foreground)]">{upcomingSession ? `${upcomingSession.day} • ${upcomingSession.time}` : "Sem agenda"}</span>
-              </p>
-            </div>
-          </article>
-
-          <article className="rounded-[1.75rem] border border-[var(--border)] bg-[var(--panel)] p-5 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">Evolução essencial</p>
-            <div className="mt-4 space-y-3">
-              {blockSummaries.slice(0, 2).map((item) => (
-                <div key={item.name} className="rounded-2xl border border-[var(--border)] bg-white p-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-sm font-semibold text-[var(--foreground)]">{item.name}</p>
-                    <p className="text-xs font-semibold text-emerald-700">{item.average}</p>
-                  </div>
-                  <p className="mt-1 text-xs text-[var(--muted)]">Última nota {item.lastScore}/10</p>
-                </div>
-              ))}
-              {!blockSummaries.length ? (
-                <div className="rounded-2xl border border-dashed border-[var(--border)] bg-white p-4 text-xs text-[var(--muted)]">
-                  Registre a primeira sessão para gerar leitura de evolução.
-                </div>
-              ) : null}
-            </div>
-          </article>
-        </div>
-
-        <div className="grid gap-4">
-          <article className="rounded-[1.75rem] border border-[var(--border)] bg-white/95 p-6 shadow-sm">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">
-                  Registrar treino
-                </p>
-                <h2 className="mt-2 font-display text-2xl font-semibold">Registro operacional da sessão</h2>
-              </div>
-              <span className="rounded-full bg-slate-900 px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-white">
-                Sessão {nextSessionNumber}
-              </span>
-            </div>
-
-            <form onSubmit={onSubmit} className="mt-5 grid gap-4">
-              <input
-                value={title}
-                onChange={(event) => setTitle(event.target.value)}
-                className="rounded-2xl border border-[var(--border)] px-4 py-3 text-sm outline-none focus:border-sky-400"
-                placeholder="Título da sessão"
-                required
-              />
-
-              <div className="flex items-center justify-between gap-3 rounded-3xl border border-[var(--border)] bg-[var(--panel)] p-4">
+    <AuthGuard role="trainer">
+      <main className="mx-auto w-full max-w-md px-3 pb-24 pt-3 sm:max-w-xl">
+        {clients.length === 0 ? (
+          <section className="rounded-[2rem] border border-dashed border-[var(--border)] bg-white p-8 text-center">
+            <p className="text-lg font-semibold text-[var(--foreground)]">Nenhum cliente cadastrado</p>
+            <p className="mt-2 text-sm text-[var(--muted)]">Cadastre um cliente e seu cao para comecar os registros.</p>
+          </section>
+        ) : (
+          <section className="rounded-[2rem] border border-[#d3e6d4] bg-[#f9fdf8] p-3.5 shadow-[0_20px_42px_rgba(24,86,35,0.08)]">
+            <header className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <Link href="/dashboard" className="flex h-9 w-9 items-center justify-center rounded-full border border-[#d5e8d6] bg-white text-[#2b6f3c]">
+                  <TinyIcon name="back" />
+                </Link>
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">Blocos da sessão</p>
-                  <p className="mt-1 text-sm text-[var(--muted)]">Documente múltiplos focos técnicos na mesma aula para manter histórico rico.</p>
+                  <p className="text-base font-semibold text-[var(--foreground)]">Treinos</p>
+                  <p className="text-[11px] text-[var(--muted)]">Gerencie e registre os treinos dos seus caes.</p>
                 </div>
-                <button
-                  type="button"
-                  onClick={addDraftNote}
-                  className="rounded-full border border-[var(--border)] bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--foreground)]"
-                >
-                  Adicionar bloco
-                </button>
               </div>
-
-              <div className="space-y-3">
-                {draftNotes.map((note, index) => (
-                  <div key={note.id} className="rounded-3xl border border-[var(--border)] bg-white p-4">
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="text-sm font-semibold">Bloco {index + 1}</p>
-                      {draftNotes.length > 1 ? (
-                        <button
-                          type="button"
-                          onClick={() => removeDraftNote(note.id)}
-                          className="text-xs font-semibold uppercase tracking-[0.14em] text-amber-800"
-                        >
-                          Remover
-                        </button>
-                      ) : null}
-                    </div>
-
-                    <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_120px]">
-                      <select
-                        value={note.block}
-                        onChange={(event) => updateDraftNote(note.id, "block", event.target.value)}
-                        className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-sky-400"
-                      >
-                        {blockOptions.map((option) => (
-                          <option key={option} value={option}>
-                            {option}
-                          </option>
-                        ))}
-                      </select>
-                      <input
-                        type="number"
-                        min={1}
-                        max={10}
-                        value={note.score}
-                        onChange={(event) => updateDraftNote(note.id, "score", Number(event.target.value))}
-                        className="rounded-2xl border border-[var(--border)] px-4 py-3 text-sm outline-none focus:border-sky-400"
-                      />
-                    </div>
-
-                    <textarea
-                      value={note.comment}
-                      onChange={(event) => updateDraftNote(note.id, "comment", event.target.value)}
-                      className="mt-3 min-h-28 w-full rounded-2xl border border-[var(--border)] px-4 py-3 text-sm outline-none focus:border-sky-400"
-                      placeholder="O que aconteceu neste bloco, onde houve avanço e qual ajuste precisa entrar na próxima aula"
-                      required
-                    />
-                  </div>
-                ))}
-              </div>
-
-              <div className="rounded-3xl border border-[var(--border)] bg-[var(--panel)] p-4">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">Imagens do treinamento</p>
-                    <p className="mt-1 text-sm text-[var(--muted)]">
-                      Compressao automatica para economizar Vercel/TiDB. Limite: {MAX_MEDIA_ITEMS} imagens, principal ate {MAX_MAIN_IMAGE_KB}KB e thumb ate {MAX_THUMB_KB}KB.
-                    </p>
-                  </div>
-                  <label className="cursor-pointer rounded-full border border-[var(--border)] bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--foreground)]">
-                    {isCompressingMedia ? "Comprimindo..." : "Adicionar imagens"}
-                    <input
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      disabled={isCompressingMedia}
-                      onChange={(event) => {
-                        handleMediaSelect(event.target.files);
-                        event.currentTarget.value = "";
-                      }}
-                      className="hidden"
-                    />
-                  </label>
-                </div>
-
-                <p className="mt-3 text-xs text-[var(--muted)]">
-                  Total atual: {draftMedia.length}/{MAX_MEDIA_ITEMS} imagem(ns) • {totalMediaKb}/{MAX_TOTAL_MEDIA_KB}KB
-                </p>
-
-                {mediaError ? <p className="mt-2 text-xs text-rose-700">{mediaError}</p> : null}
-
-                {draftMedia.length ? (
-                  <div className="mt-3 grid gap-3 sm:grid-cols-3">
-                    {draftMedia.map((media) => (
-                      <div key={media.id} className="overflow-hidden rounded-2xl border border-[var(--border)] bg-white">
-                        <div className="relative h-28 w-full">
-                          <Image
-                            src={media.thumbDataUrl || media.dataUrl}
-                            alt="Treino"
-                            fill
-                            sizes="(min-width: 640px) 20vw, 100vw"
-                            unoptimized
-                            className="object-cover"
-                          />
-                        </div>
-                        <div className="flex items-center justify-between gap-2 p-2 text-[11px] text-[var(--muted)]">
-                          <span>{media.mainSizeKb ?? media.sizeKb} + {media.thumbSizeKb ?? 0}KB</span>
-                          <button
-                            type="button"
-                            onClick={() => removeDraftMedia(media.id)}
-                            className="font-semibold uppercase tracking-[0.12em] text-amber-800"
-                          >
-                            Remover
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : null}
-              </div>
-
               <button
-                type="submit"
-                disabled={isSaving}
-                className="pc-primary-action rounded-full px-5 py-3 text-sm font-semibold disabled:opacity-60"
+                type="button"
+                onClick={() => setShowForm((value) => !value)}
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-[#2b6f3c] text-white"
+                aria-label="Novo treino"
               >
-                {isSaving ? "Salvando..." : "Salvar sess\u00e3o"}
+                <TinyIcon name="plus" />
               </button>
-              {saveError ? (
-                <p className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">{saveError}</p>
-              ) : null}
-            </form>
+            </header>
 
-            <div className="mt-5 rounded-3xl border border-[var(--border)] bg-[var(--panel)] p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">Resumo antes de salvar</p>
-              <div className="mt-3 grid gap-3 text-sm text-[var(--muted)] sm:grid-cols-2">
-                <div>
-                  <p className="font-semibold text-[var(--foreground)]">Caso selecionado</p>
-                  <p className="mt-1">{selectedClient?.name} • {selectedDog?.name}</p>
-                </div>
-                <div>
-                  <p className="font-semibold text-[var(--foreground)]">Blocos desta sessão</p>
-                  <p className="mt-1">{draftBlocksLabel || "Nenhum bloco definido"}</p>
-                </div>
-                <div>
-                  <p className="font-semibold text-[var(--foreground)]">Quantidade de blocos</p>
-                  <p className="mt-1">{draftNotes.length}</p>
-                </div>
-                <div>
-                  <p className="font-semibold text-[var(--foreground)]">Média prevista</p>
-                  <p className="mt-1">{averageDraftScore}/10</p>
-                </div>
-                <div>
-                  <p className="font-semibold text-[var(--foreground)]">Imagens</p>
-                  <p className="mt-1">{draftMedia.length} arquivo(s) • {totalMediaKb}KB</p>
-                </div>
-              </div>
-            </div>
-          </article>
+            <section className="mt-3 flex gap-2">
+              <label className="flex flex-1 items-center gap-2 rounded-xl border border-[#d5e8d6] bg-white px-3 py-2 text-[var(--muted)]">
+                <TinyIcon name="search" />
+                <input
+                  placeholder="Buscar por cao ou tutor..."
+                  className="w-full border-none bg-transparent text-sm text-[var(--foreground)] outline-none"
+                />
+              </label>
+              <button
+                type="button"
+                className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#d5e8d6] bg-white text-[#2b6f3c]"
+                aria-label="Filtros"
+              >
+                <TinyIcon name="filter" />
+              </button>
+            </section>
 
-          <article className="hidden rounded-[1.75rem] border border-[var(--border)] bg-slate-950 p-6 text-white shadow-sm xl:block">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-              Plano da próxima aula
-            </p>
-            <h2 className="mt-2 font-display text-2xl font-semibold">Roteiro recomendado com base no histórico</h2>
-            <div className="mt-5 space-y-3 text-sm leading-7 text-slate-300">
-              <div className="rounded-3xl bg-white/7 p-4">
-                <p className="font-semibold text-white">Aquecimento</p>
-                <p className="mt-2">
-                  Retomar {strongestBlock?.name?.toLowerCase() ?? "o bloco mais consistente"} para entrar com resposta fácil e elevar foco logo no início.
-                </p>
-              </div>
-              <div className="rounded-3xl bg-white/7 p-4">
-                <p className="font-semibold text-white">Ponto principal</p>
-                <p className="mt-2">
-                  Priorizar {attentionBlock?.name?.toLowerCase() ?? "o bloco mais sensível"} com progressão curta, ambiente controlado e critério mais claro entre repetições.
-                </p>
-              </div>
-              <div className="rounded-3xl bg-white/7 p-4">
-                <p className="font-semibold text-white">Entrega para o cliente</p>
-                <p className="mt-2">
-                  Fechar a aula com uma tarefa simples e objetiva para casa, conectada ao bloco {attentionBlock?.name ?? draftNotes[0]?.block ?? "Guia"}.
-                </p>
-              </div>
-              <div className="rounded-3xl bg-white/7 p-4">
-                <p className="font-semibold text-white">Contexto do ambiente</p>
-                <p className="mt-2">
-                  {selectedClient?.environment ?? "Ambiente ainda não descrito para este cliente."}
-                </p>
-              </div>
-            </div>
-          </article>
-
-          <article className="hidden rounded-[1.75rem] border border-[var(--border)] bg-[var(--panel-strong)] p-6 shadow-sm xl:block">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">
-              Última sessão lançada
-            </p>
-            <div className="mt-4 rounded-3xl border border-[var(--border)] bg-white p-5">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <h2 className="font-display text-2xl font-semibold">{latestSession?.title ?? "Sessão prática"}</h2>
-                  <p className="mt-1 text-sm text-[var(--muted)]">{latestSession?.date ?? "—"}</p>
-                </div>
-                <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-amber-900">
-                  Sessão {latestSession?.number ?? "—"}
-                </span>
-              </div>
-              <div className="mt-4 space-y-3">
-                {latestSession?.notes.map((note) => (
-                  <div key={note.block} className="rounded-2xl border border-[var(--border)] p-4">
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="font-semibold">{note.block}</p>
-                      <span className="text-sm font-semibold text-emerald-700">{note.score}/10</span>
-                    </div>
-                    <p className="mt-2 text-sm leading-7 text-[var(--muted)]">{note.comment}</p>
-                  </div>
-                )) ?? (
-                  <div className="rounded-2xl border border-dashed border-[var(--border)] p-4 text-sm text-[var(--muted)]">
-                    Nenhuma sessão registrada ainda para este cão.
-                  </div>
-                )}
-                {latestSession?.media?.length ? (
-                  <div className="grid gap-3 sm:grid-cols-3">
-                    {latestSession.media.map((media) => (
-                      <div key={media.id} className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--panel)]">
-                        <div className="relative h-24 w-full">
-                          <Image
-                            src={media.thumbDataUrl || media.dataUrl}
-                            alt="Registro de treino"
-                            fill
-                            sizes="(min-width: 1280px) 8vw, 25vw"
-                            unoptimized
-                            className="object-cover"
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : null}
-              </div>
-            </div>
-          </article>
-        </div>
-      </section>
-
-      <section className="mt-4 hidden xl:block">
-        <article className="rounded-[1.75rem] border border-[var(--border)] bg-[var(--panel)] p-6 shadow-sm">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">
-                Histórico de sessões
-              </p>
-              <h2 className="mt-2 font-display text-2xl font-semibold">
-                Timeline de {selectedDog?.name ?? "treinos"} para revisar evolução, método aplicado e próximos ajustes
-              </h2>
-            </div>
-
-            <div className="flex flex-wrap gap-2">
+            <section className="mt-3 flex gap-2 overflow-x-auto pb-1">
               {[
-                { value: "all", label: "Tudo" },
-                { value: "30d", label: "30 dias" },
-                { value: "90d", label: "90 dias" },
+                { value: "today", label: "Hoje" },
+                { value: "week", label: "Semana" },
+                { value: "all", label: "Todos" },
+                { value: "pending", label: "Pendentes" },
               ].map((option) => (
                 <button
                   key={option.value}
                   type="button"
-                  onClick={() => setHistoryPeriod(option.value as HistoryPeriod)}
-                  className={`rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] ${historyPeriod === option.value ? "bg-slate-900 text-white" : "border border-[var(--border)] bg-white text-[var(--muted)]"}`}
+                  onClick={() => setFeedFilter(option.value as FeedFilter)}
+                  className={`whitespace-nowrap rounded-full px-4 py-1.5 text-[11px] font-semibold ${
+                    feedFilter === option.value
+                      ? "bg-[#2b6f3c] text-white"
+                      : option.value === "pending"
+                      ? "bg-[#fff4df] text-[#9a6b09]"
+                      : "border border-[#d5e8d6] bg-white text-[var(--muted)]"
+                  }`}
                 >
                   {option.label}
                 </button>
               ))}
-            </div>
-          </div>
+            </section>
 
-          {historySessions.length ? (
-            <div className="mt-6 space-y-4">
-              {historySessions.map((session) => (
-                <article key={session.id} className="rounded-3xl border border-[var(--border)] bg-white/90 p-5">
-                  <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-700">{session.date}</p>
-                      <h3 className="mt-2 font-display text-2xl font-semibold">{session.title}</h3>
-                      <p className="mt-2 text-sm text-[var(--muted)]">{session.clientName ?? selectedClient?.name} • {session.dogName ?? selectedDog?.name}</p>
-                    </div>
-                    <div className="flex flex-wrap gap-2 text-xs font-semibold uppercase tracking-[0.14em]">
-                      <span className="rounded-full bg-slate-900 px-3 py-2 text-white">Sessão {session.number}</span>
-                      <span className="rounded-full border border-[var(--border)] px-3 py-2 text-[var(--muted)]">
-                        {session.notes.length} blocos avaliados
-                      </span>
-                    </div>
-                  </div>
+            <section className="mt-3 grid grid-cols-2 gap-2">
+              <article className="rounded-xl border border-[#dbead8] bg-white p-3">
+                <p className="text-2xl font-semibold text-[var(--foreground)]">{filteredFeed.length}</p>
+                <p className="text-xs text-[var(--muted)]">Treinos no filtro</p>
+              </article>
+              <article className="rounded-xl border border-[#dbead8] bg-white p-3">
+                <p className="text-2xl font-semibold text-[var(--foreground)]">{draftNotes.length}</p>
+                <p className="text-xs text-[var(--muted)]">Em andamento</p>
+              </article>
+              <article className="rounded-xl border border-[#dbead8] bg-white p-3">
+                <p className="text-2xl font-semibold text-[var(--foreground)]">{trainingSessions.length}</p>
+                <p className="text-xs text-[var(--muted)]">Concluidos</p>
+              </article>
+              <article className="rounded-xl border border-[#dbead8] bg-white p-3">
+                <p className="text-2xl font-semibold text-[var(--foreground)]">{pendingSessionsCount}</p>
+                <p className="text-xs text-[var(--muted)]">Pendentes</p>
+              </article>
+            </section>
 
-                  <div className="mt-5 grid gap-3 lg:grid-cols-2">
-                    {session.notes.map((note) => (
-                      <div key={`${session.id}-${note.block}`} className="rounded-2xl border border-[var(--border)] p-4">
-                        <div className="flex items-center justify-between gap-3">
-                          <h4 className="font-semibold">{note.block}</h4>
-                          <span className="text-sm font-semibold text-emerald-700">{note.score}/10</span>
-                        </div>
-                        <p className="mt-2 text-sm leading-7 text-[var(--muted)]">{note.comment}</p>
-                      </div>
-                    ))}
-                  </div>
-                  {session.media?.length ? (
-                    <div className="mt-4 grid gap-3 lg:grid-cols-4">
-                      {session.media.map((media) => (
-                        <div key={media.id} className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--panel)]">
-                          <div className="relative h-24 w-full">
+            <section className="mt-4 flex items-center justify-between">
+              <p className="text-sm font-semibold text-[var(--foreground)]">{feedTitle}</p>
+              <Link href="/agenda" className="text-[11px] font-semibold text-[#2b6f3c]">Ver agenda</Link>
+            </section>
+
+            <section className="mt-2 space-y-2.5">
+              {filteredFeed.slice(0, 8).map((session) => {
+                const score = averageSessionScore(session.notes);
+                const status = statusFromScore(score);
+                const dogMeta = session.dogId ? dogDirectory.get(session.dogId) : undefined;
+                const dogName = session.dogName || dogMeta?.name || "Cao";
+                const breed = dogMeta?.breed || "Sem raca";
+                const clientName = session.clientName || dogMeta?.clientName || "Tutor";
+                const firstNote = session.notes[0];
+
+                return (
+                  <article key={session.id} className="rounded-2xl border border-[#dbead8] bg-white p-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start gap-2.5">
+                        <div className="relative h-11 w-11 overflow-hidden rounded-full bg-[#edf8ed]">
+                          {dogMeta?.photoUrl ? (
                             <Image
-                              src={media.thumbDataUrl || media.dataUrl}
-                              alt="Imagem da sessão"
+                              src={dogMeta.photoUrl}
+                              alt={`Foto de ${dogName}`}
                               fill
-                              sizes="(min-width: 1024px) 8vw, 25vw"
+                              sizes="44px"
                               unoptimized
                               className="object-cover"
                             />
-                          </div>
+                          ) : (
+                            <div className="flex h-full w-full items-center justify-center text-[#2b6f3c]">
+                              <TinyIcon name="list" />
+                            </div>
+                          )}
                         </div>
-                      ))}
+                        <div>
+                          <p className="text-sm font-semibold text-[var(--foreground)]">{dogName}</p>
+                          <p className="text-[11px] text-[var(--muted)]">{clientName} • {breed}</p>
+                          <p className="mt-0.5 text-[11px] text-[#2b6f3c]">
+                            {firstNote?.block || "Treino geral"} • {score.toFixed(1)}/10
+                          </p>
+                        </div>
+                      </div>
+                      <span className={`rounded-full px-2 py-1 text-[10px] font-semibold ${statusClass(status)}`}>
+                        {statusLabel(status)}
+                      </span>
                     </div>
-                  ) : null}
-                </article>
-              ))}
-            </div>
-          ) : (
-            <div className="mt-6 rounded-3xl border border-dashed border-[var(--border)] bg-white/80 p-6 text-sm leading-7 text-[var(--muted)]">
-              Nenhuma sessão encontrada para {selectedDog?.name ?? "o cão selecionado"} neste período. Ajuste o filtro ou registre uma nova sessão.
-            </div>
-          )}
-        </article>
-      </section>
 
-      <section className="mt-4 xl:hidden">
-        <article className="rounded-[1.75rem] border border-[var(--border)] bg-[var(--panel)] p-5 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">Timeline simplificada</p>
-          <div className="mt-4 space-y-3">
-            {historySessions.slice(0, 2).map((session) => (
-              <div key={session.id} className="rounded-2xl border border-[var(--border)] bg-white p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-sky-700">{session.date}</p>
-                <h3 className="mt-1 text-base font-semibold text-[var(--foreground)]">{session.title}</h3>
-                <p className="mt-1 text-xs text-[var(--muted)]">Sessão {session.number} • {session.notes.length} blocos</p>
+                    <div className="mt-3 grid grid-cols-3 gap-2 text-[11px]">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (session.clientId) setSelectedClientId(session.clientId);
+                          if (session.dogId) setSelectedDogId(session.dogId);
+                          setShowForm(true);
+                        }}
+                        className="inline-flex items-center justify-center gap-1 rounded-lg border border-[#d5e8d6] bg-[#f7fcf7] px-2 py-1.5 text-[#2b6f3c]"
+                      >
+                        <TinyIcon name="play" />
+                        Iniciar
+                      </button>
+                      <button
+                        type="button"
+                        className="inline-flex items-center justify-center gap-1 rounded-lg border border-[#d5e8d6] bg-[#f7fcf7] px-2 py-1.5 text-[#2b6f3c]"
+                      >
+                        <TinyIcon name="list" />
+                        Registro
+                      </button>
+                      <button
+                        type="button"
+                        className="inline-flex items-center justify-center gap-1 rounded-lg border border-[#d5e8d6] bg-[#f7fcf7] px-2 py-1.5 text-[#2b6f3c]"
+                      >
+                        <TinyIcon name="whats" />
+                        WhatsApp
+                      </button>
+                    </div>
+                  </article>
+                );
+              })}
+
+              {!filteredFeed.length ? (
+                <article className="rounded-2xl border border-dashed border-[#d5e8d6] bg-white p-4 text-xs text-[var(--muted)]">
+                  Nenhum treino encontrado para este filtro.
+                </article>
+              ) : null}
+            </section>
+
+            <section className="mt-4 rounded-2xl border border-[#d5e8d6] bg-[#eef8ed] p-3">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold text-[var(--foreground)]">Registro de treino e acompanhamento</p>
+                  <p className="text-xs text-[var(--muted)]">Preencha os blocos e mantenha a evolucao do caso.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowForm((value) => !value)}
+                  className="rounded-full bg-[#2b6f3c] px-4 py-2 text-xs font-semibold text-white"
+                >
+                  {showForm ? "Fechar" : "Novo treino"}
+                </button>
               </div>
-            ))}
-            {!historySessions.length ? (
-              <div className="rounded-2xl border border-dashed border-[var(--border)] bg-white p-4 text-xs text-[var(--muted)]">
-                Sem sessões no período atual.
-              </div>
+            </section>
+
+            {showForm ? (
+              <article className="mt-3 rounded-2xl border border-[#dbead8] bg-white p-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">Registrar treino</p>
+                <form onSubmit={onSubmit} className="mt-3 grid gap-3">
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <label className="grid gap-1">
+                      <span className="text-[11px] font-medium text-[var(--muted)]">Cliente</span>
+                      <select
+                        value={selectedClientValue}
+                        onChange={(event) => {
+                          const nextClientId = event.target.value;
+                          const nextClient = clients.find((client) => client.id === nextClientId);
+                          const nextDog = nextClient?.dogs[0];
+                          setSelectedClientId(nextClientId);
+                          setSelectedDogId(nextDog?.id ?? "");
+                          resetDraftNotes(nextDog?.trainingTypes[0] ?? "Guia");
+                        }}
+                        className="rounded-xl border border-[#d5e8d6] bg-white px-3 py-2 text-sm outline-none focus:border-[#72b081]"
+                      >
+                        {clients.map((client) => (
+                          <option key={client.id} value={client.id}>{client.name}</option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <label className="grid gap-1">
+                      <span className="text-[11px] font-medium text-[var(--muted)]">Cao</span>
+                      <select
+                        value={selectedDogValue}
+                        onChange={(event) => {
+                          const nextDogId = event.target.value;
+                          const nextDog = selectedClient?.dogs.find((dog) => dog.id === nextDogId);
+                          setSelectedDogId(nextDogId);
+                          resetDraftNotes(nextDog?.trainingTypes[0] ?? "Guia");
+                        }}
+                        className="rounded-xl border border-[#d5e8d6] bg-white px-3 py-2 text-sm outline-none focus:border-[#72b081]"
+                      >
+                        {(selectedClient?.dogs ?? []).map((dog) => (
+                          <option key={dog.id} value={dog.id}>{dog.name} • {dog.breed}</option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+
+                  <input
+                    value={title}
+                    onChange={(event) => setTitle(event.target.value)}
+                    className="rounded-xl border border-[#d5e8d6] px-3 py-2 text-sm outline-none focus:border-[#72b081]"
+                    placeholder="Titulo da sessao"
+                    required
+                  />
+
+                  <div className="flex items-center justify-between rounded-xl border border-[#d5e8d6] bg-[#f7fcf7] px-3 py-2">
+                    <p className="text-xs text-[var(--muted)]">Blocos: {draftBlocksLabel || "Sem blocos"}</p>
+                    <button
+                      type="button"
+                      onClick={addDraftNote}
+                      className="rounded-full border border-[#d5e8d6] bg-white px-3 py-1 text-[11px] font-semibold text-[#2b6f3c]"
+                    >
+                      Adicionar bloco
+                    </button>
+                  </div>
+
+                  <div className="space-y-2">
+                    {draftNotes.map((note, index) => (
+                      <div key={note.id} className="rounded-xl border border-[#dbead8] bg-white p-3">
+                        <div className="flex items-center justify-between">
+                          <p className="text-xs font-semibold text-[var(--foreground)]">Bloco {index + 1}</p>
+                          {draftNotes.length > 1 ? (
+                            <button type="button" onClick={() => removeDraftNote(note.id)} className="text-[11px] font-semibold text-amber-800">
+                              Remover
+                            </button>
+                          ) : null}
+                        </div>
+
+                        <div className="mt-2 grid gap-2 sm:grid-cols-[1fr_95px]">
+                          <select
+                            value={note.block}
+                            onChange={(event) => updateDraftNote(note.id, "block", event.target.value)}
+                            className="rounded-xl border border-[#d5e8d6] bg-white px-3 py-2 text-sm outline-none focus:border-[#72b081]"
+                          >
+                            {blockOptions.map((option) => (
+                              <option key={option} value={option}>{option}</option>
+                            ))}
+                          </select>
+                          <input
+                            type="number"
+                            min={1}
+                            max={10}
+                            value={note.score}
+                            onChange={(event) => updateDraftNote(note.id, "score", Number(event.target.value))}
+                            className="rounded-xl border border-[#d5e8d6] px-3 py-2 text-sm outline-none focus:border-[#72b081]"
+                          />
+                        </div>
+
+                        <textarea
+                          value={note.comment}
+                          onChange={(event) => updateDraftNote(note.id, "comment", event.target.value)}
+                          className="mt-2 min-h-20 w-full rounded-xl border border-[#d5e8d6] px-3 py-2 text-sm outline-none focus:border-[#72b081]"
+                          placeholder="Resumo tecnico do bloco"
+                          required
+                        />
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="rounded-xl border border-[#d5e8d6] bg-[#f7fcf7] p-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-xs text-[var(--muted)]">Imagens: {draftMedia.length}/{MAX_MEDIA_ITEMS} • {totalMediaKb}/{MAX_TOTAL_MEDIA_KB}KB</p>
+                      <label className="cursor-pointer rounded-full border border-[#d5e8d6] bg-white px-3 py-1 text-[11px] font-semibold text-[#2b6f3c]">
+                        {isCompressingMedia ? "Comprimindo..." : "Adicionar"}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          disabled={isCompressingMedia}
+                          onChange={(event) => {
+                            handleMediaSelect(event.target.files);
+                            event.currentTarget.value = "";
+                          }}
+                          className="hidden"
+                        />
+                      </label>
+                    </div>
+                    {mediaError ? <p className="mt-2 text-xs text-rose-700">{mediaError}</p> : null}
+                    {draftMedia.length ? (
+                      <div className="mt-2 grid grid-cols-3 gap-2">
+                        {draftMedia.map((media) => (
+                          <div key={media.id} className="overflow-hidden rounded-lg border border-[#d5e8d6] bg-white">
+                            <div className="relative h-16 w-full">
+                              <Image
+                                src={media.thumbDataUrl || media.dataUrl}
+                                alt="Treino"
+                                fill
+                                sizes="(min-width: 640px) 10vw, 25vw"
+                                unoptimized
+                                className="object-cover"
+                              />
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => removeDraftMedia(media.id)}
+                              className="w-full border-t border-[#d5e8d6] px-1 py-1 text-[10px] font-semibold text-amber-800"
+                            >
+                              Remover
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+
+                  <button type="submit" disabled={isSaving} className="rounded-full bg-[#2b6f3c] px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60">
+                    {isSaving ? "Salvando..." : "Salvar sessao"}
+                  </button>
+
+                  {saveError ? <p className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-800">{saveError}</p> : null}
+
+                  <div className="rounded-xl border border-[#d5e8d6] bg-[#f7fcf7] px-3 py-2 text-xs text-[var(--muted)]">
+                    Caso: {selectedClient?.name} • {selectedDog?.name} • Sessao {nextSessionNumber} • Media {averageDraftScore}/10
+                  </div>
+                </form>
+              </article>
             ) : null}
-          </div>
-        </article>
-      </section>
-      </>
-      )}
-    </PageShell>
+          </section>
+        )}
+      </main>
+    </AuthGuard>
   );
 }

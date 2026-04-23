@@ -106,14 +106,6 @@ export type PaymentItem = {
   reference?: string;
 };
 
-export type DemoActivity = {
-  id: string;
-  day: number;
-  title: string;
-  detail: string;
-  kind: "session" | "agenda" | "finance" | "portal";
-};
-
 export type TrainerSubscription = {
   planName: TrainerPlanName;
   status: "Ativa" | "Renovacao pendente";
@@ -158,10 +150,6 @@ type AppState = {
   portalTasks: PortalTask[];
   portalFeedbacks: PortalFeedback[];
   payments: PaymentItem[];
-  trialActive: boolean;
-  trialMaxDays: number;
-  simulationDay: number;
-  demoActivities: DemoActivity[];
   setHydrated: (value: boolean) => void;
   login: (email: string, role: UserRole) => void;
   logout: () => void;
@@ -216,59 +204,12 @@ type AppState = {
   }) => Promise<boolean>;
   generateClientCharge: (clientId: string) => void;
   markPaymentPaid: (paymentId: string) => void;
-  resetDemoData: () => void;
   clearAppData: () => void;
   loadFromDB: () => Promise<void>;
-  startTrial: () => void;
-  advanceTrialDays: (days: number) => void;
-  completeTrial: () => void;
 };
 
 function createId(prefix: string): string {
   return `${prefix}-${Math.random().toString(36).slice(2, 10)}`;
-}
-
-const initialClients: ClientProfile[] = [];
-
-const initialTrainingSessions: TrainingSession[] = [];
-
-const initialCalendarEvents: CalendarEvent[] = [];
-
-const initialPortalTasks: PortalTask[] = [];
-
-const initialPortalFeedbacks: PortalFeedback[] = [];
-
-const initialPayments: PaymentItem[] = [];
-
-function cloneClients(): ClientProfile[] {
-  return initialClients.map((client) => ({
-    ...client,
-    dogs: client.dogs.map((dog) => ({ ...dog })),
-  }));
-}
-
-function cloneTrainingSessions(): TrainingSession[] {
-  return initialTrainingSessions.map((session) => ({
-    ...session,
-    notes: session.notes.map((note) => ({ ...note })),
-    media: session.media.map((item) => ({ ...item })),
-  }));
-}
-
-function cloneCalendarEvents(): CalendarEvent[] {
-  return initialCalendarEvents.map((event) => ({ ...event }));
-}
-
-function clonePortalTasks(): PortalTask[] {
-  return initialPortalTasks.map((task) => ({ ...task }));
-}
-
-function clonePortalFeedbacks(): PortalFeedback[] {
-  return initialPortalFeedbacks.map((feedback) => ({ ...feedback }));
-}
-
-function clonePayments(): PaymentItem[] {
-  return initialPayments.map((payment) => ({ ...payment }));
 }
 
 function getPlanAmount(plan: TrainerPlanName, lessonPackage: TrainerLessonPackage): number {
@@ -375,10 +316,6 @@ export const useAppStore = create<AppState>()(
       portalTasks: [],
       portalFeedbacks: [],
       payments: [],
-      trialActive: false,
-      trialMaxDays: 30,
-      simulationDay: 1,
-      demoActivities: [],
       setHydrated: (value) => set({ hydrated: value }),
       login: (email, role) => {
         const trainer = email.split("@")[0] || "Adestrador";
@@ -808,41 +745,6 @@ export const useAppStore = create<AppState>()(
             payments: nextPayments,
           };
         }),
-      resetDemoData: () =>
-        set((state) => ({
-          clients: cloneClients(),
-          trainingSessions: cloneTrainingSessions(),
-          calendarEvents: cloneCalendarEvents(),
-          portalTasks: clonePortalTasks(),
-          portalFeedbacks: clonePortalFeedbacks(),
-          payments: clonePayments(),
-          activePlan: "Pro",
-          trainerSubscription: {
-            planName: "Pro",
-            status: "Ativa",
-            paymentMethod: "Pix",
-            lessonPackage: "8 aulas",
-            nextChargeDate: getNextPackageReviewDate("8 aulas"),
-            amount: getPlanAmount("Pro", "8 aulas"),
-            autoRenew: true,
-          },
-          trainerPaymentProfile: {
-            pixKey: "",
-            cardHolder: "",
-            cardBrand: "Visa",
-            cardLast4: "",
-            boletoEmail: "",
-          },
-          trainerRenewalHistory: [],
-          trialActive: false,
-          trialMaxDays: 30,
-          simulationDay: 1,
-          demoActivities: [],
-          userRole: state.userRole,
-          isAuthenticated: state.isAuthenticated,
-          trainerName: state.trainerName,
-          trainerEmail: state.trainerEmail,
-        })),
       clearAppData: () =>
         set({
           clients: [],
@@ -851,7 +753,6 @@ export const useAppStore = create<AppState>()(
           portalTasks: [],
           portalFeedbacks: [],
           payments: [],
-          demoActivities: [],
         }),
       loadFromDB: async () => {
         try {
@@ -991,86 +892,15 @@ export const useAppStore = create<AppState>()(
           // silently fail — store keeps current state
         }
       },
-      startTrial: () =>
-        set(() => ({
-          trialActive: false,
-          trialMaxDays: 30,
-          simulationDay: 1,
-          demoActivities: [],
-        })),
-      advanceTrialDays: (days) =>
-        set((state) => ({
-          simulationDay: Math.min(state.trialMaxDays, Math.max(1, state.simulationDay + Math.max(0, days))),
-          trialActive: false,
-          demoActivities: state.demoActivities,
-        })),
-      completeTrial: () => set((state) => ({
-        simulationDay: state.trialMaxDays,
-        trialActive: false,
-        demoActivities: state.demoActivities,
-      })),
     }),
     {
       name: "pegadacerta-store",
       onRehydrateStorage: () => (state) => {
         state?.setHydrated(true);
       },
-      partialize: (state) => ({
-        isAuthenticated: state.isAuthenticated,
-        userRole: state.userRole,
-        trainerName: state.trainerName,
-        trainerEmail: state.trainerEmail,
-        activePlan: state.activePlan,
-        trainerSubscription: state.trainerSubscription,
-        trainerPaymentProfile: state.trainerPaymentProfile,
-        trainerRenewalHistory: state.trainerRenewalHistory,
-        clients: state.clients,
-        trainingSessions: state.trainingSessions,
-        calendarEvents: state.calendarEvents,
-        portalTasks: state.portalTasks,
-        portalFeedbacks: state.portalFeedbacks,
-        payments: state.payments,
-        trialActive: state.trialActive,
-        trialMaxDays: state.trialMaxDays,
-        simulationDay: state.simulationDay,
-        demoActivities: state.demoActivities,
-      }),
-      version: 3,
-      migrate: () => ({
-        hydrated: false,
-        isAuthenticated: false,
-        userRole: "trainer" as const,
-        trainerName: "",
-        trainerEmail: "",
-        activePlan: "Pro" as const,
-        trainerSubscription: {
-          planName: "Pro" as const,
-          status: "Ativa" as const,
-          paymentMethod: "Pix" as const,
-          lessonPackage: "8 aulas" as const,
-          nextChargeDate: "",
-          amount: 0,
-          autoRenew: true,
-        },
-        trainerPaymentProfile: {
-          pixKey: "",
-          cardHolder: "",
-          cardBrand: "Visa" as const,
-          cardLast4: "",
-          boletoEmail: "",
-        },
-        trainerRenewalHistory: [],
-        clients: [],
-        trainingSessions: [],
-        calendarEvents: [],
-        portalTasks: [],
-        portalFeedbacks: [],
-        payments: [],
-        trialActive: false,
-        trialMaxDays: 30,
-        simulationDay: 1,
-        demoActivities: [],
-      }),
+      partialize: () => ({}),
+      version: 4,
+      migrate: () => ({}),
     },
   ),
 );
