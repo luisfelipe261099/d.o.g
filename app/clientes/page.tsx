@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { FormEvent, useMemo, useState } from "react";
+import { ChangeEvent, FormEvent, useMemo, useState } from "react";
 
 import { AuthGuard } from "@/components/auth-guard";
 import { useAppStore, type ClientPaymentMethod } from "@/lib/app-store";
@@ -108,6 +108,7 @@ export default function ClientsPage() {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"todos" | ClientStatus>("todos");
+  const [showQuickFilters, setShowQuickFilters] = useState(true);
   const [sortMode, setSortMode] = useState<SortMode>("recentes");
   const [showForm, setShowForm] = useState(false);
 
@@ -117,6 +118,8 @@ export default function ClientsPage() {
   const [breed, setBreed] = useState("");
   const [age, setAge] = useState("");
   const [weight, setWeight] = useState("");
+  const [dogPhotoUrl, setDogPhotoUrl] = useState("");
+  const [dogPhotoPreview, setDogPhotoPreview] = useState("");
   const [propertyType, setPropertyType] = useState("Apartamento");
   const [trainingTypesRaw, setTrainingTypesRaw] = useState("");
   const [planLabel, setPlanLabel] = useState("");
@@ -126,6 +129,40 @@ export default function ClientsPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
   const [saveError, setSaveError] = useState("");
+
+  async function handleDogPhotoFileChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      setSaveError("Selecione um arquivo de imagem valido.");
+      event.target.value = "";
+      return;
+    }
+
+    if (file.size > 1_500_000) {
+      setSaveError("Imagem muito grande. Use um arquivo de ate 1.5MB.");
+      event.target.value = "";
+      return;
+    }
+
+    const dataUrl = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result ?? ""));
+      reader.onerror = () => reject(new Error("Falha ao ler imagem."));
+      reader.readAsDataURL(file);
+    }).catch(() => "");
+
+    if (!dataUrl) {
+      setSaveError("Nao foi possivel carregar a imagem.");
+      event.target.value = "";
+      return;
+    }
+
+    setSaveError("");
+    setDogPhotoUrl("");
+    setDogPhotoPreview(dataUrl);
+  }
 
   const clientsWithMeta = useMemo(() => {
     const now = Date.now();
@@ -225,6 +262,7 @@ export default function ClientsPage() {
         breed: breed.trim() || "SRD",
         age: age.trim() || "Nao informado",
         weight: weight.trim() || "Nao informado",
+        photoUrl: dogPhotoPreview || dogPhotoUrl.trim() || undefined,
         trainingTypes: trainingTypes.length ? trainingTypes : [],
       });
 
@@ -240,6 +278,8 @@ export default function ClientsPage() {
       setBreed("");
       setAge("");
       setWeight("");
+      setDogPhotoUrl("");
+      setDogPhotoPreview("");
       setPropertyType("Apartamento");
       setTrainingTypesRaw("");
       setPlanLabel("");
@@ -286,6 +326,7 @@ export default function ClientsPage() {
             </label>
             <button
               type="button"
+              onClick={() => setShowQuickFilters((current) => !current)}
               className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#c9dfef] bg-white text-[#145a82] shadow-[0_6px_18px_rgba(17,73,110,0.08)]"
               aria-label="Opcoes"
             >
@@ -293,7 +334,7 @@ export default function ClientsPage() {
             </button>
           </div>
 
-          <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
+          <div className={`mt-4 flex gap-2 overflow-x-auto pb-1 ${showQuickFilters ? "" : "hidden"}`}>
             {[
               { value: "todos", label: "Todos" },
               { value: "ativos", label: "Ativos" },
@@ -495,6 +536,40 @@ export default function ClientsPage() {
                   placeholder="Peso"
                   className="rounded-xl border border-[var(--border)] px-3 py-2 text-sm outline-none focus:border-sky-400"
                 />
+                <input
+                  value={dogPhotoUrl}
+                  onChange={(event) => {
+                    setDogPhotoUrl(event.target.value);
+                    if (event.target.value.trim()) setDogPhotoPreview("");
+                  }}
+                  placeholder="URL da foto (opcional)"
+                  className="rounded-xl border border-[var(--border)] px-3 py-2 text-sm outline-none focus:border-sky-400 sm:col-span-2"
+                />
+                <label className="sm:col-span-2 rounded-xl border border-dashed border-[var(--border)] bg-sky-50/40 px-3 py-2 text-xs text-[var(--muted)]">
+                  Enviar foto do cachorro (opcional)
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleDogPhotoFileChange}
+                    className="mt-1 block w-full text-xs text-[var(--muted)] file:mr-2 file:rounded-lg file:border file:border-[var(--border)] file:bg-white file:px-2 file:py-1 file:text-xs"
+                  />
+                </label>
+                {dogPhotoPreview || dogPhotoUrl.trim() ? (
+                  <div className="sm:col-span-2 flex items-center gap-3 rounded-xl border border-[var(--border)] bg-sky-50/40 px-3 py-2">
+                    <div className="relative h-12 w-12 overflow-hidden rounded-full bg-white">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={dogPhotoPreview || dogPhotoUrl.trim()}
+                        alt="Preview da foto do cachorro"
+                        className="h-full w-full object-cover"
+                      />
+                    </div>
+                    <p className="text-xs text-[var(--muted)]">Preview da foto que sera usada no cadastro.</p>
+                  </div>
+                ) : null}
+                <p className="sm:col-span-2 text-[11px] text-[var(--muted)]">
+                  Se nao enviar foto, o sistema aplica uma imagem padrao conforme a raca (ex.: Golden Retriever).
+                </p>
                 <input
                   value={trainingTypesRaw}
                   onChange={(event) => setTrainingTypesRaw(event.target.value)}

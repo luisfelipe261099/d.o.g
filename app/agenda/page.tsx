@@ -17,11 +17,11 @@ type WeekDay = {
 const weekDays: WeekDay[] = [
   { short: "DOM", full: "Domingo" },
   { short: "SEG", full: "Segunda" },
-  { short: "TER", full: "Terca" },
+  { short: "TER", full: "Terça" },
   { short: "QUA", full: "Quarta" },
   { short: "QUI", full: "Quinta" },
   { short: "SEX", full: "Sexta" },
-  { short: "SAB", full: "Sabado" },
+  { short: "SAB", full: "Sábado" },
 ];
 
 function normalizeDay(value: string): string {
@@ -120,8 +120,10 @@ export default function SchedulePage() {
   const [busyEventId, setBusyEventId] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const [showStatusFilters, setShowStatusFilters] = useState(false);
   const [agendaMessage, setAgendaMessage] = useState("");
   const [selectedDayIndex, setSelectedDayIndex] = useState(new Date().getDay());
+  const [statusFilter, setStatusFilter] = useState<"Todos" | EventStatus>("Todos");
 
   const selectedClient = useMemo(
     () => clients.find((client) => client.id === selectedClientId) ?? clients[0],
@@ -139,8 +141,9 @@ export default function SchedulePage() {
     const selectedDayName = weekDays[selectedDayIndex]?.full ?? "";
     return [...events]
       .filter((event) => normalizeDay(event.day) === normalizeDay(selectedDayName))
+      .filter((event) => statusFilter === "Todos" || event.status === statusFilter)
       .sort((left, right) => left.time.localeCompare(right.time));
-  }, [events, selectedDayIndex]);
+  }, [events, selectedDayIndex, statusFilter]);
 
   const totalConfirmed = useMemo(
     () => eventsForSelectedDay.filter((event) => event.status === "Confirmado").length,
@@ -166,6 +169,30 @@ export default function SchedulePage() {
     }
     return map;
   }, [clients]);
+
+  const clientDogMetaByNames = useMemo(() => {
+    const map = new Map<string, { clientId: string; dogId: string; phone: string }>();
+    clients.forEach((client) => {
+      client.dogs.forEach((dog) => {
+        map.set(`${client.name}::${dog.name}`, { clientId: client.id, dogId: dog.id, phone: client.phone });
+      });
+    });
+    return map;
+  }, [clients]);
+
+  function handleOpenWhatsApp(phone?: string, dogName?: string) {
+    const normalizedPhone = (phone ?? "").replace(/\D/g, "");
+    if (!normalizedPhone) {
+      setAgendaMessage("Tutor sem telefone valido para abrir WhatsApp.");
+      window.setTimeout(() => setAgendaMessage(""), 3000);
+      return;
+    }
+
+    const message = encodeURIComponent(
+      `Oi! Estou iniciando${dogName ? ` a sessao do ${dogName}` : " a sessao"} agora.`,
+    );
+    window.open(`https://wa.me/55${normalizedPhone}?text=${message}`, "_blank", "noopener,noreferrer");
+  }
 
   async function handleSetStatus(eventId: string, newStatus: EventStatus) {
     if (busyEventId) return;
@@ -237,11 +264,30 @@ export default function SchedulePage() {
 
           <section className="mt-3 flex items-center justify-between rounded-xl border border-[var(--border)] bg-white px-3 py-2 text-xs text-[var(--muted)]">
             <p>{eventsForSelectedDay.length} aulas do dia</p>
-            <button type="button" className="inline-flex items-center gap-1 text-[#145a82]">
+            <button type="button" onClick={() => setShowStatusFilters((current) => !current)} className="inline-flex items-center gap-1 text-[#145a82]">
               <TinyIcon name="filter" />
               Filtros
             </button>
           </section>
+
+          {showStatusFilters ? (
+            <section className="mt-2 flex gap-2 overflow-x-auto pb-1">
+              {(["Todos", "Confirmado", "Pendente", "Cancelado"] as const).map((filterValue) => (
+                <button
+                  key={filterValue}
+                  type="button"
+                  onClick={() => setStatusFilter(filterValue)}
+                  className={`whitespace-nowrap rounded-full px-3 py-1 text-[11px] font-semibold ${
+                    statusFilter === filterValue
+                      ? "bg-[#145a82] text-white"
+                      : "border border-[var(--border)] bg-white text-[var(--muted)]"
+                  }`}
+                >
+                  {filterValue}
+                </button>
+              ))}
+            </section>
+          ) : null}
 
           <section className="mt-3 grid grid-cols-7 gap-1.5">
             {weekDays.map((day, index) => (
@@ -292,6 +338,7 @@ export default function SchedulePage() {
           <section className="mt-2 space-y-2.5">
             {eventsForSelectedDay.map((event) => {
               const photo = dogPhotoByName.get(event.dog);
+              const relatedMeta = clientDogMetaByNames.get(`${event.client}::${event.dog}`);
               return (
                 <article key={event.id} className="rounded-2xl border border-[var(--border)] bg-white p-3">
                   <div className="flex items-start gap-3">
@@ -319,15 +366,15 @@ export default function SchedulePage() {
                       </div>
 
                       <div className="mt-2 grid grid-cols-3 gap-2 text-[11px]">
-                        <button type="button" className="inline-flex items-center justify-center gap-1 rounded-lg border border-[var(--border)] bg-[#f7fbff] px-2 py-1.5 text-[#145a82]">
+                        <Link href={relatedMeta ? `/treinos/registro?clientId=${relatedMeta.clientId}&dogId=${relatedMeta.dogId}` : "/treinos/registro"} className="inline-flex items-center justify-center gap-1 rounded-lg border border-[var(--border)] bg-[#f7fbff] px-2 py-1.5 text-[#145a82]">
                           <TinyIcon name="play" />
                           Iniciar
-                        </button>
-                        <button type="button" className="inline-flex items-center justify-center gap-1 rounded-lg border border-[var(--border)] bg-[#f7fbff] px-2 py-1.5 text-[#145a82]">
+                        </Link>
+                        <Link href={relatedMeta ? `/treinos/registro?clientId=${relatedMeta.clientId}&dogId=${relatedMeta.dogId}` : "/treinos/registro"} className="inline-flex items-center justify-center gap-1 rounded-lg border border-[var(--border)] bg-[#f7fbff] px-2 py-1.5 text-[#145a82]">
                           <TinyIcon name="notes" />
                           Registro
-                        </button>
-                        <button type="button" className="inline-flex items-center justify-center gap-1 rounded-lg border border-[var(--border)] bg-[#f7fbff] px-2 py-1.5 text-[#145a82]">
+                        </Link>
+                        <button type="button" onClick={() => handleOpenWhatsApp(relatedMeta?.phone, event.dog)} className="inline-flex items-center justify-center gap-1 rounded-lg border border-[var(--border)] bg-[#f7fbff] px-2 py-1.5 text-[#145a82]">
                           <TinyIcon name="whats" />
                           WhatsApp
                         </button>

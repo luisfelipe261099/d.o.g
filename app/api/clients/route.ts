@@ -2,6 +2,80 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
+const DOG_BREED_DEFAULTS: Array<{ keywords: string[]; url: string }> = [
+  {
+    keywords: ["golden retriever", "golden"],
+    url: "https://images.dog.ceo/breeds/retriever-golden/n02099601_3004.jpg",
+  },
+  {
+    keywords: ["labrador"],
+    url: "https://images.dog.ceo/breeds/labrador/n02099712_6856.jpg",
+  },
+  {
+    keywords: ["border collie", "collie"],
+    url: "https://images.dog.ceo/breeds/collie-border/n02106166_355.jpg",
+  },
+  {
+    keywords: ["pastor alemao", "german shepherd", "pastor"],
+    url: "https://images.dog.ceo/breeds/germanshepherd/n02106662_24175.jpg",
+  },
+  {
+    keywords: ["poodle"],
+    url: "https://images.dog.ceo/breeds/poodle-standard/n02113799_2280.jpg",
+  },
+  {
+    keywords: ["spitz", "lulu da pomerania", "pomerania"],
+    url: "https://images.dog.ceo/breeds/pomeranian/n02112018_1002.jpg",
+  },
+  {
+    keywords: ["bulldog"],
+    url: "https://images.dog.ceo/breeds/bulldog-french/n02108915_5306.jpg",
+  },
+  {
+    keywords: ["beagle"],
+    url: "https://images.dog.ceo/breeds/beagle/n02088364_11136.jpg",
+  },
+  {
+    keywords: ["rottweiler", "rott"],
+    url: "https://images.dog.ceo/breeds/rottweiler/n02106550_10620.jpg",
+  },
+  {
+    keywords: ["shih tzu", "shitzu"],
+    url: "https://images.dog.ceo/breeds/shihtzu/n02086240_2329.jpg",
+  },
+];
+
+function normalizeText(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
+function sanitizePhotoUrl(photoUrl?: string): string | undefined {
+  const value = (photoUrl ?? "").trim();
+  if (!value) return undefined;
+
+  if (value.startsWith("data:image/")) return value;
+  if (/^https?:\/\//i.test(value)) return value;
+
+  return undefined;
+}
+
+function getDefaultDogPhotoByBreed(breed?: string): string | undefined {
+  const normalizedBreed = normalizeText(breed ?? "");
+  if (!normalizedBreed) return undefined;
+
+  for (const item of DOG_BREED_DEFAULTS) {
+    if (item.keywords.some((keyword) => normalizedBreed.includes(normalizeText(keyword)))) {
+      return item.url;
+    }
+  }
+
+  return undefined;
+}
+
 function getNextChargeDate(billingDay: number): string {
   const now = new Date();
   const safeDay = Math.min(Math.max(billingDay, 1), 28);
@@ -52,6 +126,7 @@ export async function POST(request: Request) {
     breed?: string;
     age?: string;
     weight?: string;
+    photoUrl?: string;
     trainingTypes?: string[];
   };
 
@@ -59,6 +134,7 @@ export async function POST(request: Request) {
   const contractAmount = body.contractAmount ?? 0;
   const paymentMethod = body.paymentMethod ?? "Pix";
   const nextChargeDate = getNextChargeDate(billingDay);
+  const resolvedDogPhotoUrl = sanitizePhotoUrl(body.photoUrl) ?? getDefaultDogPhotoByBreed(body.breed);
 
   const client = await prisma.$transaction(async (tx) => {
     const createdClient = await tx.clientProfile.create({
@@ -79,6 +155,7 @@ export async function POST(request: Request) {
             breed:         body.breed         ?? "",
             age:           body.age           ?? "",
             weight:        body.weight        ?? "",
+            photoUrl:      resolvedDogPhotoUrl,
             trainingTypes: JSON.stringify(body.trainingTypes ?? []),
           },
         },

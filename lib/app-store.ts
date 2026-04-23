@@ -175,6 +175,7 @@ type AppState = {
     breed: string;
     age: string;
     weight: string;
+    photoUrl?: string;
     trainingTypes: string[];
   }) => Promise<boolean>;
   addTrainingSession: (payload: {

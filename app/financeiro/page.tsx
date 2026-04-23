@@ -1,9 +1,40 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 
-import { PageShell } from "@/components/page-shell";
+import { AuthGuard } from "@/components/auth-guard";
 import { useAppStore } from "@/lib/app-store";
+
+function TinyIcon({ name }: { name: "back" | "plus" | "check" | "alert" }) {
+  if (name === "back") {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden>
+        <path d="m14.5 6-6 6 6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    );
+  }
+  if (name === "plus") {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden>
+        <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
+      </svg>
+    );
+  }
+  if (name === "check") {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden>
+        <path d="M4 12l5 5L20 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    );
+  }
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden>
+      <circle cx="12" cy="18" r="1" fill="currentColor" />
+      <path d="M12 2l10 18H2L12 2z" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+    </svg>
+  );
+}
 
 export default function FinancialPage() {
   const clients = useAppStore((state) => state.clients);
@@ -107,188 +138,204 @@ export default function FinancialPage() {
   }
 
   return (
-    <PageShell
-      kicker="Financeiro"
-      title="Planos, contratos e recebimentos"
-      description="Acompanhe receita prevista, pagamentos confirmados e o pacote atual usado no controle do adestrador."
-      requireAuth="trainer"
-    >
-      {message ? (
-        <section>
-          <article className="rounded-2xl border border-[var(--border)] bg-white/90 px-4 py-3 text-sm text-[var(--foreground)] shadow-sm">
-            {message}
-          </article>
+    <AuthGuard role="trainer">
+      <main className="mx-auto w-full max-w-md px-3 pb-24 pt-3 sm:max-w-xl">
+        <section className="rounded-[2rem] border border-[var(--border)] bg-[#f7fbff] p-3.5 shadow-[var(--shadow)]">
+          <header className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <Link href="/dashboard" className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border)] bg-white text-[#145a82]">
+                <TinyIcon name="back" />
+              </Link>
+              <div>
+                <p className="text-base font-semibold text-[var(--foreground)]">Financeiro</p>
+                <p className="text-[11px] text-[var(--muted)]">Gerencie planos, contratos e recebimentos.</p>
+              </div>
+            </div>
+          </header>
+
+          {message ? (
+            <div className="mt-3 rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-xs text-sky-800">
+              {message}
+            </div>
+          ) : null}
+
+          <section className="mt-4 grid grid-cols-2 gap-2">
+            <article className="rounded-xl border border-[var(--border)] bg-white p-3">
+              <p className="text-xs text-[var(--muted)]">Clientes</p>
+              <p className="mt-1 text-2xl font-semibold text-[var(--foreground)]">{clients.length}</p>
+            </article>
+            <article className="rounded-xl border border-[var(--border)] bg-white p-3">
+              <p className="text-xs text-[var(--muted)]">Recebido</p>
+              <p className="mt-1 text-lg font-semibold text-emerald-700">
+                {totalPaid.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+              </p>
+            </article>
+            <article className="rounded-xl border border-[var(--border)] bg-white p-3">
+              <p className="text-xs text-[var(--muted)]">Pendente</p>
+              <p className="mt-1 text-lg font-semibold text-amber-800">
+                {totalPending.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+              </p>
+            </article>
+            <article className="rounded-xl border border-[var(--border)] bg-white p-3">
+              <p className="text-xs text-[var(--muted)]">Plano</p>
+              <p className="mt-1 text-sm font-semibold text-[#145a82]">{trainerSubscription.planName}</p>
+            </article>
+          </section>
+
+          <section className="mt-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">Sua assinatura PegadaCerta</p>
+            <div className="mt-3 rounded-2xl border border-[var(--border)] bg-white p-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <p className="text-[10px] text-[var(--muted)]">Pacote</p>
+                  <p className="mt-1 text-sm font-semibold text-[var(--foreground)]">{trainerSubscription.lessonPackage}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-[var(--muted)]">Pagamento</p>
+                  <p className="mt-1 text-sm font-semibold text-[var(--foreground)]">{trainerSubscription.paymentMethod}</p>
+                </div>
+              </div>
+              <div className="mt-3 grid grid-cols-2 gap-3">
+                <div>
+                  <p className="text-[10px] text-[var(--muted)]">Valor</p>
+                  <p className="mt-1 text-sm font-semibold text-[#145a82]">
+                    {trainerSubscription.amount.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-[var(--muted)]">Próxima cobrança</p>
+                  <p className="mt-1 text-sm font-semibold text-[var(--foreground)]">{trainerSubscription.nextChargeDate}</p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section className="mt-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">{clientPayments.length} cobranças de clientes</p>
+            <div className="mt-3 space-y-2">
+              {clientPayments.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-[var(--border)] bg-white p-4 text-xs text-[var(--muted)]">
+                  Nenhuma cobrança de clientes. Gere faturamentos na seção abaixo.
+                </div>
+              ) : (
+                clientPayments.map((payment) => (
+                  <div key={payment.id} className="rounded-2xl border border-[var(--border)] bg-white p-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1">
+                        <p className="text-sm font-semibold text-[var(--foreground)]">{payment.clientName}</p>
+                        <p className="mt-0.5 text-xs text-[var(--muted)]">
+                          {payment.amount.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                        </p>
+                        <p className="mt-0.5 text-[10px] text-[var(--muted)]">
+                          {payment.paymentMethod} • {payment.dueDate}
+                        </p>
+                      </div>
+                      <span className={`rounded-full px-2 py-1 text-[10px] font-semibold ${
+                        payment.status === "Pago"
+                          ? "bg-emerald-100 text-emerald-800"
+                          : "bg-amber-100 text-amber-900"
+                      }`}>
+                        {payment.status}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleSetPaymentStatus(payment.id, payment.status === "Pago" ? "Pendente" : "Pago")
+                      }
+                      disabled={busyPaymentId === payment.id}
+                      className="mt-2 w-full rounded-full border border-[var(--border)] bg-[#f7fbff] px-3 py-1.5 text-[10px] font-semibold text-[#145a82] disabled:opacity-50"
+                    >
+                      {busyPaymentId === payment.id
+                        ? "Atualizando..."
+                        : payment.status === "Pago"
+                        ? "Reabrir"
+                        : "Marcar pago"}
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          </section>
+
+          <section className="mt-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">{subscriptionPayments.length} cobranças de assinatura</p>
+            <div className="mt-3 space-y-2">
+              {subscriptionPayments.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-[var(--border)] bg-white p-4 text-xs text-[var(--muted)]">
+                  Nenhuma cobrança de assinatura gerada.
+                </div>
+              ) : (
+                subscriptionPayments.map((payment) => (
+                  <div key={payment.id} className="rounded-2xl border border-[var(--border)] bg-white p-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1">
+                        <p className="text-sm font-semibold text-[var(--foreground)]">{payment.clientName}</p>
+                        <p className="mt-0.5 text-xs text-[var(--muted)]">
+                          {payment.amount.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                        </p>
+                        <p className="mt-0.5 text-[10px] text-[var(--muted)]">
+                          {payment.paymentMethod} • {payment.dueDate}
+                        </p>
+                      </div>
+                      <span className={`rounded-full px-2 py-1 text-[10px] font-semibold ${
+                        payment.status === "Pago"
+                          ? "bg-emerald-100 text-emerald-800"
+                          : "bg-amber-100 text-amber-900"
+                      }`}>
+                        {payment.status}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleSetPaymentStatus(payment.id, payment.status === "Pago" ? "Pendente" : "Pago")
+                      }
+                      disabled={busyPaymentId === payment.id}
+                      className="mt-2 w-full rounded-full border border-[var(--border)] bg-[#f7fbff] px-3 py-1.5 text-[10px] font-semibold text-[#145a82] disabled:opacity-50"
+                    >
+                      {busyPaymentId === payment.id
+                        ? "Atualizando..."
+                        : payment.status === "Pago"
+                        ? "Reabrir"
+                        : "Marcar pago"}
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          </section>
+
+          <section className="mt-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">Gerar cobranças</p>
+            <div className="mt-3 space-y-2">
+              {clients.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-[var(--border)] bg-white p-4 text-xs text-[var(--muted)]">
+                  Nenhum cliente cadastrado. Cadastre em <Link href="/clientes" className="font-semibold text-[#145a82]">Clientes</Link>.
+                </div>
+              ) : (
+                clients.map((client) => (
+                  <div key={client.id} className="rounded-2xl border border-[var(--border)] bg-white p-3">
+                    <p className="text-sm font-semibold text-[var(--foreground)]">{client.name}</p>
+                    <p className="mt-0.5 text-xs text-[var(--muted)]">
+                      {(client.contractAmount ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })} • {client.paymentMethod ?? "Pix"}
+                    </p>
+                    <p className="mt-0.5 text-[10px] text-[var(--muted)]">Próx: {client.nextChargeDate ?? "--/--/----"}</p>
+                    <button
+                      type="button"
+                      onClick={() => handleGenerateClientCharge(client.id)}
+                      disabled={busyClientId === client.id}
+                      className="mt-2 w-full rounded-full bg-[#145a82] px-3 py-1.5 text-[10px] font-semibold text-white disabled:opacity-50"
+                    >
+                      {busyClientId === client.id ? "Gerando..." : "Gerar faturamento"}
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          </section>
         </section>
-      ) : null}
-
-      <section className="grid gap-4 md:grid-cols-3">
-        <article className="rounded-[1.75rem] border border-[var(--border)] bg-white/90 p-5 shadow-sm">
-          <p className="text-sm text-[var(--muted)]">Clientes com contrato ativo</p>
-          <p className="mt-2 font-display text-4xl font-semibold">{clients.length}</p>
-          <p className="mt-2 text-sm text-emerald-700">base com recorrência em andamento</p>
-        </article>
-        <article className="rounded-[1.75rem] border border-[var(--border)] bg-white/90 p-5 shadow-sm">
-          <p className="text-sm text-[var(--muted)]">Recebido no período</p>
-          <p className="mt-2 font-display text-4xl font-semibold">
-            {totalPaid.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
-          </p>
-          <p className="mt-2 text-sm text-emerald-700">caixa confirmado no ciclo atual</p>
-        </article>
-        <article className="hidden rounded-[1.75rem] border border-[var(--border)] bg-white/90 p-5 shadow-sm md:block">
-          <p className="text-sm text-[var(--muted)]">Em aberto</p>
-          <p className="mt-2 font-display text-4xl font-semibold">
-            {totalPending.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
-          </p>
-          <p className="mt-2 text-sm text-amber-800">pedidos que exigem ação de cobrança</p>
-        </article>
-      </section>
-
-      <section>
-        <article className="rounded-[1.75rem] border border-[var(--border)] bg-white/90 p-5 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">Sua assinatura PegadaCerta</p>
-          <div className="mt-3 grid gap-3 md:grid-cols-4">
-            <div>
-              <p className="text-xs uppercase tracking-[0.14em] text-[var(--muted)]">Plano</p>
-              <p className="mt-1 font-semibold text-[var(--foreground)]">{trainerSubscription.planName}</p>
-            </div>
-            <div>
-              <p className="text-xs uppercase tracking-[0.14em] text-[var(--muted)]">Pagamento</p>
-              <p className="mt-1 font-semibold text-[var(--foreground)]">{trainerSubscription.paymentMethod}</p>
-            </div>
-            <div>
-              <p className="text-xs uppercase tracking-[0.14em] text-[var(--muted)]">Pacote</p>
-              <p className="mt-1 font-semibold text-[var(--foreground)]">{trainerSubscription.lessonPackage}</p>
-            </div>
-            <div>
-              <p className="text-xs uppercase tracking-[0.14em] text-[var(--muted)]">Próxima revisão</p>
-              <p className="mt-1 font-semibold text-[var(--foreground)]">{trainerSubscription.nextChargeDate}</p>
-            </div>
-          </div>
-          <div className="mt-3">
-            <p className="text-xs uppercase tracking-[0.14em] text-[var(--muted)]">Valor do pacote</p>
-            <p className="mt-1 font-semibold text-[var(--foreground)]">{trainerSubscription.amount.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</p>
-          </div>
-        </article>
-      </section>
-
-      <section>
-        <article className="rounded-[1.75rem] border border-[var(--border)] bg-[var(--panel)] p-6 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">Cobrança recorrente por cliente</p>
-          <div className="mt-4 grid gap-3 md:grid-cols-2">
-            {clients.length === 0 ? (
-              <div className="rounded-3xl border border-dashed border-[var(--border)] bg-white p-4 text-sm text-[var(--muted)] md:col-span-2">
-                Nenhum cliente cadastrado. Cadastre clientes em <a href="/clientes" className="underline">Clientes</a> para gerar cobranças.
-              </div>
-            ) : null}
-            {clients.map((client) => (
-              <div key={client.id} className="rounded-3xl border border-[var(--border)] bg-white p-4">
-                <p className="font-semibold">{client.name}</p>
-                <p className="mt-1 text-sm text-[var(--muted)]">{(client.contractAmount ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })} • {client.paymentMethod ?? "Pix"}</p>
-                <p className="mt-1 text-xs text-[var(--muted)]">Próximo vencimento: {client.nextChargeDate ?? "--/--/----"}</p>
-                <button
-                  type="button"
-                  onClick={() => handleGenerateClientCharge(client.id)}
-                  disabled={busyClientId === client.id}
-                  className="mt-3 rounded-full border border-[var(--border)] bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--foreground)]"
-                >
-                  {busyClientId === client.id ? "Gerando..." : "Gerar faturamento"}
-                </button>
-              </div>
-            ))}
-          </div>
-        </article>
-      </section>
-
-      <section className="grid gap-4 lg:grid-cols-2">
-        <article className="rounded-[1.75rem] border border-[var(--border)] bg-[var(--panel)] p-6 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">
-            Cobranças de clientes
-          </p>
-          <h2 className="mt-2 font-display text-2xl font-semibold">Visão de recebimentos por contrato</h2>
-          <p className="mt-2 text-sm text-[var(--muted)]">{clientPayments.length} cobranças de clientes ativas na carteira.</p>
-          <div className="mt-4 grid gap-3 md:grid-cols-2">
-            {clientPayments.map((payment) => (
-              <div key={payment.id} className="rounded-3xl border border-[var(--border)] bg-white p-4">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="font-semibold">{payment.clientName}</p>
-                  {payment.source ? (
-                    <span className="rounded-full border border-[var(--border)] px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">
-                      {payment.source}
-                    </span>
-                  ) : null}
-                </div>
-                <p className="mt-1 text-sm text-[var(--muted)]">
-                  {payment.amount.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
-                </p>
-                <p className="mt-1 text-xs text-[var(--muted)]">
-                  {payment.paymentMethod ? `Método: ${payment.paymentMethod}` : "Método não informado"}
-                  {payment.dueDate ? ` • Vencimento: ${payment.dueDate}` : ""}
-                </p>
-                {payment.reference ? (
-                  <p className="mt-1 text-xs text-[var(--muted)]">{payment.reference}</p>
-                ) : null}
-                <button
-                  type="button"
-                  onClick={() =>
-                    handleSetPaymentStatus(payment.id, payment.status === "Pago" ? "Pendente" : "Pago")
-                  }
-                  disabled={busyPaymentId === payment.id}
-                  className={`mt-4 rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] ${
-                    payment.status === "Pago"
-                      ? "bg-emerald-100 text-emerald-800"
-                      : "bg-amber-100 text-amber-900"
-                  }`}
-                >
-                  {busyPaymentId === payment.id
-                    ? "Atualizando..."
-                    : payment.status === "Pago"
-                    ? "Reabrir pendência"
-                    : "Marcar como pago"}
-                </button>
-              </div>
-            ))}
-          </div>
-        </article>
-
-        <article className="rounded-[1.75rem] border border-[var(--border)] bg-[var(--panel)] p-6 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">Cobranças de assinatura</p>
-          <h2 className="mt-2 font-display text-2xl font-semibold">PegadaCerta</h2>
-          <div className="mt-4 space-y-3">
-            {subscriptionPayments.length ? (
-              subscriptionPayments.map((payment) => (
-                <div key={payment.id} className="rounded-3xl border border-[var(--border)] bg-white p-4">
-                  <p className="font-semibold">{payment.clientName}</p>
-                  <p className="mt-1 text-sm text-[var(--muted)]">{payment.amount.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</p>
-                  <p className="mt-1 text-xs text-[var(--muted)]">{payment.paymentMethod} • {payment.dueDate}</p>
-                  {payment.reference ? <p className="mt-1 text-xs text-[var(--muted)]">{payment.reference}</p> : null}
-                  <button
-                    type="button"
-                    onClick={() =>
-                      handleSetPaymentStatus(payment.id, payment.status === "Pago" ? "Pendente" : "Pago")
-                    }
-                    disabled={busyPaymentId === payment.id}
-                    className={`mt-4 rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] ${
-                      payment.status === "Pago"
-                        ? "bg-emerald-100 text-emerald-800"
-                        : "bg-amber-100 text-amber-900"
-                    }`}
-                  >
-                    {busyPaymentId === payment.id
-                      ? "Atualizando..."
-                      : payment.status === "Pago"
-                      ? "Reabrir pendência"
-                      : "Marcar como pago"}
-                  </button>
-                </div>
-              ))
-            ) : (
-              <div className="rounded-3xl border border-dashed border-[var(--border)] bg-white p-4 text-sm text-[var(--muted)]">
-                Nenhuma cobrança de assinatura gerada ainda.
-              </div>
-            )}
-          </div>
-        </article>
-      </section>
-    </PageShell>
+      </main>
+    </AuthGuard>
   );
 }

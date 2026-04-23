@@ -225,7 +225,9 @@ export default function TrainingPage() {
 
   const [selectedClientId, setSelectedClientId] = useState(initialClientId);
   const [selectedDogId, setSelectedDogId] = useState(initialDogId);
+  const [searchTerm, setSearchTerm] = useState("");
   const [feedFilter, setFeedFilter] = useState<FeedFilter>("today");
+  const [showQuickFilters, setShowQuickFilters] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [title, setTitle] = useState("Sessao pratica");
   const [draftNotes, setDraftNotes] = useState<DraftTrainingNote[]>([createDraftTrainingNote()]);
@@ -297,22 +299,66 @@ export default function TrainingPage() {
     return map;
   }, [clients]);
 
-  const filteredFeed = useMemo(() => {
-    if (feedFilter === "all") return feedSessions;
-
-    const now = new Date();
-    const dayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-    const weekThreshold = dayStart - 6 * 24 * 60 * 60 * 1000;
-
-    return feedSessions.filter((session) => {
-      const dateValue = parseBrazilianDate(session.date);
-      const status = statusFromScore(averageSessionScore(session.notes));
-
-      if (feedFilter === "today") return dateValue >= dayStart;
-      if (feedFilter === "week") return dateValue >= weekThreshold;
-      return status === "pendente";
+  const phoneByDogId = useMemo(() => {
+    const map = new Map<string, string>();
+    clients.forEach((client) => {
+      client.dogs.forEach((dog) => {
+        map.set(dog.id, client.phone);
+      });
     });
-  }, [feedFilter, feedSessions]);
+    return map;
+  }, [clients]);
+
+  const filteredFeed = useMemo(() => {
+    const normalizedSearch = searchTerm.trim().toLowerCase();
+
+    let nextSessions = feedSessions;
+
+    if (feedFilter !== "all") {
+      const now = new Date();
+      const dayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+      const weekThreshold = dayStart - 6 * 24 * 60 * 60 * 1000;
+
+      nextSessions = nextSessions.filter((session) => {
+        const dateValue = parseBrazilianDate(session.date);
+        const status = statusFromScore(averageSessionScore(session.notes));
+
+        if (feedFilter === "today") return dateValue >= dayStart;
+        if (feedFilter === "week") return dateValue >= weekThreshold;
+        return status === "pendente";
+      });
+    }
+
+    if (!normalizedSearch) return nextSessions;
+
+    return nextSessions.filter((session) => {
+      const haystack = [
+        session.title,
+        session.clientName,
+        session.dogName,
+        ...session.notes.map((note) => `${note.block} ${note.comment}`),
+      ]
+        .join(" ")
+        .toLowerCase();
+
+      return haystack.includes(normalizedSearch);
+    });
+  }, [feedFilter, feedSessions, searchTerm]);
+
+  function handleOpenWhatsApp(phone?: string, dogName?: string) {
+    const normalizedPhone = (phone ?? "").replace(/\D/g, "");
+    if (!normalizedPhone) {
+      setSaveError("Tutor sem telefone valido para abrir WhatsApp.");
+      window.setTimeout(() => setSaveError(""), 3000);
+      return;
+    }
+
+    const message = encodeURIComponent(
+      `Oi! Estou registrando o treino${dogName ? ` do ${dogName}` : ""} e vou te atualizar com a evolucao.`,
+    );
+
+    window.open(`https://wa.me/55${normalizedPhone}?text=${message}`, "_blank", "noopener,noreferrer");
+  }
 
   const pendingSessionsCount = feedSessions.filter(
     (session) => statusFromScore(averageSessionScore(session.notes)) === "pendente",
@@ -501,12 +547,15 @@ export default function TrainingPage() {
               <label className="flex flex-1 items-center gap-2 rounded-xl border border-[var(--border)] bg-white px-3 py-2 text-[var(--muted)]">
                 <TinyIcon name="search" />
                 <input
+                  value={searchTerm}
+                  onChange={(event) => setSearchTerm(event.target.value)}
                   placeholder="Buscar por cao ou tutor..."
                   className="w-full border-none bg-transparent text-sm text-[var(--foreground)] outline-none"
                 />
               </label>
               <button
                 type="button"
+                onClick={() => setShowQuickFilters((current) => !current)}
                 className="flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--border)] bg-white text-[#145a82]"
                 aria-label="Filtros"
               >
@@ -514,7 +563,7 @@ export default function TrainingPage() {
               </button>
             </section>
 
-            <section className="mt-3 flex gap-2 overflow-x-auto pb-1">
+            <section className={`mt-3 flex gap-2 overflow-x-auto pb-1 ${showQuickFilters ? "" : "hidden"}`}>
               {[
                 { value: "today", label: "Hoje" },
                 { value: "week", label: "Semana" },
@@ -559,7 +608,10 @@ export default function TrainingPage() {
 
             <section className="mt-4 flex items-center justify-between">
               <p className="text-sm font-semibold text-[var(--foreground)]">{feedTitle}</p>
-              <Link href="/agenda" className="text-[11px] font-semibold text-[#145a82]">Ver agenda</Link>
+              <div className="flex items-center gap-3">
+                <Link href="/treinos/registro" className="text-[11px] font-semibold text-[#145a82]">Novo registro</Link>
+                <Link href="/agenda" className="text-[11px] font-semibold text-[#145a82]">Ver agenda</Link>
+              </div>
             </section>
 
             <section className="mt-2 space-y-2.5">
@@ -606,27 +658,23 @@ export default function TrainingPage() {
                     </div>
 
                     <div className="mt-3 grid grid-cols-3 gap-2 text-[11px]">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (session.clientId) setSelectedClientId(session.clientId);
-                          if (session.dogId) setSelectedDogId(session.dogId);
-                          setShowForm(true);
-                        }}
+                      <Link
+                        href={session.clientId && session.dogId ? `/treinos/registro?clientId=${session.clientId}&dogId=${session.dogId}` : "/treinos/registro"}
                         className="inline-flex items-center justify-center gap-1 rounded-lg border border-[var(--border)] bg-[#f7fbff] px-2 py-1.5 text-[#145a82]"
                       >
                         <TinyIcon name="play" />
                         Iniciar
-                      </button>
-                      <button
-                        type="button"
+                      </Link>
+                      <Link
+                        href={session.clientId && session.dogId ? `/treinos/registro?clientId=${session.clientId}&dogId=${session.dogId}` : "/treinos/registro"}
                         className="inline-flex items-center justify-center gap-1 rounded-lg border border-[var(--border)] bg-[#f7fbff] px-2 py-1.5 text-[#145a82]"
                       >
                         <TinyIcon name="list" />
                         Registro
-                      </button>
+                      </Link>
                       <button
                         type="button"
+                        onClick={() => handleOpenWhatsApp(session.dogId ? phoneByDogId.get(session.dogId) : undefined, dogName)}
                         className="inline-flex items-center justify-center gap-1 rounded-lg border border-[var(--border)] bg-[#f7fbff] px-2 py-1.5 text-[#145a82]"
                       >
                         <TinyIcon name="whats" />
