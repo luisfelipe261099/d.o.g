@@ -14,7 +14,7 @@ async function resolveLink(rawToken: string, pin?: string) {
   const link = await prisma.portalAccessLink.findUnique({
     where: { tokenHash },
     include: {
-      trainer: { select: { id: true, name: true } },
+      trainer: { select: { id: true, name: true, phone: true } },
       client: {
         select: {
           id: true,
@@ -39,6 +39,15 @@ async function resolveLink(rawToken: string, pin?: string) {
 function mapSessionNotes(rawNotes: string) {
   try {
     const parsed = JSON.parse(rawNotes || "[]");
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function mapSessionMedia(rawMedia: string | null) {
+  try {
+    const parsed = JSON.parse(rawMedia || "[]");
     return Array.isArray(parsed) ? parsed : [];
   } catch {
     return [];
@@ -118,6 +127,7 @@ export async function GET(_request: Request, { params }: Params) {
     trainer: {
       id: link.trainer.id,
       name: link.trainer.name,
+      phone: link.trainer.phone,
     },
     client: {
       id: link.client.id,
@@ -130,6 +140,7 @@ export async function GET(_request: Request, { params }: Params) {
     sessions: sessions.map((session) => ({
       ...session,
       notes: mapSessionNotes(session.notes),
+      media: mapSessionMedia(session.media),
     })),
     tasks,
     feedbacks,

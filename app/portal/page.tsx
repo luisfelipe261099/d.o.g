@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 
 import { AuthGuard } from "@/components/auth-guard";
@@ -240,14 +241,37 @@ export default function PortalPage() {
   return (
     <AuthGuard role="trainer">
       <section className="mx-auto max-w-md px-3 pb-24 pt-3 sm:max-w-xl">
-        <div className="mb-4">
-          <h1 className="font-display text-2xl font-semibold">Portal do tutor</h1>
-          <p className="mt-1 text-sm text-[var(--muted)]">
-            Adestrador: {trainerName || "Sem nome"}
-          </p>
-        </div>
+        <div className="rounded-[2rem] border border-[var(--border)] bg-gradient-to-b from-[#f8fcff] to-[#f2f9ff] p-4 shadow-[var(--shadow)]">
+          <header className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#2d6f99]">Portal do cliente</p>
+              <h1 className="font-display text-2xl font-semibold text-[var(--foreground)]">Gestao do tutor</h1>
+              <p className="mt-1 text-xs text-[var(--muted)]">Adestrador: {trainerName || "Sem nome"}</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Link href="/agenda" className="rounded-full border border-[var(--border)] bg-white px-3 py-1.5 text-[11px] font-semibold text-[#145a82]">
+                Agenda
+              </Link>
+              <Link href="/treinos" className="rounded-full border border-[var(--border)] bg-white px-3 py-1.5 text-[11px] font-semibold text-[#145a82]">
+                Treinos
+              </Link>
+            </div>
+          </header>
 
-        <div className="mb-4 grid gap-2 sm:grid-cols-2">
+          <div className="mt-4 grid grid-cols-2 gap-2">
+            <article className="rounded-xl border border-[var(--border)] bg-white p-3">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[#2d6f99]">Tarefas</p>
+              <p className="text-2xl font-semibold text-[var(--foreground)]">{selectedTasks.length}</p>
+              <p className="text-xs text-[var(--muted)]">Itens no portal</p>
+            </article>
+            <article className="rounded-xl border border-[var(--border)] bg-white p-3">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[#2d6f99]">Feedbacks</p>
+              <p className="text-2xl font-semibold text-[var(--foreground)]">{selectedFeedbacks.length}</p>
+              <p className="text-xs text-[var(--muted)]">Mensagens recentes</p>
+            </article>
+          </div>
+
+          <div className="mt-4 grid gap-2 sm:grid-cols-2">
           <label className="grid gap-1 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
             Cliente
             <select
@@ -280,10 +304,10 @@ export default function PortalPage() {
               ))}
             </select>
           </label>
-        </div>
+          </div>
 
-        {selectedClient && selectedDog && (
-          <article className="mb-4 rounded-2xl border border-[var(--border)] bg-[var(--panel)] p-4">
+          {selectedClient && selectedDog && (
+            <article className="mb-4 mt-4 rounded-2xl border border-[var(--border)] bg-[var(--panel)] p-4">
             <div className="flex flex-col gap-3">
               {selectedDog.photoUrl ? (
                 <Image
@@ -338,7 +362,7 @@ export default function PortalPage() {
                     onClick={() => setExpiresInDays(preset)}
                     className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] transition-colors ${
                       expiresInDays === preset
-                        ? "border border-emerald-300 bg-emerald-50 text-emerald-700"
+                        ? "border border-sky-300 bg-sky-50 text-sky-700"
                         : "border border-[var(--border)] bg-white text-[var(--muted)]"
                     }`}
                   >
@@ -398,12 +422,12 @@ export default function PortalPage() {
             </div>
 
             {linkError ? <p className="mt-2 text-xs text-rose-600">{linkError}</p> : null}
-            {copyStatus === "ok" ? <p className="mt-2 text-xs text-emerald-600">Copiado!</p> : null}
+            {copyStatus === "ok" ? <p className="mt-2 text-xs text-sky-700">Copiado!</p> : null}
             {copyStatus === "error" ? <p className="mt-2 text-xs text-rose-600">Gere um novo link.</p> : null}
           </article>
         )}
 
-        <div className="mb-4 grid gap-4 sm:grid-cols-2">
+          <div className="mb-4 grid gap-4 sm:grid-cols-2">
           <article className="rounded-2xl border border-[var(--border)] bg-[var(--panel)] p-4">
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">Tarefas</p>
             <p className="mt-2 font-display text-3xl font-semibold text-[var(--foreground)]">
@@ -443,7 +467,7 @@ export default function PortalPage() {
                         onClick={() => toggleTask(task.id)}
                         className={`mt-0.5 h-4 w-4 rounded border transition-colors ${
                           task.completed
-                            ? "border-emerald-600 bg-emerald-500"
+                            ? "border-sky-600 bg-sky-500"
                             : "border-[var(--border)] bg-white"
                         }`}
                       />
@@ -563,6 +587,7 @@ export default function PortalPage() {
             )}
           </article>
         )}
+        </div>
       </section>
     </AuthGuard>
   );

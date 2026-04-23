@@ -186,12 +186,12 @@ export default function DashboardPage() {
               </div>
             </div>
             <div className="flex items-center gap-2 text-[var(--muted)]">
-              <span className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border)] bg-white text-[#145a82]">
+              <Link href="/agenda" className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border)] bg-white text-[#145a82]">
                 <Icon name="bell" className="h-4.5 w-4.5" />
-              </span>
-              <span className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border)] bg-white text-[#145a82]">
+              </Link>
+              <Link href="/portal" className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border)] bg-white text-[#145a82]">
                 <Icon name="chat" className="h-4.5 w-4.5" />
-              </span>
+              </Link>
             </div>
           </header>
 
@@ -319,6 +319,17 @@ export default function DashboardPage() {
               <p className="font-semibold text-[#145a82]">
                 {pendingPayments.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
               </p>
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Link href="/agenda" className="rounded-full border border-[var(--border)] bg-[#f7fbff] px-3 py-1.5 text-[11px] font-semibold text-[#145a82]">
+                Abrir agenda
+              </Link>
+              <Link href="/treinos/registro" className="rounded-full border border-[var(--border)] bg-[#f7fbff] px-3 py-1.5 text-[11px] font-semibold text-[#145a82]">
+                Novo treino
+              </Link>
+              <Link href="/financeiro" className="rounded-full border border-[var(--border)] bg-[#f7fbff] px-3 py-1.5 text-[11px] font-semibold text-[#145a82]">
+                Cobranças
+              </Link>
             </div>
           </section>
         </section>

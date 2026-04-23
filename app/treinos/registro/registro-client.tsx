@@ -9,7 +9,7 @@ import { AuthGuard } from "@/components/auth-guard";
 import { type TrainingMediaItem, useAppStore } from "@/lib/app-store";
 
 const MAX_IMAGES = 4;
-const MAX_IMAGE_SIZE_BYTES = 2 * 1024 * 1024;
+const MAX_RAW_IMAGE_SIZE_BYTES = 25 * 1024 * 1024;
 const MAX_DIMENSION = 1280;
 
 type StarRatingProps = {
@@ -169,8 +169,8 @@ export default function RegistroTreinoClientPage() {
         return;
       }
 
-      if (file.size > MAX_IMAGE_SIZE_BYTES) {
-        setError("Cada imagem deve ter no maximo 2MB.");
+      if (file.size > MAX_RAW_IMAGE_SIZE_BYTES) {
+        setError("Imagem muito grande para processar. Use ate 25MB por imagem.");
         event.target.value = "";
         return;
       }
@@ -341,7 +341,7 @@ export default function RegistroTreinoClientPage() {
                   onChange={handleImages}
                   className="mt-2 block w-full text-xs text-[var(--muted)] file:mr-2 file:rounded-lg file:border file:border-[var(--border)] file:bg-white file:px-2 file:py-1 file:text-xs"
                 />
-                <p className="mt-1 text-[11px] text-[var(--muted)]">Ate {MAX_IMAGES} imagens, maximo 2MB por imagem.</p>
+                <p className="mt-1 text-[11px] text-[var(--muted)]">Ate {MAX_IMAGES} imagens. O sistema comprime automaticamente fotos tiradas na camera.</p>
 
                 {isProcessingImages ? <p className="mt-2 text-xs text-[#145a82]">Processando imagens...</p> : null}
 

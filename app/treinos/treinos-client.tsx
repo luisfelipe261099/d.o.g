@@ -686,13 +686,13 @@ export default function TrainingPage() {
               })}
 
               {!filteredFeed.length ? (
-                <article className="rounded-2xl border border-dashed border-[#d5e8d6] bg-white p-4 text-xs text-[var(--muted)]">
+                <article className="rounded-2xl border border-dashed border-[var(--border)] bg-white p-4 text-xs text-[var(--muted)]">
                   Nenhum treino encontrado para este filtro.
                 </article>
               ) : null}
             </section>
 
-            <section className="mt-4 rounded-2xl border border-[#d5e8d6] bg-[#eef8ed] p-3">
+            <section className="mt-4 rounded-2xl border border-[var(--border)] bg-[#f1f8fe] p-3">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="text-sm font-semibold text-[var(--foreground)]">Registro de treino e acompanhamento</p>
@@ -787,7 +787,7 @@ export default function TrainingPage() {
                           <select
                             value={note.block}
                             onChange={(event) => updateDraftNote(note.id, "block", event.target.value)}
-                            className="rounded-xl border border-[#d5e8d6] bg-white px-3 py-2 text-sm outline-none focus:border-[#72b081]"
+                            className="rounded-xl border border-[var(--border)] bg-white px-3 py-2 text-sm outline-none focus:border-sky-400"
                           >
                             {blockOptions.map((option) => (
                               <option key={option} value={option}>{option}</option>
@@ -799,14 +799,14 @@ export default function TrainingPage() {
                             max={10}
                             value={note.score}
                             onChange={(event) => updateDraftNote(note.id, "score", Number(event.target.value))}
-                            className="rounded-xl border border-[#d5e8d6] px-3 py-2 text-sm outline-none focus:border-[#72b081]"
+                            className="rounded-xl border border-[var(--border)] px-3 py-2 text-sm outline-none focus:border-sky-400"
                           />
                         </div>
 
                         <textarea
                           value={note.comment}
                           onChange={(event) => updateDraftNote(note.id, "comment", event.target.value)}
-                          className="mt-2 min-h-20 w-full rounded-xl border border-[#d5e8d6] px-3 py-2 text-sm outline-none focus:border-[#72b081]"
+                          className="mt-2 min-h-20 w-full rounded-xl border border-[var(--border)] px-3 py-2 text-sm outline-none focus:border-sky-400"
                           placeholder="Resumo tecnico do bloco"
                           required
                         />

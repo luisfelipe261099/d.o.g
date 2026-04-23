@@ -33,16 +33,16 @@ function normalizeDay(value: string): string {
 }
 
 function statusBadge(status: EventStatus): string {
-  if (status === "Confirmado") return "bg-emerald-100 text-emerald-800";
+  if (status === "Confirmado") return "bg-sky-100 text-sky-800";
   if (status === "Pendente" || status === "Aguardando") return "bg-amber-100 text-amber-900";
-  if (status === "Recorrente") return "bg-sky-100 text-sky-800";
+  if (status === "Recorrente") return "bg-indigo-100 text-indigo-800";
   return "bg-rose-100 text-rose-800";
 }
 
 function timelineDot(status: EventStatus): string {
-  if (status === "Confirmado") return "bg-emerald-500";
+  if (status === "Confirmado") return "bg-sky-500";
   if (status === "Pendente" || status === "Aguardando") return "bg-amber-500";
-  if (status === "Recorrente") return "bg-sky-500";
+  if (status === "Recorrente") return "bg-indigo-500";
   return "bg-rose-500";
 }
 
@@ -385,7 +385,7 @@ export default function SchedulePage() {
                           type="button"
                           onClick={() => handleSetStatus(event.id, "Confirmado")}
                           disabled={busyEventId === event.id}
-                          className="rounded-full border border-emerald-300 bg-emerald-50 px-2.5 py-1 text-emerald-800 disabled:opacity-50"
+                          className="rounded-full border border-sky-300 bg-sky-50 px-2.5 py-1 text-sky-800 disabled:opacity-50"
                         >
                           Concluir
                         </button>

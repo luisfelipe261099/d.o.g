@@ -314,6 +314,18 @@ export default function ClientsPage() {
             </button>
           </header>
 
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Link href="/agenda" className="rounded-full border border-[var(--border)] bg-white px-3 py-1.5 text-[11px] font-semibold text-[#145a82]">
+              Agenda
+            </Link>
+            <Link href="/treinos" className="rounded-full border border-[var(--border)] bg-white px-3 py-1.5 text-[11px] font-semibold text-[#145a82]">
+              Treinos
+            </Link>
+            <Link href="/portal" className="rounded-full border border-[var(--border)] bg-white px-3 py-1.5 text-[11px] font-semibold text-[#145a82]">
+              Portal
+            </Link>
+          </div>
+
           <div className="mt-4 flex items-center gap-2">
             <label className="flex flex-1 items-center gap-2 rounded-xl border border-[#c9dfef] bg-white px-3 py-2 text-[var(--muted)] shadow-[0_6px_18px_rgba(17,73,110,0.08)]">
               <SmallIcon name="search" />
@@ -478,7 +490,7 @@ export default function ClientsPage() {
             })}
           </section>
 
-          <section className="mt-4 rounded-2xl border border-[var(--border)] bg-white p-3">
+          <section className="mt-4 rounded-2xl border border-[var(--border)] bg-[#f1f8fe] p-3">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-sm font-semibold text-[var(--foreground)]">Novo tutor ou novo cao?</p>

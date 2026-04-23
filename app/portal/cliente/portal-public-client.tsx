@@ -33,7 +33,8 @@ type PortalSession = {
   id: string;
   title: string;
   date: string;
-  notes: Array<{ comment?: string }>;
+  notes: Array<{ comment?: string; score?: number }>;
+  media: Array<{ id?: string; dataUrl?: string; thumbDataUrl?: string }>;
 };
 
 type PortalPayment = {
@@ -41,10 +42,13 @@ type PortalPayment = {
   amount: number;
   status: string;
   dueDate: string | null;
+  paymentMethod: string | null;
+  reference: string | null;
+  source: string | null;
 };
 
 type PortalData = {
-  trainer: { id: string; name: string };
+  trainer: { id: string; name: string; phone: string | null };
   client: {
     id: string;
     name: string;
@@ -75,6 +79,15 @@ function formatDateTime(value?: string | null): string {
   return `${date.toLocaleDateString("pt-BR")} ${date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`;
 }
 
+function formatCurrency(value: number): string {
+  return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
+function paymentStatusBadge(status: string): string {
+  if (status === "Pago") return "border-sky-200 bg-sky-50 text-sky-800";
+  return "border-amber-200 bg-amber-50 text-amber-900";
+}
+
 export function PortalPublicClient({ token }: { token: string }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -85,6 +98,7 @@ export function PortalPublicClient({ token }: { token: string }) {
   const [pin, setPin] = useState("");
   const [pinRequired, setPinRequired] = useState(false);
   const [unlockAttempt, setUnlockAttempt] = useState(0);
+  const [copiedPaymentId, setCopiedPaymentId] = useState("");
 
   const pinQuery = useMemo(() => (pinRequired && /^\d{4}$/.test(pin) ? `?pin=${encodeURIComponent(pin)}` : ""), [pinRequired, pin]);
 
@@ -122,6 +136,111 @@ export function PortalPublicClient({ token }: { token: string }) {
       .filter((payment) => payment.status === "Pendente")
       .reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
   }, [data]);
+
+  const pendingPayments = useMemo(() => {
+    if (!data) return [];
+    return data.payments.filter((payment) => payment.status === "Pendente");
+  }, [data]);
+
+  const sessionGallery = useMemo(() => {
+    if (!data) return [] as Array<{ id: string; src: string; sessionTitle: string; sessionDate: string }>;
+
+    return data.sessions
+      .flatMap((session) =>
+        (session.media || []).map((media, index) => ({
+          id: `${session.id}-${media.id || index}`,
+          src: media.thumbDataUrl || media.dataUrl || "",
+          sessionTitle: session.title,
+          sessionDate: session.date,
+        })),
+      )
+      .filter((item) => Boolean(item.src))
+      .slice(0, 12);
+  }, [data]);
+
+  const latestSessionScore = useMemo(() => {
+    if (!data?.sessions.length) return null;
+
+    for (const session of data.sessions) {
+      const scores = (session.notes || [])
+        .map((note) => Number(note.score ?? 0))
+        .filter((score) => Number.isFinite(score) && score > 0);
+
+      if (scores.length) {
+        const average = scores.reduce((sum, score) => sum + score, 0) / scores.length;
+        return { title: session.title, date: session.date, score: average };
+      }
+    }
+
+    return null;
+  }, [data]);
+
+  function openWhatsAppForPayment() {
+    if (!data?.trainer.phone) {
+      setError("Telefone do adestrador nao disponivel para contato de pagamento.");
+      return;
+    }
+
+    const normalizedPhone = data.trainer.phone.replace(/\D/g, "");
+    if (!normalizedPhone) {
+      setError("Telefone do adestrador invalido para contato de pagamento.");
+      return;
+    }
+
+    const message = encodeURIComponent("Oi! Quero confirmar o pagamento do meu plano e enviar comprovante.");
+    window.open(`https://wa.me/55${normalizedPhone}?text=${message}`, "_blank", "noopener,noreferrer");
+  }
+
+  function buildPaymentCopyText(payment: PortalPayment): string {
+    const lines = [
+      "Dados para pagamento",
+      `Tutor: ${data?.client.name || "Nao informado"}`,
+      `Adestrador: ${data?.trainer.name || "Nao informado"}`,
+      `Valor: ${formatCurrency(Number(payment.amount || 0))}`,
+      `Status: ${payment.status || "Nao informado"}`,
+      `Vencimento: ${payment.dueDate || "Nao informado"}`,
+      `Metodo: ${payment.paymentMethod || "Nao informado"}`,
+      `Referencia: ${payment.reference || payment.source || "Mensalidade"}`,
+    ];
+
+    if (data?.trainer.phone) {
+      lines.push(`Contato adestrador: ${data.trainer.phone}`);
+    }
+
+    lines.push("Mensagem: Segue comprovante do pagamento.");
+    return lines.join("\n");
+  }
+
+  async function handleCopyPayment(payment: PortalPayment) {
+    try {
+      await navigator.clipboard.writeText(buildPaymentCopyText(payment));
+      setCopiedPaymentId(payment.id);
+      window.setTimeout(() => setCopiedPaymentId(""), 1800);
+    } catch {
+      setError("Nao foi possivel copiar os dados de pagamento.");
+      window.setTimeout(() => setError(""), 2000);
+    }
+  }
+
+  async function handleCopyPendingSummary() {
+    const summary = [
+      "Resumo financeiro pendente",
+      `Tutor: ${data?.client.name || "Nao informado"}`,
+      `Adestrador: ${data?.trainer.name || "Nao informado"}`,
+      `Quantidade de pendencias: ${pendingPayments.length}`,
+      `Total em aberto: ${formatCurrency(pendingAmount)}`,
+      "Mensagem: Segue comprovante do pagamento pendente.",
+    ].join("\n");
+
+    try {
+      await navigator.clipboard.writeText(summary);
+      setCopiedPaymentId("summary");
+      window.setTimeout(() => setCopiedPaymentId(""), 1800);
+    } catch {
+      setError("Nao foi possivel copiar o resumo financeiro.");
+      window.setTimeout(() => setError(""), 2000);
+    }
+  }
 
   async function handleToggleTask(task: PortalTask) {
     if (!data) return;
@@ -250,6 +369,7 @@ export function PortalPublicClient({ token }: { token: string }) {
   }
 
   const completedTasks = data.tasks.filter((task) => task.completed).length;
+  const scoreStars = latestSessionScore ? Math.round(Math.min(Math.max(latestSessionScore.score, 0), 10) / 2) : 0;
 
   return (
     <PageShell
@@ -297,10 +417,63 @@ export function PortalPublicClient({ token }: { token: string }) {
             <div className="rounded-2xl bg-white/10 p-4">
               <p className="text-xs uppercase tracking-[0.16em] text-slate-300">Financeiro pendente</p>
               <p className="mt-2 text-xl font-semibold">
-                {pendingAmount.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                {formatCurrency(pendingAmount)}
               </p>
             </div>
           </div>
+        </article>
+
+        <article className="rounded-[1.5rem] border border-[var(--border)] bg-white p-5 shadow-sm">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">Financeiro</p>
+              <h3 className="mt-1 text-lg font-semibold text-[var(--foreground)]">Cobranças e pagamento</h3>
+              <p className="mt-1 text-sm text-[var(--muted)]">Acompanhe valores pendentes e fale com o adestrador para concluir o pagamento.</p>
+            </div>
+            <button
+              type="button"
+              onClick={openWhatsAppForPayment}
+              className="rounded-full border border-[var(--border)] bg-[#145a82] px-3 py-1.5 text-xs font-semibold text-white"
+            >
+              Falar sobre pagamento
+            </button>
+          </div>
+
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            {data.payments.slice(0, 6).map((payment) => (
+              <article key={payment.id} className="rounded-2xl border border-[var(--border)] bg-[var(--panel)] p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-sm font-semibold text-[var(--foreground)]">{formatCurrency(payment.amount)}</p>
+                  <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase ${paymentStatusBadge(payment.status)}`}>
+                    {payment.status}
+                  </span>
+                </div>
+                <p className="mt-1 text-xs text-[var(--muted)]">Vencimento: {payment.dueDate || "Nao informado"}</p>
+                <p className="text-xs text-[var(--muted)]">Metodo: {payment.paymentMethod || "Nao informado"}</p>
+                <p className="text-xs text-[var(--muted)]">Referencia: {payment.reference || payment.source || "Mensalidade"}</p>
+                <button
+                  type="button"
+                  onClick={() => handleCopyPayment(payment)}
+                  className="mt-2 rounded-full border border-[var(--border)] bg-white px-2.5 py-1 text-[11px] font-semibold text-[#145a82]"
+                >
+                  {copiedPaymentId === payment.id ? "Dados copiados" : "Copiar dados"}
+                </button>
+              </article>
+            ))}
+            {data.payments.length === 0 ? <p className="text-sm text-[var(--muted)]">Sem cobrancas registradas para este caso.</p> : null}
+          </div>
+          {pendingPayments.length > 0 ? (
+            <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+              <p>Existem {pendingPayments.length} cobranca(s) pendente(s). Total: {formatCurrency(pendingAmount)}.</p>
+              <button
+                type="button"
+                onClick={handleCopyPendingSummary}
+                className="mt-2 rounded-full border border-amber-300 bg-white px-2.5 py-1 font-semibold text-amber-900"
+              >
+                {copiedPaymentId === "summary" ? "Resumo copiado" : "Copiar resumo"}
+              </button>
+            </div>
+          ) : null}
         </article>
 
         <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
@@ -314,7 +487,7 @@ export function PortalPublicClient({ token }: { token: string }) {
                     type="button"
                     disabled={updatingTaskId === task.id}
                     onClick={() => handleToggleTask(task)}
-                    className={`mt-1 h-5 w-5 rounded border ${task.completed ? "bg-emerald-500 border-emerald-600" : "bg-white border-[var(--border)]"}`}
+                    className={`mt-1 h-5 w-5 rounded border ${task.completed ? "bg-sky-500 border-sky-600" : "bg-white border-[var(--border)]"}`}
                   />
                   <div>
                     <p className="font-semibold">{task.title}</p>
@@ -348,6 +521,34 @@ export function PortalPublicClient({ token }: { token: string }) {
             </div>
           </article>
         </div>
+
+        <article className="rounded-[1.5rem] border border-[var(--border)] bg-[var(--panel)] p-5 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">Avaliacao e evidencias</p>
+          <div className="mt-3 rounded-2xl border border-[var(--border)] bg-white p-3">
+            {latestSessionScore ? (
+              <>
+                <p className="text-sm font-semibold text-[var(--foreground)]">Ultima avaliacao: {latestSessionScore.title}</p>
+                <p className="text-xs text-[var(--muted)]">{latestSessionScore.date}</p>
+                <p className="mt-2 text-base text-amber-500">{"★".repeat(scoreStars)}{"☆".repeat(5 - scoreStars)}</p>
+                <p className="text-xs text-[var(--muted)]">Media tecnica: {latestSessionScore.score.toFixed(1)}/10</p>
+              </>
+            ) : (
+              <p className="text-sm text-[var(--muted)]">Ainda nao ha avaliacao numerica registrada.</p>
+            )}
+          </div>
+
+          <div className="mt-3 grid grid-cols-3 gap-2">
+            {sessionGallery.map((item) => (
+              <div key={item.id} className="overflow-hidden rounded-xl border border-[var(--border)] bg-white">
+                <div className="relative h-20 w-full">
+                  <Image src={item.src} alt={`Treino ${item.sessionTitle}`} fill sizes="(min-width: 768px) 8rem, 30vw" unoptimized className="object-cover" />
+                </div>
+                <p className="truncate px-2 py-1 text-[10px] text-[var(--muted)]">{item.sessionDate}</p>
+              </div>
+            ))}
+            {sessionGallery.length === 0 ? <p className="col-span-3 text-sm text-[var(--muted)]">Sem fotos anexadas nas sessoes ate o momento.</p> : null}
+          </div>
+        </article>
 
         <article className="rounded-[1.5rem] border border-[var(--border)] bg-white p-5 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">Fale com o adestrador</p>
