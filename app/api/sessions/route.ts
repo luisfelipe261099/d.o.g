@@ -18,6 +18,7 @@ export async function GET() {
   return NextResponse.json(sessions.map((s) => ({
     ...s,
     notes: JSON.parse(s.notes || "[]"),
+    media: JSON.parse(s.media || "[]"),
   })));
 }
 
@@ -37,7 +38,10 @@ export async function POST(request: Request) {
     dogId?: string;
     dogName?: string;
     notes?: unknown[];
+    media?: unknown[];
   };
+
+  const safeMedia = Array.isArray(body.media) ? body.media.slice(0, 5) : [];
 
   const created = await prisma.trainingSession.create({
     data: {
@@ -49,8 +53,9 @@ export async function POST(request: Request) {
       dogId:      body.dogId,
       dogName:    body.dogName    ?? "",
       notes:      JSON.stringify(body.notes ?? []),
+      media:      JSON.stringify(safeMedia),
     },
   });
 
-  return NextResponse.json({ ...created, notes: body.notes ?? [] }, { status: 201 });
+  return NextResponse.json({ ...created, notes: body.notes ?? [], media: safeMedia }, { status: 201 });
 }

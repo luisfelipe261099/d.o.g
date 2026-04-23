@@ -42,6 +42,18 @@ export type TrainingNote = {
   comment: string;
 };
 
+export type TrainingMediaItem = {
+  id: string;
+  dataUrl: string;
+  thumbDataUrl?: string;
+  width: number;
+  height: number;
+  sizeKb: number;
+  mainSizeKb?: number;
+  thumbSizeKb?: number;
+  createdAt: string;
+};
+
 export type TrainingSession = {
   id: string;
   number: number;
@@ -52,6 +64,7 @@ export type TrainingSession = {
   dogId?: string;
   dogName?: string;
   notes: TrainingNote[];
+  media: TrainingMediaItem[];
 };
 
 export type CalendarEvent = {
@@ -67,6 +80,7 @@ export type CalendarEvent = {
 
 export type PortalTask = {
   id: string;
+  clientId?: string;
   title: string;
   description: string;
   completed: boolean;
@@ -74,6 +88,7 @@ export type PortalTask = {
 
 export type PortalFeedback = {
   id: string;
+  clientId?: string;
   author: "Tutor" | "Adestrador";
   message: string;
   createdAt: string;
@@ -183,10 +198,11 @@ type AppState = {
     dogId?: string;
     dogName?: string;
     notes: TrainingNote[];
+    media?: TrainingMediaItem[];
   }) => Promise<boolean>;
   toggleTask: (taskId: string) => void;
-  addPortalTask: (title: string, description: string) => Promise<void>;
-  addPortalFeedback: (message: string, author?: PortalFeedback["author"]) => Promise<void>;
+  addPortalTask: (title: string, description: string, clientId?: string) => Promise<void>;
+  addPortalFeedback: (message: string, author?: PortalFeedback["author"], clientId?: string) => Promise<void>;
   setEventStatus: (eventId: string, status: SessionStatus) => Promise<boolean>;
   toggleEventStatus: (eventId: string) => void;
   addCalendarEvent: (payload: {
@@ -235,6 +251,7 @@ function cloneTrainingSessions(): TrainingSession[] {
   return initialTrainingSessions.map((session) => ({
     ...session,
     notes: session.notes.map((note) => ({ ...note })),
+    media: session.media.map((item) => ({ ...item })),
   }));
 }
 
@@ -519,9 +536,9 @@ export const useAppStore = create<AppState>()(
           // keep optimistic state
         }
       },
-      addPortalTask: async (title, description) => {
+      addPortalTask: async (title, description, clientId) => {
         const tempId = createId("task");
-        const tempTask: PortalTask = { id: tempId, title, description, completed: false };
+        const tempTask: PortalTask = { id: tempId, clientId, title, description, completed: false };
 
         // Optimistic add
         set((state) => ({ portalTasks: [...state.portalTasks, tempTask] }));
@@ -530,7 +547,7 @@ export const useAppStore = create<AppState>()(
           const response = await fetch("/api/portal-tasks", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ title, description }),
+            body: JSON.stringify({ title, description, clientId }),
           });
           if (!response.ok) {
             set((state) => ({ portalTasks: state.portalTasks.filter((t) => t.id !== tempId) }));
@@ -541,10 +558,11 @@ export const useAppStore = create<AppState>()(
           set((state) => ({ portalTasks: state.portalTasks.filter((t) => t.id !== tempId) }));
         }
       },
-      addPortalFeedback: async (message, author = "Tutor") => {
+      addPortalFeedback: async (message, author = "Tutor", clientId) => {
         const tempId = createId("fb");
         const tempFeedback: PortalFeedback = {
           id: tempId,
+          clientId,
           author,
           message,
           createdAt: new Date().toISOString(),
@@ -557,7 +575,7 @@ export const useAppStore = create<AppState>()(
           const response = await fetch("/api/portal-feedbacks", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ message, author }),
+            body: JSON.stringify({ message, author, clientId }),
           });
           if (!response.ok) {
             set((state) => ({ portalFeedbacks: state.portalFeedbacks.filter((f) => f.id !== tempId) }));
@@ -904,6 +922,7 @@ export const useAppStore = create<AppState>()(
             dogId:      s.dogId ? String(s.dogId) : undefined,
             dogName:    String(s.dogName ?? ""),
             notes:      Array.isArray(s.notes) ? (s.notes as TrainingNote[]) : [],
+            media:      Array.isArray(s.media) ? (s.media as TrainingMediaItem[]) : [],
           }));
 
           const calendarEvents: CalendarEvent[] = (rawEvents as Array<Record<string, unknown>>).map((e) => ({
@@ -931,6 +950,7 @@ export const useAppStore = create<AppState>()(
 
           const portalTasks: PortalTask[] = (rawTasks as Array<Record<string, unknown>>).map((t) => ({
             id:          String(t.id),
+            clientId:    t.clientId ? String(t.clientId) : undefined,
             title:       String(t.title),
             description: t.description ? String(t.description) : "",
             completed:   Boolean(t.completed),
@@ -938,6 +958,7 @@ export const useAppStore = create<AppState>()(
 
           const portalFeedbacks: PortalFeedback[] = (rawFeedbacks as Array<Record<string, unknown>>).map((f) => ({
             id:        String(f.id),
+            clientId:  f.clientId ? String(f.clientId) : undefined,
             author:    (f.author ?? "Tutor") as "Tutor" | "Adestrador",
             message:   String(f.message),
             createdAt: (() => {

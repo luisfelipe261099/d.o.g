@@ -1,10 +1,32 @@
 "use client";
 
 import Image from "next/image";
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 
 import { PageShell } from "@/components/page-shell";
 import { useAppStore } from "@/lib/app-store";
+
+type PortalLinkStatus = "Ativo" | "Revogado" | "Expirado";
+
+type PortalLinkInfo = {
+  id: string;
+  clientId: string;
+  tokenPrefix: string;
+  expiresAt: string;
+  revokedAt: string | null;
+  lastAccessAt: string | null;
+  hasPin: boolean;
+  status: PortalLinkStatus;
+  shareUrl: string | null;
+  previewPath: string;
+};
+
+function formatDateTime(value?: string | null): string {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+  return `${date.toLocaleDateString("pt-BR")} ${date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`;
+}
 
 export default function PortalPage() {
   const trainerName = useAppStore((state) => state.trainerName);
@@ -23,6 +45,15 @@ export default function PortalPage() {
   const [selectedDogId, setSelectedDogId] = useState("");
   const [copyStatus, setCopyStatus] = useState<"idle" | "ok" | "error">("idle");
   const [isAddingTask, setIsAddingTask] = useState(false);
+  const [portalLink, setPortalLink] = useState<PortalLinkInfo | null>(null);
+  const [lastGeneratedUrl, setLastGeneratedUrl] = useState("");
+  const [isLoadingLink, setIsLoadingLink] = useState(false);
+  const [isGeneratingLink, setIsGeneratingLink] = useState(false);
+  const [isRevokingLink, setIsRevokingLink] = useState(false);
+  const [linkError, setLinkError] = useState("");
+  const [expiresInDays, setExpiresInDays] = useState(90);
+  const [pinEnabled, setPinEnabled] = useState(false);
+  const [pin, setPin] = useState("");
 
   const selectedClient = useMemo(() => {
     if (!storeClients.length) return null;
@@ -34,12 +65,53 @@ export default function PortalPage() {
     return selectedClient.dogs.find((dog) => dog.id === selectedDogId) ?? selectedClient.dogs[0];
   }, [selectedClient, selectedDogId]);
 
+  const selectedTasks = useMemo(
+    () => tasks.filter((task) => !selectedClient || task.clientId === selectedClient.id),
+    [tasks, selectedClient],
+  );
+
+  const selectedFeedbacks = useMemo(
+    () => feedbacks.filter((feedback) => !selectedClient || feedback.clientId === selectedClient.id),
+    [feedbacks, selectedClient],
+  );
+
+  useEffect(() => {
+    async function loadPortalLink() {
+      if (!selectedClient?.id) {
+        setPortalLink(null);
+        setLastGeneratedUrl("");
+        return;
+      }
+
+      setIsLoadingLink(true);
+      setLinkError("");
+
+      try {
+        const response = await fetch(`/api/portal-links?clientId=${encodeURIComponent(selectedClient.id)}`, {
+          cache: "no-store",
+        });
+
+        if (!response.ok) throw new Error("Falha ao consultar link");
+
+        const body = (await response.json()) as { link?: PortalLinkInfo | null };
+        setPortalLink(body.link ?? null);
+        setLastGeneratedUrl("");
+      } catch {
+        setLinkError("Nao foi possivel carregar o status do link deste tutor.");
+      } finally {
+        setIsLoadingLink(false);
+      }
+    }
+
+    loadPortalLink();
+  }, [selectedClient?.id]);
+
   async function handleAddTask(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!taskTitle.trim() || isAddingTask) return;
+    if (!taskTitle.trim() || isAddingTask || !selectedClient?.id) return;
     setIsAddingTask(true);
     try {
-      await addPortalTask(taskTitle, taskDesc);
+      await addPortalTask(taskTitle, taskDesc, selectedClient.id);
       setTaskTitle("");
       setTaskDesc("");
     } finally {
@@ -48,16 +120,16 @@ export default function PortalPage() {
   }
 
   async function handleTemplateTask(template: string) {
-    if (isAddingTask) return;
+    if (isAddingTask || !selectedClient?.id) return;
     setIsAddingTask(true);
     try {
-      await addPortalTask(template, "Tarefa sugerida pelo plano semanal");
+      await addPortalTask(template, "Tarefa sugerida pelo plano semanal", selectedClient.id);
     } finally {
       setIsAddingTask(false);
     }
   }
-  const completed = tasks.filter((task) => task.completed).length;
-  const pendingTasks = tasks.length - completed;
+  const completed = selectedTasks.filter((task) => task.completed).length;
+  const pendingTasks = selectedTasks.length - completed;
 
   const selectedEvents = useMemo(() => {
     if (!selectedClient) return [];
@@ -91,24 +163,80 @@ export default function PortalPage() {
     .filter((payment) => payment.status === "Pendente")
     .reduce((sum, payment) => sum + payment.amount, 0);
 
-  const portalUrl = useMemo(() => {
-    if (!selectedClient || !selectedDog) return "";
+  async function handleGeneratePortalLink() {
+    if (!selectedClient?.id || isGeneratingLink) return;
+    if (pinEnabled && !/^\d{4}$/.test(pin)) {
+      setLinkError("Defina um PIN de 4 digitos para proteger o link.");
+      return;
+    }
 
-    const slug = `${selectedClient.name}-${selectedDog.name}`
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-+|-+$/g, "");
-
-    return `https://d-o-g.vercel.app/portal/cliente?caso=${slug}`;
-  }, [selectedClient, selectedDog]);
-
-  async function handleCopyPortalLink() {
-    if (!portalUrl) return;
+    setIsGeneratingLink(true);
+    setLinkError("");
+    setCopyStatus("idle");
 
     try {
-      await navigator.clipboard.writeText(portalUrl);
+      const response = await fetch("/api/portal-links", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ clientId: selectedClient.id, expiresInDays, pin: pinEnabled ? pin : null }),
+      });
+
+      if (!response.ok) throw new Error("Falha ao gerar link");
+
+      const body = (await response.json()) as { link?: PortalLinkInfo };
+      if (!body.link) throw new Error("Resposta sem link");
+
+      setPortalLink(body.link);
+      setLastGeneratedUrl(body.link.shareUrl ?? "");
+    } catch {
+      setLinkError("Nao foi possivel gerar o link deste tutor. Tente novamente.");
+    } finally {
+      setIsGeneratingLink(false);
+    }
+  }
+
+  async function handleRevokePortalLink() {
+    if (!selectedClient?.id || isRevokingLink) return;
+
+    setIsRevokingLink(true);
+    setLinkError("");
+
+    try {
+      const response = await fetch("/api/portal-links", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ clientId: selectedClient.id, action: "revoke" }),
+      });
+
+      if (!response.ok) throw new Error("Falha ao revogar link");
+
+      setPortalLink((current) =>
+        current
+          ? {
+              ...current,
+              status: "Revogado",
+              revokedAt: new Date().toISOString(),
+              shareUrl: null,
+            }
+          : current,
+      );
+      setLastGeneratedUrl("");
+    } catch {
+      setLinkError("Nao foi possivel revogar o link agora.");
+    } finally {
+      setIsRevokingLink(false);
+    }
+  }
+
+  async function handleCopyPortalLink() {
+    if (!lastGeneratedUrl) {
+      setCopyStatus("error");
+      window.setTimeout(() => setCopyStatus("idle"), 2000);
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(lastGeneratedUrl);
       setCopyStatus("ok");
     } catch {
       setCopyStatus("error");
@@ -192,24 +320,98 @@ export default function PortalPage() {
                 <div className="flex h-24 w-24 items-center justify-center rounded-[1.5rem] bg-white/20 text-4xl">🐾</div>
               )}
               <div>
-                <p className="text-sm text-slate-300">{portalUrl}</p>
+                <p className="text-sm text-slate-300">{portalLink?.previewPath || "Sem link gerado ainda"}</p>
                 <h2 className="mt-4 font-display text-3xl font-semibold">Portal do {selectedDog.name}</h2>
                 <p className="mt-2 text-sm text-slate-300">Tutor: {selectedClient.name} • Plano: {selectedClient.plan || "Não informado"}</p>
-                <button
-                  type="button"
-                  onClick={handleCopyPortalLink}
-                  className="mt-3 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-white"
-                >
-                  Copiar link do portal
-                </button>
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleGeneratePortalLink}
+                    disabled={!selectedClient || isGeneratingLink}
+                    className="rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-white disabled:opacity-60"
+                  >
+                    {isGeneratingLink ? "Gerando..." : portalLink ? "Renovar link" : "Gerar link do tutor"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCopyPortalLink}
+                    className="rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-white"
+                  >
+                    Copiar ultimo link gerado
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleRevokePortalLink}
+                    disabled={!portalLink || portalLink.status === "Revogado" || isRevokingLink}
+                    className="rounded-full border border-rose-300/40 bg-rose-500/20 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-rose-100 disabled:opacity-60"
+                  >
+                    {isRevokingLink ? "Revogando..." : "Revogar link"}
+                  </button>
+                </div>
+                <div className="mt-3 flex items-center gap-2 text-xs text-slate-300">
+                  <span>Validade (dias):</span>
+                  <input
+                    type="number"
+                    min={1}
+                    max={365}
+                    value={expiresInDays}
+                    onChange={(event) => setExpiresInDays(Number(event.target.value || 90))}
+                    className="w-20 rounded-lg border border-white/20 bg-white/10 px-2 py-1 text-white outline-none"
+                  />
+                </div>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {[7, 30, 90].map((preset) => (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => setExpiresInDays(preset)}
+                      className={`rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] ${
+                        expiresInDays === preset
+                          ? "border-emerald-200 bg-emerald-500/20 text-emerald-100"
+                          : "border-white/20 bg-white/10 text-white"
+                      }`}
+                    >
+                      {preset} dias
+                    </button>
+                  ))}
+                </div>
+                <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-slate-300">
+                  <label className="inline-flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={pinEnabled}
+                      onChange={(event) => setPinEnabled(event.target.checked)}
+                      className="h-4 w-4 rounded border-white/30 bg-white/10"
+                    />
+                    Proteger com PIN
+                  </label>
+                  <input
+                    type="password"
+                    inputMode="numeric"
+                    maxLength={4}
+                    pattern="[0-9]{4}"
+                    value={pin}
+                    onChange={(event) => setPin(event.target.value.replace(/\D/g, "").slice(0, 4))}
+                    disabled={!pinEnabled}
+                    placeholder="0000"
+                    className="w-20 rounded-lg border border-white/20 bg-white/10 px-2 py-1 text-white outline-none disabled:opacity-60"
+                  />
+                </div>
+                <div className="mt-3 grid gap-1 text-xs text-slate-300">
+                  <p>Status: {isLoadingLink ? "Carregando..." : portalLink?.status || "Nao gerado"}</p>
+                  <p>Expira em: {formatDateTime(portalLink?.expiresAt)}</p>
+                  <p>Ultimo acesso: {formatDateTime(portalLink?.lastAccessAt)}</p>
+                  <p>PIN ativo: {portalLink?.hasPin ? "Sim" : "Nao"}</p>
+                </div>
+                {linkError ? <p className="mt-2 text-xs text-rose-300">{linkError}</p> : null}
                 {copyStatus === "ok" ? <p className="mt-2 text-xs text-emerald-300">Link copiado com sucesso.</p> : null}
-                {copyStatus === "error" ? <p className="mt-2 text-xs text-rose-300">Não foi possível copiar automaticamente.</p> : null}
+                {copyStatus === "error" ? <p className="mt-2 text-xs text-rose-300">Gere um novo link antes de copiar.</p> : null}
               </div>
             </div>
             <div className="mt-6 grid gap-3 sm:grid-cols-2">
               <div className="rounded-2xl bg-white/7 p-4">
                 <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Tarefas concluídas</p>
-                <p className="mt-2 font-display text-4xl font-semibold">{completed}/{tasks.length || 0}</p>
+                <p className="mt-2 font-display text-4xl font-semibold">{completed}/{selectedTasks.length || 0}</p>
               </div>
               <div className="rounded-2xl bg-white/7 p-4">
                 <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Financeiro em aberto do caso</p>
@@ -230,11 +432,11 @@ export default function PortalPage() {
             </p>
             <h3 className="mt-2 font-display text-2xl font-semibold">Entregas para casa</h3>
             <p className="mt-2 text-sm text-[var(--muted)]">Crie tarefas simples e objetivas para aumentar aderência entre sessões.</p>
-            {tasks.length === 0 ? (
+            {selectedTasks.length === 0 ? (
               <p className="mt-4 text-sm text-[var(--muted)]">Nenhuma tarefa cadastrada. Adicione tarefas para o tutor acompanhar.</p>
             ) : null}
             <div className="mt-5 space-y-3">
-              {tasks.map((task, index) => (
+              {selectedTasks.map((task, index) => (
                 <div
                   key={task.id}
                   className={`items-start gap-3 rounded-3xl border border-[var(--border)] bg-white/90 p-4 ${index > 2 ? "hidden md:flex" : "flex"}`}
@@ -367,17 +569,17 @@ export default function PortalPage() {
                 <div className="flex items-center justify-between gap-2">
                   <p className="text-xs uppercase tracking-[0.14em] text-[var(--muted)]">Feedback recentes do tutor</p>
                   <span className="rounded-full bg-sky-100 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-sky-800">
-                    {feedbacks.length}
+                    {selectedFeedbacks.length}
                   </span>
                 </div>
                 <div className="mt-2 space-y-2">
-                  {feedbacks.slice(0, 2).map((feedback) => (
+                      {selectedFeedbacks.slice(0, 2).map((feedback) => (
                     <div key={feedback.id} className="rounded-xl border border-[var(--border)] bg-[var(--panel)] p-3">
                       <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">{feedback.author} • {feedback.createdAt}</p>
                       <p className="mt-1 text-sm text-[var(--muted)]">{feedback.message}</p>
                     </div>
                   ))}
-                  {feedbacks.length === 0 ? <p className="text-sm text-[var(--muted)]">Sem feedback enviado pelo tutor ainda.</p> : null}
+                      {selectedFeedbacks.length === 0 ? <p className="text-sm text-[var(--muted)]">Sem feedback enviado pelo tutor ainda.</p> : null}
                 </div>
               </div>
             </>

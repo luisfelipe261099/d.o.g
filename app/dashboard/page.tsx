@@ -1,8 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { PageShell } from "@/components/page-shell";
+import Image from "next/image";
+
+import { AuthGuard } from "@/components/auth-guard";
 import { useAppStore } from "@/lib/app-store";
+
+function getFirstName(name: string): string {
+  const first = name.trim().split(" ")[0];
+  return first || "Adestrador";
+}
+
+function statusBadge(status: string): string {
+  if (status === "Confirmado") return "bg-emerald-100 text-emerald-800";
+  if (status === "Cancelado") return "bg-rose-100 text-rose-800";
+  return "bg-amber-100 text-amber-900";
+}
 
 export default function DashboardPage() {
   const clients = useAppStore((state) => state.clients);
@@ -10,184 +23,175 @@ export default function DashboardPage() {
   const sessions = useAppStore((state) => state.trainingSessions);
   const payments = useAppStore((state) => state.payments);
   const trainerName = useAppStore((state) => state.trainerName);
-  const upcomingEvents = events.slice(0, 4);
+  const upcomingEvents = events.slice(0, 3);
 
-  const confirmedEvents = events.filter((event) => event.status === "Confirmado").length;
+  const totalDogs = clients.reduce((total, client) => total + client.dogs.length, 0);
+  const pendingEvents = events.filter((event) => event.status === "Pendente" || event.status === "Aguardando").length;
+  const todayEvent = upcomingEvents[0];
+
+  const heroClient = clients.find((client) => client.name === todayEvent?.client) ?? clients[0];
+  const heroDog = heroClient?.dogs.find((dog) => dog.name === todayEvent?.dog) ?? heroClient?.dogs[0];
+
+  const todaysLabel = todayEvent?.time ?? "10:00";
+  const dogName = todayEvent?.dog ?? heroDog?.name ?? "Sem atendimento";
+  const heroPlan = todayEvent?.plan || "Operação";
+
+  const quickStats = [
+    { value: String(events.length), label: "Atendimentos", link: "/agenda" },
+    { value: String(sessions.length), label: "Treinos", link: "/treinos" },
+    { value: String(totalDogs), label: "Cães ativos", link: "/clientes" },
+    { value: String(pendingEvents), label: "Pendências", link: "/agenda" },
+  ];
+
   const pendingPayments = payments
     .filter((payment) => payment.status === "Pendente")
     .reduce((total, payment) => total + payment.amount, 0);
 
-  const metrics = [
-    { label: "Clientes ativos", value: String(clients.length), detail: "carteira acompanhada nesta semana" },
-    {
-      label: "Cães em evolução",
-      value: String(clients.reduce((total, client) => total + client.dogs.length, 0)),
-      detail: "com evolução monitorada por sessão",
-    },
-    {
-      label: "Treinos cadastrados",
-      value: String(sessions.length),
-      detail: "sessões registradas com contexto técnico",
-    },
-    {
-      label: "Cobranças pendentes",
-      value: `R$ ${pendingPayments.toLocaleString("pt-BR")}`,
-      detail: "receita prevista pendente de confirmação",
-    },
-  ];
-
   return (
-    <PageShell
-      kicker="Painel"
-      title={`Painel do ${trainerName || "adestrador"}`}
-      description="Veja o que precisa ser feito hoje e siga direto para a próxima ação da operação."
-      requireAuth="trainer"
-    >
-      <section className="grid gap-3 sm:grid-cols-3">
-        {[
-          { step: "1. Veja os atendimentos de hoje", href: "/agenda", cta: "Abrir agenda" },
-          { step: "2. Registre o treino do caso", href: "/treinos", cta: "Registrar treino" },
-          { step: "3. Entregue tarefa no portal do tutor", href: "/portal", cta: "Abrir portal" },
-        ].map(({ step, href, cta }) => (
-          <Link
-            key={step}
-            href={href}
-            className="rounded-2xl border border-[var(--border)] bg-white/90 p-3.5 sm:p-4 flex items-center justify-between gap-3 hover:border-sky-300 hover:bg-sky-50 transition-colors"
-          >
-            <p className="text-sm font-semibold leading-6 text-[var(--foreground)]">{step}</p>
-            <span className="shrink-0 rounded-full border border-[var(--border)] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">{cta}</span>
-          </Link>
-        ))}
-      </section>
+    <AuthGuard role="trainer">
+      <main className="mx-auto w-full max-w-md px-3 pb-28 pt-4 sm:max-w-xl">
+        <section className="rounded-[2rem] border border-[var(--border)] bg-[#f7fbf8]/95 p-4 shadow-[var(--shadow)]">
+          <header className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-200 text-lg font-semibold text-emerald-900">
+                {getFirstName(trainerName || "Adestrador").slice(0, 1)}
+              </div>
+              <div>
+                <p className="text-xl font-semibold text-[var(--foreground)]">Bom dia, {getFirstName(trainerName || "adestrador")}!</p>
+                <p className="text-xs text-[var(--muted)]">Aqui está o resumo da sua operação.</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 text-[var(--muted)]">
+              <span className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border)] bg-white">🔔</span>
+              <span className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border)] bg-white">💬</span>
+            </div>
+          </header>
 
-      {clients.length === 0 ? (
-        <section>
-          <article className="rounded-[1.75rem] border border-sky-200 bg-sky-50 p-6 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-700">Por onde come\u00e7ar</p>
-            <h2 className="mt-2 font-display text-2xl font-semibold text-[var(--foreground)]">Nenhum cliente cadastrado ainda</h2>
-            <p className="mt-2 text-sm leading-7 text-[var(--muted)]">
-              Cadastre seu primeiro cliente e o cão dele para liberar a agenda, os treinos e o portal do tutor.
-            </p>
-            <Link href="/clientes" className="mt-4 inline-flex rounded-full bg-[#145a82] px-5 py-2.5 text-sm font-semibold text-white">
-              Cadastrar primeiro cliente
+          <article className="mt-4 overflow-hidden rounded-2xl bg-[linear-gradient(140deg,#153b2e_0%,#0e5a3a_56%,#2a7f4f_100%)] p-4 text-white">
+            <p className="text-xs uppercase tracking-[0.15em] text-emerald-100">Próximo atendimento</p>
+            <div className="mt-2 flex items-end justify-between gap-3">
+              <div>
+                <p className="text-4xl font-semibold leading-none">{todaysLabel}</p>
+                <p className="mt-2 text-lg font-semibold">{dogName}</p>
+                <p className="text-xs text-emerald-100">Treino de obediência • {heroPlan}</p>
+              </div>
+              <div className="relative h-24 w-24 overflow-hidden rounded-2xl bg-white/20">
+                {heroDog?.photoUrl ? (
+                  <Image
+                    src={heroDog.photoUrl}
+                    alt={`Foto de ${heroDog.name}`}
+                    fill
+                    sizes="96px"
+                    unoptimized
+                    className="object-cover"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center text-4xl">🐶</div>
+                )}
+              </div>
+            </div>
+            <Link
+              href="/agenda"
+              className="mt-3 inline-flex rounded-full bg-white/15 px-3 py-1.5 text-xs font-semibold text-white"
+            >
+              Ver agenda completa
             </Link>
           </article>
-        </section>
-      ) : null}
 
-      <section className="grid gap-4 md:hidden">
-        {metrics.slice(0, 2).map((metric) => (
-          <article
-            key={metric.label}
-            className="rounded-[1.5rem] border border-[var(--border)] bg-white/85 p-4 shadow-sm"
-          >
-            <p className="text-sm text-[var(--muted)]">{metric.label}</p>
-            <p className="mt-2 font-display text-3xl font-semibold">{metric.value}</p>
-            <p className="mt-2 text-sm text-emerald-700">{metric.detail}</p>
-          </article>
-        ))}
-      </section>
+          <section className="mt-4 grid grid-cols-2 gap-3">
+            {quickStats.map((item) => (
+              <Link key={item.label} href={item.link} className="rounded-2xl border border-[var(--border)] bg-white p-3">
+                <p className="text-2xl font-semibold text-[var(--foreground)]">{item.value}</p>
+                <p className="mt-1 text-xs text-[var(--muted)]">{item.label}</p>
+              </Link>
+            ))}
+          </section>
 
-      <section className="hidden gap-4 md:grid md:grid-cols-2 xl:grid-cols-4">
-        {metrics.map((metric) => (
-          <article
-            key={metric.label}
-            className="rounded-[1.75rem] border border-[var(--border)] bg-white/85 p-5 shadow-sm"
-          >
-            <p className="text-sm text-[var(--muted)]">{metric.label}</p>
-            <p className="mt-3 font-display text-3xl font-semibold xl:text-4xl">{metric.value}</p>
-            <p className="mt-2 text-sm text-emerald-700">{metric.detail}</p>
-          </article>
-        ))}
-      </section>
-
-      <section>
-        <article className="rounded-[1.75rem] border border-[var(--border)] bg-[var(--panel)] p-5 shadow-sm md:p-6">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">
-                Agenda do dia
-              </p>
-              <h2 className="mt-2 font-display text-xl font-semibold md:text-2xl">
-                Próximos atendimentos
-              </h2>
+          <section className="mt-5">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-semibold text-[var(--foreground)]">Atendimentos de hoje</p>
+              <Link href="/agenda" className="text-xs font-semibold text-[#145a82]">Ver agenda</Link>
             </div>
-            <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-emerald-800">
-              {confirmedEvents} confirmados
-            </span>
-          </div>
-
-          {events.length === 0 ? (
-            <p className="mt-6 text-sm text-[var(--muted)]">Nenhum atendimento agendado. Cadastre eventos na Agenda.</p>
-          ) : null}
-          <div className="mt-6 space-y-4">
-            {upcomingEvents.map((session) => (
-              <div
-                key={session.id}
-                className="grid gap-3 rounded-3xl border border-[var(--border)] bg-white/85 p-4 md:grid-cols-[0.22fr_1fr_auto] md:items-center"
-              >
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-700">
-                    {session.time}
-                  </p>
-                  <p className="mt-1 text-sm text-[var(--muted)]">Sessão {session.sessionNumber}</p>
+            <div className="mt-3 space-y-2">
+              {upcomingEvents.length === 0 ? (
+                <div className="rounded-2xl border border-[var(--border)] bg-white p-3 text-sm text-[var(--muted)]">
+                  Sem atendimentos para hoje.
                 </div>
-                <div className="flex items-center gap-3">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-sky-100 text-2xl">
-                    🐾
+              ) : null}
+              {upcomingEvents.map((event) => (
+                <article key={event.id} className="flex items-center justify-between rounded-2xl border border-[var(--border)] bg-white p-3">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-sm">🐾</div>
+                    <div>
+                      <p className="text-sm font-semibold text-[var(--foreground)]">{event.dog}</p>
+                      <p className="text-xs text-[var(--muted)]">{event.time} • {event.client}</p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="font-display text-lg font-semibold md:text-xl">{session.dog}</h3>
-                    <p className="text-sm text-[var(--muted)]">
-                      {session.client} • {session.plan}
-                    </p>
-                  </div>
-                </div>
-                <div className={`rounded-full px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] ${
-                  session.status === "Confirmado"
-                    ? "bg-emerald-100 text-emerald-800"
-                    : session.status === "Cancelado"
-                    ? "bg-rose-100 text-rose-800"
-                    : "bg-amber-100 text-amber-900"
-                }`}>
-                  {session.status}
-                </div>
-              </div>
-            ))}
-          </div>
-        </article>
-      </section>
-
-      <section>
-        <article className="rounded-[1.75rem] border border-[var(--border)] bg-[var(--panel)] p-5 shadow-sm md:p-6">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">
-            Financeiro rápido
-          </p>
-          <h2 className="mt-2 font-display text-xl font-semibold md:text-2xl">
-            Receita recorrente e risco de cancelamento
-          </h2>
-          {payments.length === 0 ? (
-            <p className="mt-6 text-sm text-[var(--muted)]">Nenhuma cobrança registrada. Adicione clientes para gerar cobranças.</p>
-          ) : null}
-          <div className="mt-6 space-y-3">
-            {payments.slice(0, 2).map((payment) => (
-              <div key={payment.id} className="rounded-3xl border border-[var(--border)] bg-white/90 p-4">
-                <div className="flex items-center justify-between gap-3">
-                  <p className="font-semibold">{payment.clientName}</p>
-                  <span className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] ${
-                    payment.status === "Pago" ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-900"
-                  }`}>
-                    {payment.status}
+                  <span className={`rounded-full px-2 py-1 text-[10px] font-semibold uppercase ${statusBadge(event.status)}`}>
+                    {event.status}
                   </span>
-                </div>
-                <p className="mt-2 text-sm text-[var(--muted)]">
-                  Valor: {payment.amount.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
-                </p>
-              </div>
+                </article>
+              ))}
+            </div>
+          </section>
+
+          <section className="mt-5">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-semibold text-[var(--foreground)]">Novos leads</p>
+              <Link href="/clientes" className="text-xs font-semibold text-[#145a82]">Ver todos</Link>
+            </div>
+            <article className="mt-3 rounded-2xl border border-[var(--border)] bg-white p-3">
+              <p className="text-sm font-semibold text-[var(--foreground)]">{clients[0]?.name || "Sem lead novo"}</p>
+              <p className="mt-1 text-xs text-[var(--muted)]">
+                {clients[0] ? `${clients[0].dogs.length} pet(s) • cadastro recente` : "Cadastre clientes para começar"}
+              </p>
+            </article>
+          </section>
+
+          <section className="mt-5">
+            <p className="text-sm font-semibold text-[var(--foreground)]">Acesso rápido</p>
+            <div className="mt-3 grid grid-cols-4 gap-2">
+              {[
+                { label: "Novo cliente", href: "/clientes", icon: "👤" },
+                { label: "Registrar treino", href: "/treinos", icon: "🏋️" },
+                { label: "Financeiro", href: "/financeiro", icon: "💵" },
+                { label: "Portal", href: "/portal", icon: "📣" },
+              ].map((item) => (
+                <Link key={item.label} href={item.href} className="rounded-xl border border-[var(--border)] bg-white p-2 text-center">
+                  <p className="text-lg">{item.icon}</p>
+                  <p className="mt-1 text-[10px] font-semibold text-[var(--muted)]">{item.label}</p>
+                </Link>
+              ))}
+            </div>
+          </section>
+
+          <section className="mt-5 rounded-2xl border border-[var(--border)] bg-white p-3">
+            <div className="flex items-center justify-between text-sm">
+              <p className="font-semibold text-[var(--foreground)]">Financeiro pendente</p>
+              <p className="font-semibold text-amber-700">
+                {pendingPayments.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+              </p>
+            </div>
+          </section>
+        </section>
+
+        <nav className="fixed bottom-3 left-1/2 z-50 w-[calc(100%-1.5rem)] max-w-md -translate-x-1/2 rounded-2xl border border-[var(--border)] bg-white/95 p-2 shadow-lg backdrop-blur">
+          <div className="grid grid-cols-5 gap-1 text-center">
+            {[
+              { label: "Início", href: "/dashboard", icon: "🏠", active: true },
+              { label: "Agenda", href: "/agenda", icon: "🗓️" },
+              { label: "Novo", href: "/clientes", icon: "➕" },
+              { label: "Clientes", href: "/clientes", icon: "👥" },
+              { label: "Mais", href: "/portal", icon: "⋯" },
+            ].map((item) => (
+              <Link key={item.label} href={item.href} className="rounded-xl px-1 py-1.5">
+                <p className={`text-sm ${item.active ? "text-emerald-700" : "text-[var(--muted)]"}`}>{item.icon}</p>
+                <p className={`text-[10px] font-semibold ${item.active ? "text-emerald-700" : "text-[var(--muted)]"}`}>{item.label}</p>
+              </Link>
             ))}
           </div>
-        </article>
-      </section>
-    </PageShell>
+        </nav>
+      </main>
+    </AuthGuard>
   );
 }

@@ -14,7 +14,28 @@ type DraftTrainingNote = {
   comment: string;
 };
 
+type DraftTrainingMedia = {
+  id: string;
+  dataUrl: string;
+  thumbDataUrl: string;
+  width: number;
+  height: number;
+  sizeKb: number;
+  mainSizeKb: number;
+  thumbSizeKb: number;
+  createdAt: string;
+};
+
 type HistoryPeriod = "all" | "30d" | "90d";
+
+const MAX_MEDIA_ITEMS = 5;
+const TARGET_MAIN_IMAGE_KB = 115;
+const MAX_MAIN_IMAGE_KB = 170;
+const TARGET_THUMB_KB = 24;
+const MAX_THUMB_KB = 40;
+const MAX_TOTAL_MEDIA_KB = 750;
+const MAX_DIMENSION = 1280;
+const THUMB_MAX_DIMENSION = 320;
 
 function createDraftTrainingNote(block = "Guia"): DraftTrainingNote {
   return {
@@ -35,6 +56,84 @@ function parseBrazilianDate(date: string): number {
   return new Date(year, month - 1, day).getTime();
 }
 
+async function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result ?? ""));
+    reader.onerror = () => reject(new Error("Falha ao ler arquivo"));
+    reader.readAsDataURL(file);
+  });
+}
+
+async function compressTrainingImage(file: File): Promise<DraftTrainingMedia> {
+  const sourceDataUrl = await fileToDataUrl(file);
+  const image = new window.Image();
+  image.src = sourceDataUrl;
+  await image.decode();
+
+  const scale = Math.min(1, MAX_DIMENSION / Math.max(image.width, image.height));
+  const width = Math.max(1, Math.round(image.width * scale));
+  const height = Math.max(1, Math.round(image.height * scale));
+
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Canvas nao disponivel");
+  ctx.drawImage(image, 0, 0, width, height);
+
+  function encodeWebpWithTarget(sourceCanvas: HTMLCanvasElement, targetKb: number) {
+    const qualities = [0.82, 0.72, 0.62, 0.52, 0.42, 0.34];
+    let bestDataUrl = "";
+    let bestSizeKb = Number.POSITIVE_INFINITY;
+
+    for (const quality of qualities) {
+      const dataUrl = sourceCanvas.toDataURL("image/webp", quality);
+      const base64Part = dataUrl.split(",")[1] ?? "";
+      const sizeBytes = Math.ceil((base64Part.length * 3) / 4);
+      const sizeKb = Math.round(sizeBytes / 1024);
+
+      if (sizeKb < bestSizeKb) {
+        bestDataUrl = dataUrl;
+        bestSizeKb = sizeKb;
+      }
+
+      if (sizeKb <= targetKb) {
+        bestDataUrl = dataUrl;
+        bestSizeKb = sizeKb;
+        break;
+      }
+    }
+
+    return { dataUrl: bestDataUrl, sizeKb: bestSizeKb };
+  }
+
+  const mainEncoded = encodeWebpWithTarget(canvas, TARGET_MAIN_IMAGE_KB);
+
+  const thumbScale = Math.min(1, THUMB_MAX_DIMENSION / Math.max(width, height));
+  const thumbWidth = Math.max(1, Math.round(width * thumbScale));
+  const thumbHeight = Math.max(1, Math.round(height * thumbScale));
+  const thumbCanvas = document.createElement("canvas");
+  thumbCanvas.width = thumbWidth;
+  thumbCanvas.height = thumbHeight;
+  const thumbCtx = thumbCanvas.getContext("2d");
+  if (!thumbCtx) throw new Error("Canvas de miniatura nao disponivel");
+  thumbCtx.drawImage(image, 0, 0, thumbWidth, thumbHeight);
+  const thumbEncoded = encodeWebpWithTarget(thumbCanvas, TARGET_THUMB_KB);
+
+  return {
+    id: `media-${Math.random().toString(36).slice(2, 10)}`,
+    dataUrl: mainEncoded.dataUrl,
+    thumbDataUrl: thumbEncoded.dataUrl,
+    width,
+    height,
+    sizeKb: mainEncoded.sizeKb + thumbEncoded.sizeKb,
+    mainSizeKb: mainEncoded.sizeKb,
+    thumbSizeKb: thumbEncoded.sizeKb,
+    createdAt: new Date().toISOString(),
+  };
+}
+
 export default function TrainingPage() {
   const searchParams = useSearchParams();
   const clients = useAppStore((state) => state.clients);
@@ -50,6 +149,9 @@ export default function TrainingPage() {
   const [historyPeriod, setHistoryPeriod] = useState<HistoryPeriod>("all");
   const [title, setTitle] = useState("Sessão prática");
   const [draftNotes, setDraftNotes] = useState<DraftTrainingNote[]>([createDraftTrainingNote()]);
+  const [draftMedia, setDraftMedia] = useState<DraftTrainingMedia[]>([]);
+  const [isCompressingMedia, setIsCompressingMedia] = useState(false);
+  const [mediaError, setMediaError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
 
@@ -148,6 +250,7 @@ export default function TrainingPage() {
     ? (draftNotes.reduce((total, note) => total + note.score, 0) / draftNotes.length).toFixed(1)
     : "0.0";
   const draftBlocksLabel = draftNotes.map((note) => note.block).join(" • ");
+  const totalMediaKb = draftMedia.reduce((sum, item) => sum + item.sizeKb, 0);
 
   function resetDraftNotes(defaultBlock = selectedDog?.trainingTypes[0] ?? "Guia") {
     setDraftNotes([createDraftTrainingNote(defaultBlock)]);
@@ -196,6 +299,10 @@ export default function TrainingPage() {
       .filter((note) => note.block && note.comment);
 
     if (!title.trim() || !selectedClient || !selectedDog || !validNotes.length) return;
+    if (totalMediaKb > MAX_TOTAL_MEDIA_KB) {
+      setSaveError("As imagens da sessão excedem o limite total permitido.");
+      return;
+    }
 
     setSaveError("");
     setIsSaving(true);
@@ -209,10 +316,13 @@ export default function TrainingPage() {
         dogId: selectedDog.id,
         dogName: selectedDog.name,
         notes: validNotes,
+        media: draftMedia,
       });
       if (ok) {
         setTitle("Sessão prática");
         resetDraftNotes();
+        setDraftMedia([]);
+        setMediaError("");
       } else {
         setSaveError("Erro ao salvar sessão. Verifique sua conexão e tente novamente.");
         window.setTimeout(() => setSaveError(""), 4000);
@@ -220,6 +330,59 @@ export default function TrainingPage() {
     } finally {
       setIsSaving(false);
     }
+  }
+
+  async function handleMediaSelect(files: FileList | null) {
+    if (!files?.length) return;
+
+    setMediaError("");
+    const room = MAX_MEDIA_ITEMS - draftMedia.length;
+    if (room <= 0) {
+      setMediaError(`Limite de ${MAX_MEDIA_ITEMS} imagens por sessão atingido.`);
+      return;
+    }
+
+    const selected = Array.from(files).slice(0, room);
+    setIsCompressingMedia(true);
+
+    try {
+      const compressed = await Promise.all(
+        selected.map(async (file) => {
+          if (!file.type.startsWith("image/")) {
+            throw new Error("Apenas imagens sao permitidas.");
+          }
+
+          const media = await compressTrainingImage(file);
+          if ((media.mainSizeKb ?? media.sizeKb) > MAX_MAIN_IMAGE_KB) {
+            throw new Error(`Imagem principal acima do limite de ${MAX_MAIN_IMAGE_KB}KB.`);
+          }
+
+          if ((media.thumbSizeKb ?? 0) > MAX_THUMB_KB) {
+            throw new Error(`Miniatura acima do limite de ${MAX_THUMB_KB}KB.`);
+          }
+
+          return media;
+        }),
+      );
+
+      const nextMedia = [...draftMedia, ...compressed];
+      const nextTotalKb = nextMedia.reduce((sum, item) => sum + item.sizeKb, 0);
+      if (nextTotalKb > MAX_TOTAL_MEDIA_KB) {
+        setMediaError(`Total de imagens excede ${MAX_TOTAL_MEDIA_KB}KB. Remova alguma imagem.`);
+        return;
+      }
+
+      setDraftMedia(nextMedia);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Falha ao processar imagem.";
+      setMediaError(message);
+    } finally {
+      setIsCompressingMedia(false);
+    }
+  }
+
+  function removeDraftMedia(mediaId: string) {
+    setDraftMedia((current) => current.filter((item) => item.id !== mediaId));
   }
 
   return (
@@ -463,6 +626,66 @@ export default function TrainingPage() {
                 ))}
               </div>
 
+              <div className="rounded-3xl border border-[var(--border)] bg-[var(--panel)] p-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">Imagens do treinamento</p>
+                    <p className="mt-1 text-sm text-[var(--muted)]">
+                      Compressao automatica para economizar Vercel/TiDB. Limite: {MAX_MEDIA_ITEMS} imagens, principal ate {MAX_MAIN_IMAGE_KB}KB e thumb ate {MAX_THUMB_KB}KB.
+                    </p>
+                  </div>
+                  <label className="cursor-pointer rounded-full border border-[var(--border)] bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--foreground)]">
+                    {isCompressingMedia ? "Comprimindo..." : "Adicionar imagens"}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      disabled={isCompressingMedia}
+                      onChange={(event) => {
+                        handleMediaSelect(event.target.files);
+                        event.currentTarget.value = "";
+                      }}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+
+                <p className="mt-3 text-xs text-[var(--muted)]">
+                  Total atual: {draftMedia.length}/{MAX_MEDIA_ITEMS} imagem(ns) • {totalMediaKb}/{MAX_TOTAL_MEDIA_KB}KB
+                </p>
+
+                {mediaError ? <p className="mt-2 text-xs text-rose-700">{mediaError}</p> : null}
+
+                {draftMedia.length ? (
+                  <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                    {draftMedia.map((media) => (
+                      <div key={media.id} className="overflow-hidden rounded-2xl border border-[var(--border)] bg-white">
+                        <div className="relative h-28 w-full">
+                          <Image
+                            src={media.thumbDataUrl || media.dataUrl}
+                            alt="Treino"
+                            fill
+                            sizes="(min-width: 640px) 20vw, 100vw"
+                            unoptimized
+                            className="object-cover"
+                          />
+                        </div>
+                        <div className="flex items-center justify-between gap-2 p-2 text-[11px] text-[var(--muted)]">
+                          <span>{media.mainSizeKb ?? media.sizeKb} + {media.thumbSizeKb ?? 0}KB</span>
+                          <button
+                            type="button"
+                            onClick={() => removeDraftMedia(media.id)}
+                            className="font-semibold uppercase tracking-[0.12em] text-amber-800"
+                          >
+                            Remover
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+
               <button
                 type="submit"
                 disabled={isSaving}
@@ -493,6 +716,10 @@ export default function TrainingPage() {
                 <div>
                   <p className="font-semibold text-[var(--foreground)]">Média prevista</p>
                   <p className="mt-1">{averageDraftScore}/10</p>
+                </div>
+                <div>
+                  <p className="font-semibold text-[var(--foreground)]">Imagens</p>
+                  <p className="mt-1">{draftMedia.length} arquivo(s) • {totalMediaKb}KB</p>
                 </div>
               </div>
             </div>
@@ -559,6 +786,24 @@ export default function TrainingPage() {
                     Nenhuma sessão registrada ainda para este cão.
                   </div>
                 )}
+                {latestSession?.media?.length ? (
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    {latestSession.media.map((media) => (
+                      <div key={media.id} className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--panel)]">
+                        <div className="relative h-24 w-full">
+                          <Image
+                            src={media.thumbDataUrl || media.dataUrl}
+                            alt="Registro de treino"
+                            fill
+                            sizes="(min-width: 1280px) 8vw, 25vw"
+                            unoptimized
+                            className="object-cover"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
               </div>
             </div>
           </article>
@@ -624,6 +869,24 @@ export default function TrainingPage() {
                       </div>
                     ))}
                   </div>
+                  {session.media?.length ? (
+                    <div className="mt-4 grid gap-3 lg:grid-cols-4">
+                      {session.media.map((media) => (
+                        <div key={media.id} className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--panel)]">
+                          <div className="relative h-24 w-full">
+                            <Image
+                              src={media.thumbDataUrl || media.dataUrl}
+                              alt="Imagem da sessão"
+                              fill
+                              sizes="(min-width: 1024px) 8vw, 25vw"
+                              unoptimized
+                              className="object-cover"
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
                 </article>
               ))}
             </div>

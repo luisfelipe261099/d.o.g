@@ -91,6 +91,7 @@ model Trainer {
   payments        Payment[]
   portalTasks     PortalTask[]
   portalFeedbacks PortalFeedback[]
+  portalAccessLinks PortalAccessLink[]
 
   @@index([userId])
 }
@@ -124,6 +125,9 @@ model ClientProfile {
 
   dogs     Dog[]
   payments Payment[]
+  portalTasks     PortalTask[]
+  portalFeedbacks PortalFeedback[]
+  portalAccessLink PortalAccessLink?
 
   clientUserId String?
   clientUser   Client? @relation(fields: [clientUserId], references: [id])
@@ -164,6 +168,7 @@ model TrainingSession {
   title       String
   date        String
   notes       String   @db.LongText // JSON serializado
+  media       String?  @db.LongText // JSON serializado de imagens comprimidas
   createdAt   DateTime @default(now())
 
   @@index([trainerId])
@@ -215,12 +220,15 @@ model PortalTask {
   id          String   @id @default(cuid())
   trainerId   String
   trainer     Trainer  @relation(fields: [trainerId], references: [id], onDelete: Cascade)
+  clientId    String?
+  client      ClientProfile? @relation(fields: [clientId], references: [id], onDelete: SetNull)
   title       String
   description String?  @db.Text
   completed   Boolean  @default(false)
   createdAt   DateTime @default(now())
 
   @@index([trainerId])
+  @@index([clientId])
 }
 
 // ─── Feedback do portal ───────────────────────────────────────────────────────
@@ -229,9 +237,34 @@ model PortalFeedback {
   id        String   @id @default(cuid())
   trainerId String
   trainer   Trainer  @relation(fields: [trainerId], references: [id], onDelete: Cascade)
+  clientId  String?
+  client    ClientProfile? @relation(fields: [clientId], references: [id], onDelete: SetNull)
   author    String   @default("Tutor")
   message   String   @db.Text
   createdAt DateTime @default(now())
 
   @@index([trainerId])
+  @@index([clientId])
+}
+
+// ─── Link mágico do portal do tutor ──────────────────────────────────────────
+
+model PortalAccessLink {
+  id          String   @id @default(cuid())
+  trainerId   String
+  trainer     Trainer  @relation(fields: [trainerId], references: [id], onDelete: Cascade)
+  clientId    String   @unique
+  client      ClientProfile @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  tokenHash   String   @unique
+  pinHash     String?
+  tokenPrefix String
+  expiresAt   DateTime
+  revokedAt   DateTime?
+  lastAccessAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([trainerId])
+  @@index([expiresAt])
+  @@index([revokedAt])
 }
