@@ -126,7 +126,7 @@ export function CadastroClient() {
     return (
       <main className="mx-auto w-full max-w-5xl px-4 pb-16 pt-6 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-xl text-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[rgba(20,90,130,0.8)]">PegadaCerta</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[rgba(20,90,130,0.8)]">Adestro</p>
           <h2 className="mt-2 font-display text-2xl font-semibold text-[var(--foreground)] sm:text-3xl">Escolha seu plano</h2>
           <p className="mt-2 text-sm text-[var(--muted)]">Comece de graca por 90 dias ou escolha um plano pago diretamente.</p>
         </div>
@@ -205,7 +205,7 @@ export function CadastroClient() {
           ? Voltar aos planos
         </button>
 
-        <p className="relative text-xs font-semibold uppercase tracking-[0.22em] text-[rgba(20,90,130,0.8)]">PegadaCerta</p>
+        <p className="relative text-xs font-semibold uppercase tracking-[0.22em] text-[rgba(20,90,130,0.8)]">Adestro</p>
         <h2 className="relative mt-2 font-display text-2xl font-semibold text-[var(--foreground)] sm:text-3xl">Criar conta</h2>
 
         {/* Plano selecionado */}

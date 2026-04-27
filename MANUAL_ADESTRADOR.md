@@ -1,11 +1,11 @@
-# Manual do Adestrador - PegadaCerta
+# Manual do Adestrador - Adestro
 
 Este manual foi escrito para o adestrador que vai usar o sistema no dia a dia.
 O foco aqui e mostrar o fluxo pratico de uso da plataforma, o que cada modulo faz hoje e como operar a demo sem se perder.
 
 ## 1. Objetivo do sistema
 
-O PegadaCerta organiza a operacao do adestrador em um fluxo unico:
+O Adestro organiza a operacao do adestrador em um fluxo unico:
 
 1. cadastrar clientes e caes
 2. registrar treinos e evolucao tecnica
@@ -249,7 +249,7 @@ Financeiro mostra contratos, cobrancas e recebimentos ligados aos clientes e a a
 
 - clientes com contrato ativo entram na carteira financeira
 - cada cobranca pode ser gerada e acompanhada
-- o sistema separa cobrancas de clientes e cobrancas da assinatura PegadaCerta
+- o sistema separa cobrancas de clientes e cobrancas da assinatura Adestro
 
 ### Uso recomendado
 

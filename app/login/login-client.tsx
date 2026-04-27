@@ -48,7 +48,7 @@ export function LoginClient() {
         <div className="pointer-events-none absolute -right-10 top-0 h-36 w-36 rounded-full bg-[rgba(34,137,190,0.14)] blur-3xl" />
         <div className="pointer-events-none absolute bottom-0 left-0 h-32 w-32 rounded-full bg-[rgba(31,154,138,0.12)] blur-3xl" />
 
-        <p className="relative text-xs font-semibold uppercase tracking-[0.22em] text-[rgba(20,90,130,0.8)]">PegadaCerta</p>
+        <p className="relative text-xs font-semibold uppercase tracking-[0.22em] text-[rgba(20,90,130,0.8)]">Adestro</p>
         <h2 className="relative mt-2 font-display text-2xl font-semibold text-[var(--foreground)] sm:text-3xl">Entrar</h2>
         <p className="relative mt-2 text-sm text-[var(--muted)]">Acesse sua conta para continuar.</p>
 

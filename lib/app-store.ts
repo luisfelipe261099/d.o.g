@@ -895,7 +895,7 @@ export const useAppStore = create<AppState>()(
       },
     }),
     {
-      name: "pegadacerta-store",
+      name: "adestro-store",
       onRehydrateStorage: () => (state) => {
         state?.setHydrated(true);
       },

@@ -86,10 +86,10 @@ export function SiteHeader() {
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-2.5 sm:px-6 lg:px-8">
           <Link href="/" className="flex items-center gap-3">
             <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/70 bg-[linear-gradient(145deg,_#145a82,_#1f8e80)] font-display text-base font-semibold text-white shadow-[0_10px_30px_rgba(16,89,131,0.24)] sm:h-12 sm:w-12 sm:text-lg">
-              PC
+              AD
             </div>
             <div>
-              <p className="font-display text-lg font-semibold sm:text-xl">PegadaCerta</p>
+              <p className="font-display text-lg font-semibold sm:text-xl">Adestro</p>
               <p className="hidden text-xs text-[var(--muted)] sm:block">Operacao para adestradores</p>
             </div>
           </Link>

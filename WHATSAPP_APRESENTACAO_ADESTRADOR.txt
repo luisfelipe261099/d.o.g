@@ -2,7 +2,7 @@ VERSAO 1 - APRESENTACAO CURTA
 
 Oi, tudo bem?
 
-Estou usando uma plataforma chamada PegadaCerta para organizar meus atendimentos de adestramento.
+Estou usando uma plataforma chamada Adestro para organizar meus atendimentos de adestramento.
 Nela eu consigo centralizar clientes, agenda, evolucao das aulas, tarefas para casa e acompanhamento do tutor em um unico lugar.
 
 A ideia e deixar o processo mais claro, profissional e facil de acompanhar, tanto para mim quanto para o cliente.

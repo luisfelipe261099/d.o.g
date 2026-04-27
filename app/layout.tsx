@@ -20,7 +20,7 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: "PegadaCerta",
+  title: "Adestro",
   description:
     "Plataforma para adestradores gerenciarem rotina, treinos, relatorios e agenda com apoio de IA.",
   icons: {

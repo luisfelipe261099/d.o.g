@@ -1,4 +1,4 @@
-// PegadaCerta – Prisma schema para TiDB Cloud (MySQL compatível)
+// Adestro – Prisma schema para TiDB Cloud (MySQL compatível)
 
 generator client {
   provider = "prisma-client-js"

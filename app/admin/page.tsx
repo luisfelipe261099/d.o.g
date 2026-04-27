@@ -6,7 +6,7 @@ export default function AdminPage() {
     <PageShell
       kicker="Admin"
       title="Painel administrativo"
-      description="Gerencie adestradores assinantes, planos, faturamento e indicadores da PegadaCerta."
+      description="Gerencie adestradores assinantes, planos, faturamento e indicadores da Adestro."
       requireAuth="admin"
     >
       <AdminDashboard />

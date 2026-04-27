@@ -1,4 +1,4 @@
-# PegadaCerta
+# Adestro
 
 Plataforma SaaS para adestradores, feita em Next.js, com foco em operacao diaria, treino, agenda, portal do cliente e financeiro.
 
@@ -78,9 +78,9 @@ Invoke-WebRequest -Uri "http://localhost:3000/api/seed" -Method POST -Headers @{
 
 ## Contas demo (seed)
 
-- Adestrador: adestrador@pegadacerta.com.br / 123456
-- Cliente: cliente@pegadacerta.com.br / 123456
-- Admin: admin@pegadacerta.com.br / 123456
+- Adestrador: adestrador@adestro.com.br / 123456
+- Cliente: cliente@adestro.com.br / 123456
+- Admin: admin@adestro.com.br / 123456
 
 ## Deploy na Vercel
 

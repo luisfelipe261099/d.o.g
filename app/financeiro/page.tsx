@@ -183,7 +183,7 @@ export default function FinancialPage() {
           </section>
 
           <section className="mt-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">Sua assinatura PegadaCerta</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">Sua assinatura Adestro</p>
             <div className="mt-3 rounded-2xl border border-[var(--border)] bg-white p-3">
               <div className="grid grid-cols-2 gap-3">
                 <div>
