@@ -168,7 +168,7 @@ export default function DashboardPage() {
     if (!matches.length) return undefined;
     return [...matches].sort((a, b) => b.number - a.number)[0];
   })();
-  const lastSessionSummary = lastSessionForDog?.notes?.[0]?.text ?? "";
+  const lastSessionSummary = lastSessionForDog?.notes?.[0]?.comment ?? "";
   const dogProfileHref = heroClient && heroDog ? `/treinos?clientId=${heroClient.id}&dogId=${heroDog.id}` : "/clientes";
   const lastSessionHref = lastSessionForDog ? `/treinos?clientId=${heroClient?.id ?? ""}&dogId=${heroDog?.id ?? ""}` : dogProfileHref;
 
