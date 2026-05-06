@@ -249,8 +249,8 @@ export default function IaPage() {
                   {dogTimeline.map((session) => (
                     <li key={session.id} className="rounded-xl border border-[var(--border)] bg-[#f7fbff] px-3 py-2">
                       <p className="text-xs font-semibold text-[var(--foreground)]">{session.date} • {session.title}</p>
-                      {session.notes?.[0]?.text ? (
-                        <p className="mt-1 line-clamp-2 text-[11px] text-[var(--muted)]">{session.notes[0].text}</p>
+                      {session.notes?.[0]?.comment ? (
+                        <p className="mt-1 line-clamp-2 text-[11px] text-[var(--muted)]">{session.notes[0].comment}</p>
                       ) : null}
                     </li>
                   ))}
