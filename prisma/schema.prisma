@@ -92,8 +92,26 @@ model Trainer {
   portalTasks     PortalTask[]
   portalFeedbacks PortalFeedback[]
   portalAccessLinks PortalAccessLink[]
+  clientGamifications ClientGamification[]
+  renewals        SubscriptionRenewal[]
 
   @@index([userId])
+}
+
+model SubscriptionRenewal {
+  id            String   @id @default(cuid())
+  trainerId     String
+  trainer       Trainer  @relation(fields: [trainerId], references: [id], onDelete: Cascade)
+  planName      String
+  lessonPackage String
+  paymentMethod String
+  amount        Float
+  status        String   @default("Gerada")
+  reference     String?
+  dueDate       String?
+  createdAt     DateTime @default(now())
+
+  @@index([trainerId])
 }
 
 // ─── Cliente/Tutor ────────────────────────────────────────────────────────────
@@ -117,17 +135,13 @@ model ClientProfile {
   propertyType   String?
   environment    String?  @db.Text
   plan           String?
-  contractAmount Float    @default(0)
-  billingDay     Int      @default(10)
-  paymentMethod  String   @default("Pix")
-  nextChargeDate String?
   createdAt      DateTime @default(now())
 
   dogs     Dog[]
-  payments Payment[]
   portalTasks     PortalTask[]
   portalFeedbacks PortalFeedback[]
   portalAccessLink PortalAccessLink?
+  gamification    ClientGamification?
 
   clientUserId String?
   clientUser   Client? @relation(fields: [clientUserId], references: [id])
@@ -199,19 +213,15 @@ model Payment {
   id            String   @id @default(cuid())
   trainerId     String
   trainer       Trainer  @relation(fields: [trainerId], references: [id], onDelete: Cascade)
-  clientId      String?
-  clientProfile ClientProfile? @relation(fields: [clientId], references: [id])
-  clientName    String
+  description   String
   amount        Float
   status        String   @default("Pendente")
-  source        String?
   paymentMethod String?
   dueDate       String?
   reference     String?
   createdAt     DateTime @default(now())
 
   @@index([trainerId])
-  @@index([clientId])
 }
 
 // ─── Tarefa do portal ─────────────────────────────────────────────────────────
@@ -267,4 +277,26 @@ model PortalAccessLink {
   @@index([trainerId])
   @@index([expiresAt])
   @@index([revokedAt])
+}
+
+// ─── Gamificação do cliente ───────────────────────────────────────────────
+
+model ClientGamification {
+  id                  String   @id @default(cuid())
+  clientId            String   @unique
+  client              ClientProfile @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  trainerId           String
+  trainer             Trainer  @relation(fields: [trainerId], references: [id], onDelete: Cascade)
+  points              Int      @default(0)
+  streakDays          Int      @default(0)
+  lastVisitDate       String?  // YYYY-MM-DD
+  trainerRating       Int      @default(0)
+  totalTasksCompleted Int      @default(0)
+  totalFeedbacks      Int      @default(0)
+  watchedVideos       String   @db.Text
+  sessionRatings      String   @db.Text
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([trainerId])
 }

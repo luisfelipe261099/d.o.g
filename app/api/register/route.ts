@@ -17,7 +17,7 @@ export async function POST(request: Request) {
   const password = (body.password ?? "");
   const plan     = (body.plan     ?? "Trial").trim();
 
-  const allowedPlans = ["Trial", "Essencial", "Pro", "Premium"];
+  const allowedPlans = ["Trial", "Starter", "Pro", "Business"];
   const safePlan = allowedPlans.includes(plan) ? plan : "Trial";
 
   // Validações básicas de entrada

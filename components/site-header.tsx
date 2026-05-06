@@ -44,18 +44,18 @@ export function SiteHeader() {
   ];
 
   const trainerNav = [
-    { href: "/dashboard", label: "Dashboard", kicker: "Home", description: "Visão geral da operação" },
-    { href: "/clientes", label: "Clientes", kicker: "Carteira", description: "Gestão de clientes" },
-    { href: "/treinos", label: "Treinos", kicker: "Técnica", description: "Registro de sessões" },
-    { href: "/ia", label: "Assistente IA", kicker: "Protocolos", description: "Sugestões para casos complexos" },
-    { href: "/agenda", label: "Agenda", kicker: "Calendário", description: "Agendamentos" },
-    { href: "/portal", label: "Portal do Tutor", kicker: "Externo", description: "Gerenciar acesso do cliente" },
+    { href: "/dashboard", label: "Início", kicker: "Home", description: "Comece por aqui" },
+    { href: "/clientes", label: "Clientes", kicker: "Carteira", description: "Tutores e cães" },
+    { href: "/agenda", label: "Agenda", kicker: "Hoje", description: "Próximos atendimentos" },
+    { href: "/treinos", label: "Treinos", kicker: "Histórico", description: "Sessões registradas" },
+    { href: "/portal", label: "Portal do Tutor", kicker: "Externo", description: "Link compartilhado com o tutor" },
+    { href: "/ia", label: "Assistente IA", kicker: "Apoio", description: "Sugestões para casos complexos" },
     { href: "/planos", label: "Meu Plano", kicker: "Assinatura", description: "Plano e pagamento" },
-    { href: "/financeiro", label: "Financeiro", kicker: "Financeiro", description: "Gestão financeira" },
+    { href: "/configuracoes", label: "Configurações", kicker: "Conta", description: "Preferências da conta" },
   ];
 
   const clientNav = [
-    { href: "/portal/cliente", label: "Meu Portal", kicker: "Cliente", description: "Visão do tutor" },
+    { href: "/portal/cliente", label: "Meu Portal", kicker: "Cliente", description: "Visão do cliente" },
   ];
 
   const visibleNav = isAuthenticated

@@ -68,7 +68,7 @@ export async function GET(_request: Request, { params }: Params) {
     return NextResponse.json({ error: "Link invalido ou expirado" }, { status: 404 });
   }
 
-  const [events, sessions, tasks, feedbacks, payments] = await Promise.all([
+  const [events, sessions, tasks, feedbacks] = await Promise.all([
     prisma.calendarEvent.findMany({
       where: {
         trainerId: link.trainerId,
@@ -108,14 +108,6 @@ export async function GET(_request: Request, { params }: Params) {
       orderBy: { createdAt: "desc" },
       take: 30,
     }),
-    prisma.payment.findMany({
-      where: {
-        trainerId: link.trainerId,
-        OR: [{ clientId: link.clientId }, { clientName: link.client.name }],
-      },
-      orderBy: { createdAt: "desc" },
-      take: 30,
-    }),
   ]);
 
   await prisma.portalAccessLink.update({
@@ -144,7 +136,6 @@ export async function GET(_request: Request, { params }: Params) {
     })),
     tasks,
     feedbacks,
-    payments,
     linkMeta: {
       expiresAt: link.expiresAt,
       status: "Ativo",

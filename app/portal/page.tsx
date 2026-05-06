@@ -34,7 +34,6 @@ export default function PortalPage() {
   const storeClients = useAppStore((state) => state.clients);
   const sessions = useAppStore((state) => state.trainingSessions);
   const events = useAppStore((state) => state.calendarEvents);
-  const payments = useAppStore((state) => state.payments);
   const tasks = useAppStore((state) => state.portalTasks);
   const feedbacks = useAppStore((state) => state.portalFeedbacks);
   const toggleTask = useAppStore((state) => state.toggleTask);
@@ -148,14 +147,6 @@ export default function PortalPage() {
     });
   }, [sessions, selectedClient, selectedDog]);
 
-  const selectedPayments = useMemo(() => {
-    if (!selectedClient) return [];
-
-    return payments.filter(
-      (payment) => payment.clientId === selectedClient.id || payment.clientName === selectedClient.name,
-    );
-  }, [payments, selectedClient]);
-
   async function handleGeneratePortalLink() {
     if (!selectedClient?.id || isGeneratingLink) return;
     if (pinEnabled && !/^\d{4}$/.test(pin)) {
@@ -244,7 +235,7 @@ export default function PortalPage() {
         <div className="rounded-[2rem] border border-[var(--border)] bg-gradient-to-b from-[#f8fcff] to-[#f2f9ff] p-4 shadow-[var(--shadow)]">
           <header className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#2d6f99]">Portal do cliente</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#2d6f99]">Portal do tutor</p>
               <h1 className="font-display text-2xl font-semibold text-[var(--foreground)]">Gestao do tutor</h1>
               <p className="mt-1 text-xs text-[var(--muted)]">Adestrador: {trainerName || "Sem nome"}</p>
             </div>
@@ -435,12 +426,9 @@ export default function PortalPage() {
             </p>
           </article>
           <article className="rounded-2xl border border-[var(--border)] bg-[var(--panel)] p-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">Em aberto</p>
-            <p className="mt-2 font-display text-2xl font-semibold text-[var(--foreground)]">
-              {selectedPayments
-                .filter((payment) => payment.status === "Pendente")
-                .reduce((sum, payment) => sum + payment.amount, 0)
-                .toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">Sessões</p>
+            <p className="mt-2 font-display text-3xl font-semibold text-[var(--foreground)]">
+              {selectedSessions.length}
             </p>
           </article>
         </div>

@@ -18,14 +18,14 @@ const plans = [
     cta: "Comecar de graca",
   },
   {
-    id: "Essencial",
-    label: "Essencial",
+    id: "Starter",
+    label: "Starter",
     price: "R$ 420",
     cycle: "/mes",
     badge: null,
     features: ["Ate 15 clientes", "Agenda + treinos", "Portal do cliente basico", "Suporte por e-mail"],
     highlight: false,
-    cta: "Escolher Essencial",
+    cta: "Escolher Starter",
   },
   {
     id: "Pro",
@@ -38,14 +38,14 @@ const plans = [
     cta: "Escolher Pro",
   },
   {
-    id: "Premium",
-    label: "Premium",
+    id: "Business",
+    label: "Business",
     price: "R$ 990",
     cycle: "/mes",
     badge: null,
     features: ["Multi-adestrador", "Relatorios analiticos", "White label do portal", "Gerente de conta"],
     highlight: false,
-    cta: "Escolher Premium",
+    cta: "Escolher Business",
   },
 ];
 

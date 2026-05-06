@@ -11,14 +11,14 @@ type TrainerRow = {
   email: string;
   joinedAt: string;
   status: "Ativo" | "Trial";
-  planType: "Essencial" | "Pro" | "Premium" | "Trial";
+  planType: "Trial" | "Starter" | "Pro" | "Business";
   monthlyValue: number;
 };
 
 export default function PlanosPage() {
   const [trainers, setTrainers] = useState<TrainerRow[]>([]);
   const [selectedTrainerId, setSelectedTrainerId] = useState("");
-  const [draftPlan, setDraftPlan] = useState<"Essencial" | "Pro" | "Premium" | "Trial">("Essencial");
+  const [draftPlan, setDraftPlan] = useState<"Trial" | "Starter" | "Pro" | "Business">("Starter");
   const [message, setMessage] = useState("");
 
   async function fetchTrainers(): Promise<TrainerRow[]> {
@@ -142,13 +142,13 @@ export default function PlanosPage() {
                 <span className="text-sm font-medium text-[var(--muted)]">Plano</span>
                 <select
                   value={draftPlan}
-                  onChange={(event) => setDraftPlan(event.target.value as "Essencial" | "Pro" | "Premium" | "Trial")}
+                  onChange={(event) => setDraftPlan(event.target.value as "Trial" | "Starter" | "Pro" | "Business")}
                   className="mt-2 w-full rounded-2xl border border-[var(--border)] px-4 py-3 text-sm outline-none focus:border-sky-400"
                 >
-                  <option value="Essencial">Essencial</option>
-                  <option value="Pro">Pro</option>
-                  <option value="Premium">Premium</option>
                   <option value="Trial">Trial</option>
+                  <option value="Starter">Starter</option>
+                  <option value="Pro">Pro</option>
+                  <option value="Business">Business</option>
                 </select>
               </label>
 

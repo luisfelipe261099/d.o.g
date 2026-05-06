@@ -11,6 +11,13 @@ function getFirstName(name: string): string {
   return first || "Adestrador";
 }
 
+function getGreeting(): string {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Bom dia";
+  if (hour < 18) return "Boa tarde";
+  return "Boa noite";
+}
+
 type IconName =
   | "bell"
   | "chat"
@@ -145,7 +152,6 @@ export default function DashboardPage() {
   const clients = useAppStore((state) => state.clients);
   const events = useAppStore((state) => state.calendarEvents);
   const sessions = useAppStore((state) => state.trainingSessions);
-  const payments = useAppStore((state) => state.payments);
   const trainerName = useAppStore((state) => state.trainerName);
   const upcomingEvents = events.slice(0, 3);
 
@@ -155,6 +161,16 @@ export default function DashboardPage() {
 
   const heroClient = clients.find((client) => client.name === todayEvent?.client) ?? clients[0];
   const heroDog = heroClient?.dogs.find((dog) => dog.name === todayEvent?.dog) ?? heroClient?.dogs[0];
+
+  const lastSessionForDog = (() => {
+    if (!heroDog) return undefined;
+    const matches = sessions.filter((session) => session.dogId === heroDog.id || session.dogName === heroDog.name);
+    if (!matches.length) return undefined;
+    return [...matches].sort((a, b) => b.number - a.number)[0];
+  })();
+  const lastSessionSummary = lastSessionForDog?.notes?.[0]?.text ?? "";
+  const dogProfileHref = heroClient && heroDog ? `/treinos?clientId=${heroClient.id}&dogId=${heroDog.id}` : "/clientes";
+  const lastSessionHref = lastSessionForDog ? `/treinos?clientId=${heroClient?.id ?? ""}&dogId=${heroDog?.id ?? ""}` : dogProfileHref;
 
   const todaysLabel = todayEvent?.time ?? "10:00";
   const dogName = todayEvent?.dog ?? heroDog?.name ?? "Sem atendimento";
@@ -167,10 +183,6 @@ export default function DashboardPage() {
     { value: String(pendingEvents), label: "Pendências", link: "/agenda" },
   ];
 
-  const pendingPayments = payments
-    .filter((payment) => payment.status === "Pendente")
-    .reduce((total, payment) => total + payment.amount, 0);
-
   return (
     <AuthGuard role="trainer">
       <main className="mx-auto w-full max-w-md px-3 pb-8 pt-3 sm:max-w-xl">
@@ -181,7 +193,7 @@ export default function DashboardPage() {
                 {getFirstName(trainerName || "Adestrador").slice(0, 1)}
               </div>
               <div>
-                <p className="text-[1.12rem] font-semibold text-[var(--foreground)]">Bom dia, {getFirstName(trainerName || "adestrador")}!</p>
+                <p className="text-[1.12rem] font-semibold text-[var(--foreground)]">{getGreeting()}, {getFirstName(trainerName || "adestrador")}!</p>
                 <p className="text-xs text-[var(--muted)]">Aqui está o resumo da sua operação.</p>
               </div>
             </div>
@@ -201,7 +213,7 @@ export default function DashboardPage() {
               <div>
                 <p className="text-4xl font-semibold leading-none">{todaysLabel}</p>
                 <p className="mt-2 text-lg font-semibold">{dogName}</p>
-                <p className="text-xs text-sky-100">Treino de obediência • {heroPlan}</p>
+                <p className="text-xs text-sky-100">{heroPlan}</p>
               </div>
               <div className="relative h-24 w-24 overflow-hidden rounded-2xl bg-white/20">
                 {heroDog?.photoUrl ? (
@@ -226,6 +238,28 @@ export default function DashboardPage() {
             >
               Ver agenda completa
             </Link>
+            {heroDog ? (
+              <div className="mt-3 grid gap-2 rounded-xl bg-white/10 p-2.5 text-xs text-sky-50">
+                <Link
+                  href={dogProfileHref}
+                  className="flex items-center justify-between gap-2 rounded-lg bg-white/10 px-2.5 py-1.5 font-semibold transition hover:bg-white/20"
+                >
+                  <span>Ficha do cão • {heroDog.name}</span>
+                  <span aria-hidden>→</span>
+                </Link>
+                <Link
+                  href={lastSessionHref}
+                  className="rounded-lg bg-white/10 px-2.5 py-1.5 transition hover:bg-white/20"
+                >
+                  <p className="font-semibold">
+                    Última aula{lastSessionForDog ? ` • ${lastSessionForDog.date}` : ""}
+                  </p>
+                  <p className="mt-0.5 line-clamp-2 text-[11px] text-sky-100">
+                    {lastSessionSummary || "Sem resumo registrado ainda. Toque para abrir o histórico."}
+                  </p>
+                </Link>
+              </div>
+            ) : null}
           </article>
 
           <section className="mt-4 grid grid-cols-2 gap-3">
@@ -267,17 +301,63 @@ export default function DashboardPage() {
             </div>
           </section>
 
-          <section className="mt-5">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold text-[var(--foreground)]">Novos leads</p>
-              <Link href="/clientes" className="text-xs font-semibold text-[#145a82]">Ver todos</Link>
-            </div>
-            <article className="mt-3 rounded-2xl border border-[var(--border)] bg-white p-3">
-              <p className="text-sm font-semibold text-[var(--foreground)]">{clients[0]?.name || "Sem lead novo"}</p>
-              <p className="mt-1 text-xs text-[var(--muted)]">
-                {clients[0] ? `${clients[0].dogs.length} pet(s) • cadastro recente` : "Cadastre clientes para começar"}
-              </p>
-            </article>
+          <section className="mt-5 rounded-2xl border border-[#cfe4f3] bg-white p-3">
+            <p className="text-sm font-semibold text-[var(--foreground)]">Comece por aqui</p>
+            <p className="mt-0.5 text-[11px] text-[var(--muted)]">Fluxo simples para colocar um caso novo no ar.</p>
+            <ol className="mt-3 space-y-2">
+              {[
+                {
+                  step: 1,
+                  label: "Cadastre cliente e cão",
+                  detail: "Crie a ficha do tutor com os dados do cão.",
+                  href: "/clientes",
+                  done: clients.length > 0,
+                },
+                {
+                  step: 2,
+                  label: "Agende a primeira sessão",
+                  detail: "Defina dia e horário no calendário.",
+                  href: "/agenda",
+                  done: events.length > 0,
+                },
+                {
+                  step: 3,
+                  label: "Registre o treino realizado",
+                  detail: "Anote evolução, notas e fotos.",
+                  href: "/treinos",
+                  done: sessions.length > 0,
+                },
+                {
+                  step: 4,
+                  label: "Compartilhe o portal com o tutor",
+                  detail: "Envie um link seguro para acompanhamento.",
+                  href: "/portal",
+                  done: false,
+                },
+              ].map((item) => (
+                <li key={item.step}>
+                  <Link
+                    href={item.href}
+                    className="flex items-center gap-3 rounded-xl border border-[var(--border)] bg-[#f7fbff] px-3 py-2 transition hover:bg-white"
+                  >
+                    <span
+                      className={`flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full text-xs font-semibold ${
+                        item.done
+                          ? "bg-emerald-500 text-white"
+                          : "bg-[#145a82] text-white"
+                      }`}
+                    >
+                      {item.done ? "✓" : item.step}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-semibold text-[var(--foreground)]">{item.label}</p>
+                      <p className="text-[10px] text-[var(--muted)]">{item.detail}</p>
+                    </div>
+                    <span className="text-[#145a82]" aria-hidden>→</span>
+                  </Link>
+                </li>
+              ))}
+            </ol>
           </section>
 
           <section className="mt-5">
@@ -287,9 +367,8 @@ export default function DashboardPage() {
             </div>
             <div className="mt-3 grid gap-2">
               {[
-                { label: "Novo cliente", href: "/clientes", icon: "user" as const, detail: "Cadastrar tutor e pet" },
+                { label: "Novo cliente", href: "/cadastro", icon: "user" as const, detail: "Cadastrar cliente e cão" },
                 { label: "Registrar treino", href: "/treinos", icon: "train" as const, detail: "Lançar sessão de hoje" },
-                { label: "Financeiro", href: "/financeiro", icon: "money" as const, detail: "Ver pendências" },
               ].map((item) => (
                 <Link
                   key={item.label}
@@ -313,25 +392,6 @@ export default function DashboardPage() {
             </div>
           </section>
 
-          <section className="mt-5 rounded-2xl border border-[var(--border)] bg-white p-3">
-            <div className="flex items-center justify-between text-sm">
-              <p className="font-semibold text-[var(--foreground)]">Financeiro pendente</p>
-              <p className="font-semibold text-[#145a82]">
-                {pendingPayments.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
-              </p>
-            </div>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <Link href="/agenda" className="rounded-full border border-[var(--border)] bg-[#f7fbff] px-3 py-1.5 text-[11px] font-semibold text-[#145a82]">
-                Abrir agenda
-              </Link>
-              <Link href="/treinos/registro" className="rounded-full border border-[var(--border)] bg-[#f7fbff] px-3 py-1.5 text-[11px] font-semibold text-[#145a82]">
-                Novo treino
-              </Link>
-              <Link href="/financeiro" className="rounded-full border border-[var(--border)] bg-[#f7fbff] px-3 py-1.5 text-[11px] font-semibold text-[#145a82]">
-                Cobranças
-              </Link>
-            </div>
-          </section>
         </section>
 
       </main>

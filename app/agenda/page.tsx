@@ -440,7 +440,10 @@ export default function SchedulePage() {
               <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">Novo agendamento</p>
               <form onSubmit={onSubmit} className="mt-3 grid gap-2.5 sm:grid-cols-2">
                 <label className="grid gap-1">
-                  <span className="text-[11px] font-medium text-[var(--muted)]">Cliente</span>
+                  <span className="flex items-center justify-between text-[11px] font-medium text-[var(--muted)]">
+                    Cliente
+                    <Link href="/clientes" className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#145a82]">+ Novo cliente</Link>
+                  </span>
                   <select
                     value={selectedClient?.id ?? ""}
                     onChange={(event) => {
@@ -457,7 +460,10 @@ export default function SchedulePage() {
                 </label>
 
                 <label className="grid gap-1">
-                  <span className="text-[11px] font-medium text-[var(--muted)]">Cao</span>
+                  <span className="flex items-center justify-between text-[11px] font-medium text-[var(--muted)]">
+                    Cão
+                    <Link href="/clientes" className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#145a82]">+ Novo cão</Link>
+                  </span>
                   <select
                     value={selectedDog?.id ?? ""}
                     onChange={(event) => setSelectedDogId(event.target.value)}

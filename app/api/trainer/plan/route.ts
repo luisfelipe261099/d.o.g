@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-const allowedPlans = ["Trial", "Essencial", "Pro", "Premium"] as const;
+const allowedPlans = ["Trial", "Starter", "Pro", "Business"] as const;
 type AllowedPlan = (typeof allowedPlans)[number];
 
 // PATCH /api/trainer/plan – atualiza plano do adestrador logado

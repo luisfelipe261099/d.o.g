@@ -5,6 +5,8 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 
 import { PageShell } from "@/components/page-shell";
+import { GamificationPanel } from "@/components/gamification-panel";
+import { useGamification } from "@/lib/gamification";
 
 type PortalTask = {
   id: string;
@@ -37,16 +39,6 @@ type PortalSession = {
   media: Array<{ id?: string; dataUrl?: string; thumbDataUrl?: string }>;
 };
 
-type PortalPayment = {
-  id: string;
-  amount: number;
-  status: string;
-  dueDate: string | null;
-  paymentMethod: string | null;
-  reference: string | null;
-  source: string | null;
-};
-
 type PortalData = {
   trainer: { id: string; name: string; phone: string | null };
   client: {
@@ -68,7 +60,6 @@ type PortalData = {
   sessions: PortalSession[];
   tasks: PortalTask[];
   feedbacks: PortalFeedback[];
-  payments: PortalPayment[];
   linkMeta: { expiresAt: string; status: "Ativo" };
 };
 
@@ -77,15 +68,6 @@ function formatDateTime(value?: string | null): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
   return `${date.toLocaleDateString("pt-BR")} ${date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`;
-}
-
-function formatCurrency(value: number): string {
-  return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-}
-
-function paymentStatusBadge(status: string): string {
-  if (status === "Pago") return "border-sky-200 bg-sky-50 text-sky-800";
-  return "border-amber-200 bg-amber-50 text-amber-900";
 }
 
 export function PortalPublicClient({ token }: { token: string }) {
@@ -98,7 +80,9 @@ export function PortalPublicClient({ token }: { token: string }) {
   const [pin, setPin] = useState("");
   const [pinRequired, setPinRequired] = useState(false);
   const [unlockAttempt, setUnlockAttempt] = useState(0);
-  const [copiedPaymentId, setCopiedPaymentId] = useState("");
+  const [openVideo, setOpenVideo] = useState<{ id: string; src: string; title: string } | null>(null);
+
+  const gam = useGamification(token, { pin: pinRequired ? pin : undefined });
 
   const pinQuery = useMemo(() => (pinRequired && /^\d{4}$/.test(pin) ? `?pin=${encodeURIComponent(pin)}` : ""), [pinRequired, pin]);
 
@@ -129,18 +113,6 @@ export function PortalPublicClient({ token }: { token: string }) {
   }, [token, pinQuery, pinRequired, unlockAttempt]);
 
   const featuredDog = data?.client.dogs[0];
-
-  const pendingAmount = useMemo(() => {
-    if (!data) return 0;
-    return data.payments
-      .filter((payment) => payment.status === "Pendente")
-      .reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
-  }, [data]);
-
-  const pendingPayments = useMemo(() => {
-    if (!data) return [];
-    return data.payments.filter((payment) => payment.status === "Pendente");
-  }, [data]);
 
   const sessionGallery = useMemo(() => {
     if (!data) return [] as Array<{ id: string; src: string; sessionTitle: string; sessionDate: string }>;
@@ -175,73 +147,6 @@ export function PortalPublicClient({ token }: { token: string }) {
     return null;
   }, [data]);
 
-  function openWhatsAppForPayment() {
-    if (!data?.trainer.phone) {
-      setError("Telefone do adestrador nao disponivel para contato de pagamento.");
-      return;
-    }
-
-    const normalizedPhone = data.trainer.phone.replace(/\D/g, "");
-    if (!normalizedPhone) {
-      setError("Telefone do adestrador invalido para contato de pagamento.");
-      return;
-    }
-
-    const message = encodeURIComponent("Oi! Quero confirmar o pagamento do meu plano e enviar comprovante.");
-    window.open(`https://wa.me/55${normalizedPhone}?text=${message}`, "_blank", "noopener,noreferrer");
-  }
-
-  function buildPaymentCopyText(payment: PortalPayment): string {
-    const lines = [
-      "Dados para pagamento",
-      `Tutor: ${data?.client.name || "Nao informado"}`,
-      `Adestrador: ${data?.trainer.name || "Nao informado"}`,
-      `Valor: ${formatCurrency(Number(payment.amount || 0))}`,
-      `Status: ${payment.status || "Nao informado"}`,
-      `Vencimento: ${payment.dueDate || "Nao informado"}`,
-      `Metodo: ${payment.paymentMethod || "Nao informado"}`,
-      `Referencia: ${payment.reference || payment.source || "Mensalidade"}`,
-    ];
-
-    if (data?.trainer.phone) {
-      lines.push(`Contato adestrador: ${data.trainer.phone}`);
-    }
-
-    lines.push("Mensagem: Segue comprovante do pagamento.");
-    return lines.join("\n");
-  }
-
-  async function handleCopyPayment(payment: PortalPayment) {
-    try {
-      await navigator.clipboard.writeText(buildPaymentCopyText(payment));
-      setCopiedPaymentId(payment.id);
-      window.setTimeout(() => setCopiedPaymentId(""), 1800);
-    } catch {
-      setError("Nao foi possivel copiar os dados de pagamento.");
-      window.setTimeout(() => setError(""), 2000);
-    }
-  }
-
-  async function handleCopyPendingSummary() {
-    const summary = [
-      "Resumo financeiro pendente",
-      `Tutor: ${data?.client.name || "Nao informado"}`,
-      `Adestrador: ${data?.trainer.name || "Nao informado"}`,
-      `Quantidade de pendencias: ${pendingPayments.length}`,
-      `Total em aberto: ${formatCurrency(pendingAmount)}`,
-      "Mensagem: Segue comprovante do pagamento pendente.",
-    ].join("\n");
-
-    try {
-      await navigator.clipboard.writeText(summary);
-      setCopiedPaymentId("summary");
-      window.setTimeout(() => setCopiedPaymentId(""), 1800);
-    } catch {
-      setError("Nao foi possivel copiar o resumo financeiro.");
-      window.setTimeout(() => setError(""), 2000);
-    }
-  }
-
   async function handleToggleTask(task: PortalTask) {
     if (!data) return;
 
@@ -252,6 +157,8 @@ export function PortalPublicClient({ token }: { token: string }) {
       ...data,
       tasks: data.tasks.map((item) => (item.id === task.id ? { ...item, completed: nextCompleted } : item)),
     });
+
+    gam.award(nextCompleted ? "task_completed" : "task_uncompleted", nextCompleted ? `Tarefa: ${task.title}` : undefined);
 
     try {
       const response = await fetch(`/api/portal-public/${encodeURIComponent(token)}${pinQuery}`, {
@@ -295,6 +202,7 @@ export function PortalPublicClient({ token }: { token: string }) {
         feedbacks: [created, ...data.feedbacks],
       });
       setFeedbackMessage("");
+      gam.award("feedback_sent", "Comentário enviado");
     } catch {
       setError("Nao foi possivel enviar o comentario agora.");
     } finally {
@@ -423,58 +331,13 @@ export function PortalPublicClient({ token }: { token: string }) {
           </div>
         </article>
 
-        <article className="rounded-[1.5rem] border border-[var(--border)] bg-white p-5 shadow-sm">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">Financeiro</p>
-              <h3 className="mt-1 text-lg font-semibold text-[var(--foreground)]">Cobranças e pagamento</h3>
-              <p className="mt-1 text-sm text-[var(--muted)]">Acompanhe valores pendentes e fale com o adestrador para concluir o pagamento.</p>
-            </div>
-            <button
-              type="button"
-              onClick={openWhatsAppForPayment}
-              className="rounded-full border border-[var(--border)] bg-[#145a82] px-3 py-1.5 text-xs font-semibold text-white"
-            >
-              Falar sobre pagamento
-            </button>
-          </div>
-
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            {data.payments.slice(0, 6).map((payment) => (
-              <article key={payment.id} className="rounded-2xl border border-[var(--border)] bg-[var(--panel)] p-3">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-sm font-semibold text-[var(--foreground)]">{formatCurrency(payment.amount)}</p>
-                  <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase ${paymentStatusBadge(payment.status)}`}>
-                    {payment.status}
-                  </span>
-                </div>
-                <p className="mt-1 text-xs text-[var(--muted)]">Vencimento: {payment.dueDate || "Nao informado"}</p>
-                <p className="text-xs text-[var(--muted)]">Metodo: {payment.paymentMethod || "Nao informado"}</p>
-                <p className="text-xs text-[var(--muted)]">Referencia: {payment.reference || payment.source || "Mensalidade"}</p>
-                <button
-                  type="button"
-                  onClick={() => handleCopyPayment(payment)}
-                  className="mt-2 rounded-full border border-[var(--border)] bg-white px-2.5 py-1 text-[11px] font-semibold text-[#145a82]"
-                >
-                  {copiedPaymentId === payment.id ? "Dados copiados" : "Copiar dados"}
-                </button>
-              </article>
-            ))}
-            {data.payments.length === 0 ? <p className="text-sm text-[var(--muted)]">Sem cobrancas registradas para este caso.</p> : null}
-          </div>
-          {pendingPayments.length > 0 ? (
-            <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
-              <p>Existem {pendingPayments.length} cobranca(s) pendente(s). Total: {formatCurrency(pendingAmount)}.</p>
-              <button
-                type="button"
-                onClick={handleCopyPendingSummary}
-                className="mt-2 rounded-full border border-amber-300 bg-white px-2.5 py-1 font-semibold text-amber-900"
-              >
-                {copiedPaymentId === "summary" ? "Resumo copiado" : "Copiar resumo"}
-              </button>
-            </div>
-          ) : null}
-        </article>
+        <GamificationPanel
+          state={gam.state}
+          trainerName={data.trainer.name}
+          onRateTrainer={gam.rateTrainer}
+          lastEarned={gam.lastEarned}
+          onDismissEarned={gam.dismissEarned}
+        />
 
         <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
           <article className="rounded-[1.5rem] border border-[var(--border)] bg-[var(--panel)] p-5 shadow-sm">
@@ -539,14 +402,60 @@ export function PortalPublicClient({ token }: { token: string }) {
 
           <div className="mt-3 grid grid-cols-3 gap-2">
             {sessionGallery.map((item) => (
-              <div key={item.id} className="overflow-hidden rounded-xl border border-[var(--border)] bg-white">
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => {
+                  setOpenVideo({ id: item.id, src: item.src, title: item.sessionTitle });
+                  gam.watchVideo(item.id);
+                }}
+                className="group overflow-hidden rounded-xl border border-[var(--border)] bg-white text-left transition hover:border-sky-300"
+              >
                 <div className="relative h-20 w-full">
                   <Image src={item.src} alt={`Treino ${item.sessionTitle}`} fill sizes="(min-width: 768px) 8rem, 30vw" unoptimized className="object-cover" />
+                  <span className="absolute inset-0 flex items-center justify-center bg-black/30 text-2xl text-white opacity-0 transition group-hover:opacity-100">▶</span>
+                  {gam.state.watchedVideos.includes(item.id) ? (
+                    <span className="absolute right-1 top-1 rounded-full bg-emerald-500 px-1.5 py-0.5 text-[9px] font-semibold uppercase text-white">Visto</span>
+                  ) : (
+                    <span className="absolute right-1 top-1 rounded-full bg-amber-400 px-1.5 py-0.5 text-[9px] font-semibold uppercase text-amber-900">+15 pts</span>
+                  )}
                 </div>
                 <p className="truncate px-2 py-1 text-[10px] text-[var(--muted)]">{item.sessionDate}</p>
-              </div>
+              </button>
             ))}
-            {sessionGallery.length === 0 ? <p className="col-span-3 text-sm text-[var(--muted)]">Sem fotos anexadas nas sessoes ate o momento.</p> : null}
+            {sessionGallery.length === 0 ? <p className="col-span-3 text-sm text-[var(--muted)]">Sem fotos anexadas nas sessões até o momento.</p> : null}
+          </div>
+
+          <div className="mt-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">Avalie as últimas aulas</p>
+            <div className="mt-2 grid gap-2">
+              {data.sessions.slice(0, 5).map((session) => {
+                const current = gam.state.sessionRatings[session.id] ?? 0;
+                return (
+                  <div key={session.id} className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-[var(--border)] bg-white p-3">
+                    <div>
+                      <p className="text-sm font-semibold text-[var(--foreground)]">{session.title}</p>
+                      <p className="text-[11px] text-[var(--muted)]">{session.date}</p>
+                    </div>
+                    <div className="flex items-center gap-1" role="radiogroup" aria-label={`Avaliar ${session.title}`}>
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          key={star}
+                          type="button"
+                          onClick={() => gam.rateSession(session.id, star)}
+                          className={`text-xl leading-none ${current >= star ? "text-amber-400" : "text-slate-300"}`}
+                          aria-label={`${star} estrelas`}
+                        >★</button>
+                      ))}
+                      {current === 0 ? (
+                        <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-900">+15 pts</span>
+                      ) : null}
+                    </div>
+                  </div>
+                );
+              })}
+              {data.sessions.length === 0 ? <p className="text-sm text-[var(--muted)]">Sem aulas registradas para avaliar.</p> : null}
+            </div>
           </div>
         </article>
 
@@ -579,6 +488,23 @@ export function PortalPublicClient({ token }: { token: string }) {
           </div>
         </article>
       </section>
+
+      {openVideo ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" role="dialog" aria-modal="true">
+          <button type="button" aria-label="Fechar" className="absolute inset-0" onClick={() => setOpenVideo(null)} />
+          <div className="relative max-h-[90vh] w-full max-w-3xl overflow-hidden rounded-2xl bg-white shadow-2xl">
+            <div className="flex items-center justify-between gap-2 border-b border-[var(--border)] px-4 py-2">
+              <p className="text-sm font-semibold text-[var(--foreground)]">{openVideo.title}</p>
+              <button type="button" onClick={() => setOpenVideo(null)} className="rounded-full border border-[var(--border)] bg-white px-3 py-1 text-xs font-semibold">Fechar</button>
+            </div>
+            <div className="relative flex h-[60vh] items-center justify-center bg-black">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={openVideo.src} alt={openVideo.title} className="max-h-full max-w-full object-contain" />
+            </div>
+            <p className="px-4 py-2 text-xs text-emerald-700">+15 pts por assistir o material da aula.</p>
+          </div>
+        </div>
+      ) : null}
     </PageShell>
   );
 }

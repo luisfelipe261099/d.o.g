@@ -9,7 +9,7 @@ type TrainerRow = {
   email: string;
   joinedAt: string;
   status: "Ativo" | "Trial";
-  planType: "Essencial" | "Pro" | "Premium" | "Trial";
+  planType: "Trial" | "Starter" | "Pro" | "Business";
   monthlyValue: number;
 };
 
@@ -21,7 +21,7 @@ export function AdestradoresClient() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formName, setFormName] = useState("");
   const [formEmail, setFormEmail] = useState("");
-  const [formPlan, setFormPlan] = useState<"Essencial" | "Pro" | "Premium" | "Trial">("Essencial");
+  const [formPlan, setFormPlan] = useState<"Trial" | "Starter" | "Pro" | "Business">("Starter");
   const [formStatus, setFormStatus] = useState<"Ativo" | "Trial">("Ativo");
   const [message, setMessage] = useState("");
 
@@ -49,7 +49,7 @@ export function AdestradoresClient() {
   function resetForm() {
     setFormName("");
     setFormEmail("");
-    setFormPlan("Essencial");
+    setFormPlan("Starter");
     setFormStatus("Ativo");
     setEditingId(null);
     setIsCreating(false);
@@ -167,13 +167,13 @@ export function AdestradoresClient() {
             />
             <select
               value={formPlan}
-              onChange={(event) => setFormPlan(event.target.value as "Essencial" | "Pro" | "Premium" | "Trial")}
+              onChange={(event) => setFormPlan(event.target.value as "Trial" | "Starter" | "Pro" | "Business")}
               className="rounded-2xl border border-[var(--border)] px-4 py-3 text-sm outline-none focus:border-sky-400"
             >
-              <option>Essencial</option>
-              <option>Pro</option>
-              <option>Premium</option>
               <option>Trial</option>
+              <option>Starter</option>
+              <option>Pro</option>
+              <option>Business</option>
             </select>
             <select
               value={formStatus}

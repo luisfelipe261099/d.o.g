@@ -4,9 +4,9 @@ import { prisma } from "@/lib/prisma";
 
 function getMonthlyValueByPlan(plan?: string): number {
   const normalized = (plan ?? "").trim().toLowerCase();
-  if (normalized === "premium" || normalized === "business") return 990;
+  if (normalized === "business" || normalized === "premium") return 990;
   if (normalized === "pro") return 690;
-  if (normalized === "essencial" || normalized === "starter") return 420;
+  if (normalized === "starter" || normalized === "essencial") return 420;
   return 0;
 }
 
@@ -46,7 +46,6 @@ export async function GET() {
           select: {
             amount: true,
             status: true,
-            source: true,
           },
         },
       },
@@ -122,7 +121,7 @@ export async function GET() {
     amount: payment.amount,
     status: payment.status,
     date: payment.createdAt.toLocaleDateString("pt-BR"),
-    source: payment.source || "Cliente",
+    source: "Assinatura",
   }));
 
   return NextResponse.json({

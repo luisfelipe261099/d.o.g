@@ -5,10 +5,11 @@ import Link from "next/link";
 import { ChangeEvent, FormEvent, useMemo, useState } from "react";
 
 import { AuthGuard } from "@/components/auth-guard";
-import { useAppStore, type ClientPaymentMethod } from "@/lib/app-store";
+import { useAppStore } from "@/lib/app-store";
 
-type ClientStatus = "ativos" | "pendentes" | "inativos";
+type ClientStatus = "ativos" | "inativos";
 type SortMode = "recentes" | "nome";
+type EntityKind = "humanos" | "caes";
 
 function parseBrazilianDate(date: string): number {
   const [day, month, year] = date.split("/").map(Number);
@@ -23,21 +24,18 @@ function normalizeText(value: string): string {
     .toLowerCase();
 }
 
-function getClientStatus(params: { pendingAmount: number; hasRecentSession: boolean }): ClientStatus {
-  if (params.pendingAmount > 0) return "pendentes";
+function getClientStatus(params: { hasRecentSession: boolean }): ClientStatus {
   if (params.hasRecentSession) return "ativos";
   return "inativos";
 }
 
 function statusStyle(status: ClientStatus): string {
   if (status === "ativos") return "bg-sky-100 text-sky-800";
-  if (status === "pendentes") return "bg-amber-100 text-amber-900";
   return "bg-slate-100 text-slate-700";
 }
 
 function statusLabel(status: ClientStatus): string {
   if (status === "ativos") return "Ativo";
-  if (status === "pendentes") return "Em atencao";
   return "Inativo";
 }
 
@@ -103,11 +101,11 @@ export default function ClientsPage() {
   const clients = useAppStore((state) => state.clients);
   const sessions = useAppStore((state) => state.trainingSessions);
   const events = useAppStore((state) => state.calendarEvents);
-  const payments = useAppStore((state) => state.payments);
   const addClientWithDog = useAppStore((state) => state.addClientWithDog);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"todos" | ClientStatus>("todos");
+  const [entityKind, setEntityKind] = useState<EntityKind>("humanos");
   const [showQuickFilters, setShowQuickFilters] = useState(true);
   const [sortMode, setSortMode] = useState<SortMode>("recentes");
   const [showForm, setShowForm] = useState(false);
@@ -123,9 +121,6 @@ export default function ClientsPage() {
   const [propertyType, setPropertyType] = useState("Apartamento");
   const [trainingTypesRaw, setTrainingTypesRaw] = useState("");
   const [planLabel, setPlanLabel] = useState("");
-  const [contractAmount, setContractAmount] = useState("");
-  const [billingDay, setBillingDay] = useState("10");
-  const [paymentMethod, setPaymentMethod] = useState<ClientPaymentMethod>("Pix");
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
   const [saveError, setSaveError] = useState("");
@@ -169,31 +164,22 @@ export default function ClientsPage() {
     const recentWindow = 45 * 24 * 60 * 60 * 1000;
 
     return clients.map((client, index) => {
-      const pendingAmount = payments
-        .filter(
-          (payment) =>
-            payment.status === "Pendente" &&
-            (payment.clientId === client.id || payment.clientName === client.name),
-        )
-        .reduce((total, payment) => total + payment.amount, 0);
-
       const lastSessionDate = sessions
         .filter((session) => session.clientId === client.id || session.clientName === client.name)
         .map((session) => parseBrazilianDate(session.date))
         .sort((a, b) => b - a)[0] ?? 0;
 
       const hasRecentSession = lastSessionDate > 0 && now - lastSessionDate <= recentWindow;
-      const status = getClientStatus({ pendingAmount, hasRecentSession });
+      const status = getClientStatus({ hasRecentSession });
 
       return {
         client,
         status,
-        pendingAmount,
         lastSessionDate,
         insertionOrder: index,
       };
     });
-  }, [clients, payments, sessions]);
+  }, [clients, sessions]);
 
   const filteredClients = useMemo(() => {
     const search = normalizeText(searchTerm.trim());
@@ -228,17 +214,13 @@ export default function ClientsPage() {
 
   const totalDogs = clients.reduce((total, client) => total + client.dogs.length, 0);
   const activeClients = clientsWithMeta.filter((item) => item.status === "ativos").length;
-  const pendingClients = clientsWithMeta.filter((item) => item.status === "pendentes").length;
   const adherenceRate = clients.length ? Math.round((activeClients / clients.length) * 100) : 0;
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (isSaving) return;
 
-    const parsedAmount = Number(contractAmount.replace(/[^\d.,]/g, "").replace(",", "."));
-    const parsedBillingDay = Number(billingDay);
-
-    if (!clientName.trim() || !dogName.trim() || !Number.isFinite(parsedAmount) || parsedAmount <= 0) return;
+    if (!clientName.trim() || !dogName.trim()) return;
 
     const trainingTypes = trainingTypesRaw
       .split(",")
@@ -255,9 +237,6 @@ export default function ClientsPage() {
         propertyType: propertyType || "Apartamento",
         environment: "",
         plan: planLabel.trim() || "Plano personalizado",
-        contractAmount: parsedAmount,
-        billingDay: Number.isFinite(parsedBillingDay) ? Math.min(Math.max(parsedBillingDay, 1), 28) : 10,
-        paymentMethod,
         dogName: dogName.trim(),
         breed: breed.trim() || "SRD",
         age: age.trim() || "Nao informado",
@@ -283,11 +262,8 @@ export default function ClientsPage() {
       setPropertyType("Apartamento");
       setTrainingTypesRaw("");
       setPlanLabel("");
-      setContractAmount("");
-      setBillingDay("10");
-      setPaymentMethod("Pix");
       setShowForm(false);
-      setSaveMessage("Tutor e cao cadastrados com sucesso.");
+      setSaveMessage("Cliente e cão cadastrados com sucesso.");
       window.setTimeout(() => setSaveMessage(""), 3000);
     } finally {
       setIsSaving(false);
@@ -301,8 +277,8 @@ export default function ClientsPage() {
           <header className="flex items-center justify-between gap-3">
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#2d6f99]">Painel de clientes</p>
-              <h1 className="font-display text-2xl font-semibold leading-tight text-[var(--foreground)]">Tutores e caes</h1>
-              <p className="mt-1 text-xs text-[var(--muted)]">Gestao rapida para cadastro, status e acesso ao treino.</p>
+              <h1 className="font-display text-2xl font-semibold leading-tight text-[var(--foreground)]">Clientes e cães</h1>
+              <p className="mt-1 text-xs text-[var(--muted)]">Gestão rápida para cadastro, status e acesso ao treino.</p>
             </div>
             <button
               type="button"
@@ -318,12 +294,37 @@ export default function ClientsPage() {
             <Link href="/agenda" className="rounded-full border border-[var(--border)] bg-white px-3 py-1.5 text-[11px] font-semibold text-[#145a82]">
               Agenda
             </Link>
-            <Link href="/treinos" className="rounded-full border border-[var(--border)] bg-white px-3 py-1.5 text-[11px] font-semibold text-[#145a82]">
-              Treinos
-            </Link>
-            <Link href="/portal" className="rounded-full border border-[var(--border)] bg-white px-3 py-1.5 text-[11px] font-semibold text-[#145a82]">
-              Portal
-            </Link>
+            <button
+              type="button"
+              onClick={() => setShowForm(true)}
+              className="rounded-full border border-[#145a82] bg-[#145a82] px-3 py-1.5 text-[11px] font-semibold text-white"
+            >
+              + Novo cliente
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowForm(true)}
+              className="rounded-full border border-[#145a82] bg-white px-3 py-1.5 text-[11px] font-semibold text-[#145a82]"
+            >
+              + Novo cão
+            </button>
+          </div>
+
+          <div className="mt-3 inline-flex rounded-full border border-[#c9dfef] bg-white p-0.5 text-[11px] font-semibold">
+            <button
+              type="button"
+              onClick={() => setEntityKind("humanos")}
+              className={`rounded-full px-3 py-1.5 transition ${entityKind === "humanos" ? "bg-[#145a82] text-white" : "text-[var(--muted)]"}`}
+            >
+              Clientes humanos
+            </button>
+            <button
+              type="button"
+              onClick={() => setEntityKind("caes")}
+              className={`rounded-full px-3 py-1.5 transition ${entityKind === "caes" ? "bg-[#145a82] text-white" : "text-[var(--muted)]"}`}
+            >
+              Cães
+            </button>
           </div>
 
           <div className="mt-4 flex items-center gap-2">
@@ -332,7 +333,7 @@ export default function ClientsPage() {
               <input
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
-                placeholder="Buscar tutor ou cao"
+                placeholder={entityKind === "humanos" ? "Buscar cliente pelo nome" : "Buscar cão pelo nome ou raça"}
                 className="w-full border-none bg-transparent text-sm text-[var(--foreground)] outline-none"
               />
             </label>
@@ -350,7 +351,6 @@ export default function ClientsPage() {
             {[
               { value: "todos", label: "Todos" },
               { value: "ativos", label: "Ativos" },
-              { value: "pendentes", label: "Pendentes" },
               { value: "inativos", label: "Inativos" },
             ].map((item) => (
               <button
@@ -370,12 +370,12 @@ export default function ClientsPage() {
 
           <section className="mt-4 grid grid-cols-2 gap-2">
             <article className="rounded-xl border border-[var(--border)] bg-white p-3">
-              <p className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-[#2d6f99]"><SmallIcon name="plus" /> Tutores</p>
+              <p className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-[#2d6f99]"><SmallIcon name="plus" /> Clientes</p>
               <p className="text-2xl font-semibold text-[var(--foreground)]">{clients.length}</p>
               <p className="mt-1 text-xs text-[var(--muted)]">Base cadastrada</p>
             </article>
             <article className="rounded-xl border border-[var(--border)] bg-white p-3">
-              <p className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-[#2d6f99]"><SmallIcon name="dog" /> Caes</p>
+              <p className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-[#2d6f99]"><SmallIcon name="dog" /> Cães</p>
               <p className="text-2xl font-semibold text-[var(--foreground)]">{totalDogs}</p>
               <p className="mt-1 text-xs text-[var(--muted)]">Total atendido</p>
             </article>
@@ -392,7 +392,7 @@ export default function ClientsPage() {
           </section>
 
           <section className="mt-4 flex items-center justify-between rounded-xl border border-[#c9dfef] bg-white px-3 py-2 text-xs text-[var(--muted)]">
-            <p>{filteredClients.length} tutores encontrados</p>
+            <p>{filteredClients.length} {entityKind === "humanos" ? "clientes" : "cães"} encontrados</p>
             <label className="flex items-center gap-1.5">
               Ordenar:
               <select
@@ -407,13 +407,13 @@ export default function ClientsPage() {
           </section>
 
           <section className="mt-2 rounded-xl border border-[#d7e8f4] bg-[#eef6fc] px-3 py-2 text-xs text-[#245d84]">
-            {pendingClients > 0 ? `${pendingClients} cliente(s) em atencao financeira.` : "Nenhum cliente com pendencia financeira hoje."}
+            {clients.length} cliente(s) cadastrados.
           </section>
 
           <section className="mt-3 space-y-2">
             {filteredClients.length === 0 ? (
               <article className="rounded-2xl border border-[var(--border)] bg-white p-4 text-sm text-[var(--muted)]">
-                Nenhum tutor encontrado com os filtros atuais.
+                Nenhum {entityKind === "humanos" ? "cliente" : "cão"} encontrado com os filtros atuais.
               </article>
             ) : null}
 
@@ -462,10 +462,6 @@ export default function ClientsPage() {
 
                   <div className="mt-3 flex flex-wrap gap-2 text-[10px] font-semibold uppercase text-[var(--muted)]">
                     <span className="inline-flex items-center gap-1 rounded-full border border-sky-100 bg-sky-50 px-2 py-1 text-[#145a82]">
-                      <SmallIcon name="money" />
-                      {item.pendingAmount > 0 ? "Pendente" : "Em dia"}
-                    </span>
-                    <span className="inline-flex items-center gap-1 rounded-full border border-sky-100 bg-sky-50 px-2 py-1 text-[#145a82]">
                       <SmallIcon name="calendar" />
                       Agenda
                     </span>
@@ -476,7 +472,6 @@ export default function ClientsPage() {
                   </div>
 
                   <div className="mt-3 flex items-center justify-between">
-                    <p className="text-[11px] font-medium text-[var(--muted)]">{formatCurrency(item.pendingAmount)}</p>
                     <Link
                       href={firstDogId ? `/treinos?clientId=${item.client.id}&dogId=${firstDogId}` : "/treinos"}
                       className="rounded-full border border-[var(--border)] bg-[#145a82] px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-white"
@@ -493,7 +488,7 @@ export default function ClientsPage() {
           <section className="mt-4 rounded-2xl border border-[var(--border)] bg-[#f1f8fe] p-3">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-sm font-semibold text-[var(--foreground)]">Novo tutor ou novo cao?</p>
+                <p className="text-sm font-semibold text-[var(--foreground)]">Novo cliente ou novo cão?</p>
                 <p className="mt-1 text-xs text-[var(--muted)]">Cadastre agora e comece o acompanhamento.</p>
               </div>
               <button
@@ -508,12 +503,12 @@ export default function ClientsPage() {
 
           {showForm ? (
             <section className="mt-4 rounded-2xl border border-[var(--border)] bg-white p-4">
-              <p className="text-sm font-semibold text-[var(--foreground)]">Cadastro de tutor e cao</p>
+              <p className="text-sm font-semibold text-[var(--foreground)]">Cadastro de cliente e cão</p>
               <form onSubmit={onSubmit} className="mt-3 grid gap-2 sm:grid-cols-2">
                 <input
                   value={clientName}
                   onChange={(event) => setClientName(event.target.value)}
-                  placeholder="Nome do tutor"
+                  placeholder="Nome do cliente"
                   className="rounded-xl border border-[var(--border)] px-3 py-2 text-sm outline-none focus:border-sky-400"
                   required
                 />
@@ -602,35 +597,9 @@ export default function ClientsPage() {
                 <input
                   value={planLabel}
                   onChange={(event) => setPlanLabel(event.target.value)}
-                  placeholder="Plano"
-                  className="rounded-xl border border-[var(--border)] px-3 py-2 text-sm outline-none focus:border-sky-400"
-                />
-                <input
-                  value={contractAmount}
-                  onChange={(event) => setContractAmount(event.target.value)}
-                  placeholder="Valor (R$)"
-                  className="rounded-xl border border-[var(--border)] px-3 py-2 text-sm outline-none focus:border-sky-400"
-                  required
-                />
-                <input
-                  type="number"
-                  min={1}
-                  max={28}
-                  value={billingDay}
-                  onChange={(event) => setBillingDay(event.target.value)}
-                  placeholder="Vencimento"
-                  className="rounded-xl border border-[var(--border)] px-3 py-2 text-sm outline-none focus:border-sky-400"
-                />
-                <select
-                  value={paymentMethod}
-                  onChange={(event) => setPaymentMethod(event.target.value as ClientPaymentMethod)}
+                  placeholder="Nome do plano (ex.: Mensal 4 aulas)"
                   className="rounded-xl border border-[var(--border)] px-3 py-2 text-sm outline-none focus:border-sky-400 sm:col-span-2"
-                >
-                  <option value="Pix">Pix</option>
-                  <option value="Cartao">Cartao</option>
-                  <option value="Boleto">Boleto</option>
-                  <option value="Dinheiro">Dinheiro</option>
-                </select>
+                />
 
                 {saveMessage ? (
                   <p className="sm:col-span-2 rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-xs text-sky-800">{saveMessage}</p>

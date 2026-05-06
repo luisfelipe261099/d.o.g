@@ -6,11 +6,10 @@ import { persist } from "zustand/middleware";
 type SessionStatus = "Confirmado" | "Pendente" | "Aguardando" | "Recorrente" | "Cancelado";
 type PaymentStatus = "Pago" | "Pendente";
 export type UserRole = "admin" | "trainer" | "client";
-export type TrainerPlanName = "Starter" | "Pro" | "Business";
+export type TrainerPlanName = "Trial" | "Starter" | "Pro" | "Business";
 export type TrainerPaymentMethod = "Pix" | "Cartao" | "Boleto";
 export type TrainerLessonPackage = "4 aulas" | "8 aulas" | "12 aulas";
 export type TrainerCardBrand = "Visa" | "Mastercard" | "Elo";
-export type ClientPaymentMethod = "Pix" | "Cartao" | "Boleto" | "Dinheiro";
 
 export type DogProfile = {
   id: string;
@@ -29,10 +28,6 @@ export type ClientProfile = {
   propertyType: string;
   environment: string;
   plan: string;
-  contractAmount: number;
-  billingDay: number;
-  paymentMethod: ClientPaymentMethod;
-  nextChargeDate: string;
   dogs: DogProfile[];
 };
 
@@ -96,12 +91,10 @@ export type PortalFeedback = {
 
 export type PaymentItem = {
   id: string;
-  clientId?: string;
-  clientName: string;
+  description: string;
   amount: number;
   status: PaymentStatus;
-  source?: "Cliente" | "Assinatura";
-  paymentMethod?: ClientPaymentMethod | TrainerPaymentMethod;
+  paymentMethod?: TrainerPaymentMethod;
   dueDate?: string;
   reference?: string;
 };
@@ -168,9 +161,6 @@ type AppState = {
     propertyType: string;
     environment: string;
     plan: string;
-    contractAmount: number;
-    billingDay: number;
-    paymentMethod: ClientPaymentMethod;
     dogName: string;
     breed: string;
     age: string;
@@ -203,8 +193,6 @@ type AppState = {
     sessionNumber: number;
     status?: SessionStatus;
   }) => Promise<boolean>;
-  generateClientCharge: (clientId: string) => void;
-  markPaymentPaid: (paymentId: string) => void;
   clearAppData: () => void;
   loadFromDB: () => Promise<void>;
 };
@@ -215,6 +203,7 @@ function createId(prefix: string): string {
 
 function getPlanAmount(plan: TrainerPlanName, lessonPackage: TrainerLessonPackage): number {
   const lessonRate = {
+    Trial: 0,
     Starter: 30,
     Pro: 42,
     Business: 55,
@@ -235,18 +224,11 @@ function getPlanAmount(plan: TrainerPlanName, lessonPackage: TrainerLessonPackag
 
 function mapDbPlanToSubscriptionPlan(dbPlan?: string): TrainerPlanName {
   const normalized = (dbPlan ?? "").trim().toLowerCase();
-
   if (normalized === "pro") return "Pro";
-  if (normalized === "premium" || normalized === "business") return "Business";
-  if (normalized === "trial" || normalized === "essencial" || normalized === "starter") return "Starter";
-
-  return "Pro";
-}
-
-function mapSubscriptionPlanToDbPlan(plan: TrainerPlanName): "Trial" | "Pro" | "Premium" {
-  if (plan === "Business") return "Premium";
-  if (plan === "Starter") return "Trial";
-  return "Pro";
+  if (normalized === "business" || normalized === "premium") return "Business";
+  if (normalized === "starter" || normalized === "essencial") return "Starter";
+  if (normalized === "trial") return "Trial";
+  return "Trial";
 }
 
 function getNextPackageReviewDate(lessonPackage: TrainerLessonPackage): string {
@@ -260,29 +242,6 @@ function getNextPackageReviewDate(lessonPackage: TrainerLessonPackage): string {
   nextDate.setDate(nextDate.getDate() + reviewWindow[lessonPackage]);
 
   return nextDate.toLocaleDateString("pt-BR");
-}
-
-function getNextClientChargeDate(billingDay: number): string {
-  const now = new Date(2026, 3, 14);
-  const safeDay = Math.min(Math.max(billingDay, 1), 28);
-  const next = new Date(now.getFullYear(), now.getMonth(), safeDay);
-
-  if (next <= now) {
-    next.setMonth(next.getMonth() + 1);
-  }
-
-  return next.toLocaleDateString("pt-BR");
-}
-
-function shiftClientChargeDate(currentDate: string, billingDay: number): string {
-  const [day, month, year] = currentDate.split("/").map(Number);
-  if (!day || !month || !year) {
-    return getNextClientChargeDate(billingDay);
-  }
-
-  const next = new Date(year, month - 1, Math.min(Math.max(billingDay, 1), 28));
-  next.setMonth(next.getMonth() + 1);
-  return next.toLocaleDateString("pt-BR");
 }
 
 export const useAppStore = create<AppState>()(
@@ -345,7 +304,7 @@ export const useAppStore = create<AppState>()(
           const response = await fetch("/api/trainer/plan", {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ plan: mapSubscriptionPlanToDbPlan(plan) }),
+            body: JSON.stringify({ plan }),
           });
 
           if (!response.ok) return false;
@@ -389,15 +348,27 @@ export const useAppStore = create<AppState>()(
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              clientName: `Assinatura ${trainerSubscription.planName}`,
+              description: `Assinatura ${trainerSubscription.planName}`,
               amount: trainerSubscription.amount,
-              source: "Assinatura",
               paymentMethod: trainerSubscription.paymentMethod,
               dueDate: trainerSubscription.nextChargeDate,
               reference: `${trainerSubscription.planName} \u2022 ${trainerSubscription.lessonPackage}`,
             }),
           });
           if (!response.ok) return false;
+
+          await fetch("/api/trainer/renewals", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              planName: trainerSubscription.planName,
+              lessonPackage: trainerSubscription.lessonPackage,
+              paymentMethod: trainerSubscription.paymentMethod,
+              amount: trainerSubscription.amount,
+              dueDate: trainerSubscription.nextChargeDate,
+              reference: `${trainerSubscription.planName} \u2022 ${trainerSubscription.lessonPackage}`,
+            }),
+          });
         } catch {
           return false;
         }
@@ -408,18 +379,6 @@ export const useAppStore = create<AppState>()(
             status: "Ativa",
             nextChargeDate: getNextPackageReviewDate(state.trainerSubscription.lessonPackage),
           },
-          trainerRenewalHistory: [
-            {
-              id: createId("renewal"),
-              date: new Date().toLocaleDateString("pt-BR"),
-              planName: state.trainerSubscription.planName,
-              lessonPackage: state.trainerSubscription.lessonPackage,
-              paymentMethod: state.trainerSubscription.paymentMethod,
-              amount: state.trainerSubscription.amount,
-              status: "Gerada" as const,
-            },
-            ...state.trainerRenewalHistory,
-          ].slice(0, 20),
         }));
 
         await get().loadFromDB();
@@ -628,124 +587,6 @@ export const useAppStore = create<AppState>()(
           return false;
         }
       },
-      generateClientCharge: (clientId) =>
-        set((state) => {
-          const client = state.clients.find((item) => item.id === clientId);
-          if (!client) return state;
-
-          const safeBillingDay = client.billingDay ?? 10;
-          const safeContractAmount = client.contractAmount ?? 0;
-          const safePaymentMethod = client.paymentMethod ?? "Pix";
-          const safeNextChargeDate = client.nextChargeDate ?? getNextClientChargeDate(safeBillingDay);
-
-          const hasPendingForCurrentDueDate = state.payments.some(
-            (payment) =>
-              payment.source === "Cliente" &&
-              payment.clientId === client.id &&
-              payment.status === "Pendente" &&
-              payment.dueDate === safeNextChargeDate,
-          );
-
-          if (hasPendingForCurrentDueDate) {
-            return state;
-          }
-
-          const nextClientDate = shiftClientChargeDate(safeNextChargeDate, safeBillingDay);
-
-          return {
-            clients: state.clients.map((item) =>
-              item.id === client.id
-                ? {
-                    ...item,
-                    nextChargeDate: nextClientDate,
-                    billingDay: safeBillingDay,
-                    contractAmount: safeContractAmount,
-                    paymentMethod: safePaymentMethod,
-                  }
-                : item,
-            ),
-            payments: [
-              {
-                id: createId("pay"),
-                clientId: client.id,
-                source: "Cliente",
-                clientName: client.name,
-                amount: safeContractAmount,
-                status: "Pendente",
-                paymentMethod: safePaymentMethod,
-                dueDate: safeNextChargeDate,
-                reference: client.plan,
-              },
-              ...state.payments,
-            ],
-          };
-        }),
-      markPaymentPaid: (paymentId) =>
-        set((state) => {
-          const targetPayment = state.payments.find((item) => item.id === paymentId);
-          if (!targetPayment || targetPayment.status === "Pago") {
-            return state;
-          }
-
-          let nextClients = state.clients;
-          let nextPayments = state.payments.map((payment) =>
-            payment.id === paymentId ? { ...payment, status: "Pago" as const } : payment,
-          );
-
-          if (targetPayment.source === "Cliente" && targetPayment.clientId) {
-            const client = state.clients.find((item) => item.id === targetPayment.clientId);
-
-            if (client) {
-              const safeBillingDay = client.billingDay ?? 10;
-              const safeContractAmount = client.contractAmount ?? targetPayment.amount ?? 0;
-              const safePaymentMethod = client.paymentMethod ?? "Pix";
-              const safeNextChargeDate = client.nextChargeDate ?? getNextClientChargeDate(safeBillingDay);
-
-              const nextClientDate = shiftClientChargeDate(safeNextChargeDate, safeBillingDay);
-              nextClients = state.clients.map((item) =>
-                item.id === client.id
-                  ? {
-                      ...item,
-                      nextChargeDate: nextClientDate,
-                      billingDay: safeBillingDay,
-                      contractAmount: safeContractAmount,
-                      paymentMethod: safePaymentMethod,
-                    }
-                  : item,
-              );
-
-              const hasPendingNext = nextPayments.some(
-                (payment) =>
-                  payment.source === "Cliente" &&
-                  payment.clientId === client.id &&
-                  payment.status === "Pendente" &&
-                  payment.dueDate === nextClientDate,
-              );
-
-              if (!hasPendingNext) {
-                nextPayments = [
-                  {
-                    id: createId("pay"),
-                    clientId: client.id,
-                    source: "Cliente",
-                    clientName: client.name,
-                    amount: safeContractAmount,
-                    status: "Pendente",
-                    paymentMethod: safePaymentMethod,
-                    dueDate: nextClientDate,
-                    reference: client.plan,
-                  },
-                  ...nextPayments,
-                ];
-              }
-            }
-          }
-
-          return {
-            clients: nextClients,
-            payments: nextPayments,
-          };
-        }),
       clearAppData: () =>
         set({
           clients: [],
@@ -757,7 +598,7 @@ export const useAppStore = create<AppState>()(
         }),
       loadFromDB: async () => {
         try {
-          const [meRes, clientsRes, sessionsRes, eventsRes, paymentsRes, tasksRes, feedbacksRes] = await Promise.all([
+          const [meRes, clientsRes, sessionsRes, eventsRes, paymentsRes, tasksRes, feedbacksRes, renewalsRes] = await Promise.all([
             fetch("/api/me", { cache: "no-store" }),
             fetch("/api/clients", { cache: "no-store" }),
             fetch("/api/sessions", { cache: "no-store" }),
@@ -765,11 +606,12 @@ export const useAppStore = create<AppState>()(
             fetch("/api/payments", { cache: "no-store" }),
             fetch("/api/portal-tasks", { cache: "no-store" }),
             fetch("/api/portal-feedbacks", { cache: "no-store" }),
+            fetch("/api/trainer/renewals", { cache: "no-store" }),
           ]);
 
           if (!clientsRes.ok || !sessionsRes.ok || !eventsRes.ok || !paymentsRes.ok) return;
 
-          const [rawMe, rawClients, rawSessions, rawEvents, rawPayments, rawTasks, rawFeedbacks] = await Promise.all([
+          const [rawMe, rawClients, rawSessions, rawEvents, rawPayments, rawTasks, rawFeedbacks, rawRenewals] = await Promise.all([
             meRes.ok ? meRes.json() : Promise.resolve(null),
             clientsRes.json(),
             sessionsRes.json(),
@@ -777,6 +619,7 @@ export const useAppStore = create<AppState>()(
             paymentsRes.json(),
             tasksRes.ok ? tasksRes.json() : Promise.resolve([]),
             feedbacksRes.ok ? feedbacksRes.json() : Promise.resolve([]),
+            renewalsRes.ok ? renewalsRes.json() : Promise.resolve([]),
           ]);
 
           const dbPlanName = mapDbPlanToSubscriptionPlan(
@@ -796,10 +639,6 @@ export const useAppStore = create<AppState>()(
             propertyType:   String(c.propertyType ?? ""),
             environment:    String(c.environment ?? ""),
             plan:           String(c.plan ?? ""),
-            contractAmount: Number(c.contractAmount ?? 0),
-            billingDay:     Number(c.billingDay ?? 10),
-            paymentMethod:  (c.paymentMethod ?? "Pix") as ClientPaymentMethod,
-            nextChargeDate: String(c.nextChargeDate ?? ""),
             dogs: ((c.dogs as Array<Record<string, unknown>>) ?? []).map((d) => ({
               id:            String(d.id),
               name:          String(d.name),
@@ -840,12 +679,10 @@ export const useAppStore = create<AppState>()(
 
           const payments: PaymentItem[] = (rawPayments as Array<Record<string, unknown>>).map((p) => ({
             id:            String(p.id),
-            clientId:      p.clientId ? String(p.clientId) : undefined,
-            clientName:    String(p.clientName),
+            description:   String(p.description ?? ""),
             amount:        Number(p.amount ?? 0),
             status:        (p.status ?? "Pendente") as "Pago" | "Pendente",
-            source:        (p.source ?? "Cliente") as "Cliente" | "Assinatura",
-            paymentMethod: p.paymentMethod as ClientPaymentMethod | undefined,
+            paymentMethod: p.paymentMethod as TrainerPaymentMethod | undefined,
             dueDate:       p.dueDate ? String(p.dueDate) : undefined,
             reference:     p.reference ? String(p.reference) : undefined,
           }));
@@ -873,6 +710,19 @@ export const useAppStore = create<AppState>()(
             })(),
           }));
 
+          const trainerRenewalHistory: TrainerRenewalRecord[] = (rawRenewals as Array<Record<string, unknown>>).map((r) => ({
+            id: String(r.id),
+            date: (() => {
+              const d = new Date(String(r.createdAt));
+              return Number.isNaN(d.getTime()) ? String(r.createdAt ?? "") : d.toLocaleDateString("pt-BR");
+            })(),
+            planName: mapDbPlanToSubscriptionPlan(String(r.planName ?? "")),
+            lessonPackage: (r.lessonPackage as TrainerLessonPackage) ?? "8 aulas",
+            paymentMethod: (r.paymentMethod as TrainerPaymentMethod) ?? "Pix",
+            amount: Number(r.amount ?? 0),
+            status: (r.status === "Pago" ? "Pago" : "Gerada") as "Gerada" | "Pago",
+          }));
+
           set((state) => ({
             clients,
             trainingSessions,
@@ -880,6 +730,7 @@ export const useAppStore = create<AppState>()(
             payments,
             portalTasks,
             portalFeedbacks,
+            trainerRenewalHistory,
             activePlan: dbPlanName,
             trainerSubscription: {
               ...state.trainerSubscription,
