@@ -63,6 +63,10 @@ type PortalData = {
   linkMeta: { expiresAt: string; status: "Ativo" };
 };
 
+function formatCurrency(value: number): string {
+  return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
 function formatDateTime(value?: string | null): string {
   if (!value) return "-";
   const date = new Date(value);
@@ -129,6 +133,8 @@ export function PortalPublicClient({ token }: { token: string }) {
       .filter((item) => Boolean(item.src))
       .slice(0, 12);
   }, [data]);
+
+  const pendingAmount = 0;
 
   const latestSessionScore = useMemo(() => {
     if (!data?.sessions.length) return null;
