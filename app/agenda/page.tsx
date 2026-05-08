@@ -39,6 +39,13 @@ function statusBadge(status: EventStatus): string {
   return "bg-rose-100 text-rose-800";
 }
 
+function statusLabel(status: EventStatus): string {
+  if (status === "Confirmado") return "Concluída";
+  if (status === "Pendente" || status === "Aguardando") return "Agendada";
+  if (status === "Recorrente") return "Recorrente";
+  return "Cancelada";
+}
+
 function timelineDot(status: EventStatus): string {
   if (status === "Confirmado") return "bg-sky-500";
   if (status === "Pendente" || status === "Aguardando") return "bg-amber-500";
@@ -183,13 +190,13 @@ export default function SchedulePage() {
   function handleOpenWhatsApp(phone?: string, dogName?: string) {
     const normalizedPhone = (phone ?? "").replace(/\D/g, "");
     if (!normalizedPhone) {
-      setAgendaMessage("Tutor sem telefone valido para abrir WhatsApp.");
+      setAgendaMessage("Tutor sem telefone válido para abrir WhatsApp.");
       window.setTimeout(() => setAgendaMessage(""), 3000);
       return;
     }
 
     const message = encodeURIComponent(
-      `Oi! Estou iniciando${dogName ? ` a sessao do ${dogName}` : " a sessao"} agora.`,
+      `Oi! Estou iniciando${dogName ? ` a aula do ${dogName}` : " a aula"} agora.`,
     );
     window.open(`https://wa.me/55${normalizedPhone}?text=${message}`, "_blank", "noopener,noreferrer");
   }
@@ -249,7 +256,7 @@ export default function SchedulePage() {
               </Link>
               <div>
                 <p className="text-base font-semibold text-[var(--foreground)]">Agenda de aulas</p>
-                <p className="text-[11px] text-[var(--muted)]">Visualize e gerencie suas aulas e atendimentos.</p>
+                <p className="text-[11px] text-[var(--muted)]">Veja quando acontece cada aula e registre o treino ao final.</p>
               </div>
             </div>
             <button
@@ -283,7 +290,7 @@ export default function SchedulePage() {
                       : "border border-[var(--border)] bg-white text-[var(--muted)]"
                   }`}
                 >
-                  {filterValue}
+                  {filterValue === "Todos" ? "Todos" : statusLabel(filterValue)}
                 </button>
               ))}
             </section>
@@ -310,15 +317,15 @@ export default function SchedulePage() {
           <section className="mt-3 grid grid-cols-2 gap-2">
             <article className="rounded-xl border border-[var(--border)] bg-white p-3">
               <p className="text-2xl font-semibold text-[var(--foreground)]">{eventsForSelectedDay.length}</p>
-              <p className="text-xs text-[var(--muted)]">Aulas hoje</p>
+              <p className="text-xs text-[var(--muted)]">Aulas no dia</p>
             </article>
             <article className="rounded-xl border border-[var(--border)] bg-white p-3">
               <p className="text-2xl font-semibold text-[var(--foreground)]">{totalInProgress}</p>
-              <p className="text-xs text-[var(--muted)]">Em andamento</p>
+              <p className="text-xs text-[var(--muted)]">Agendadas</p>
             </article>
             <article className="rounded-xl border border-[var(--border)] bg-white p-3">
               <p className="text-2xl font-semibold text-[var(--foreground)]">{totalConfirmed}</p>
-              <p className="text-xs text-[var(--muted)]">Concluidas</p>
+              <p className="text-xs text-[var(--muted)]">Concluídas</p>
             </article>
             <article className="rounded-xl border border-[var(--border)] bg-white p-3">
               <p className="text-2xl font-semibold text-[var(--foreground)]">{totalCancelled}</p>
@@ -331,7 +338,7 @@ export default function SchedulePage() {
           ) : null}
 
           <section className="mt-4 flex items-center justify-between">
-            <p className="text-sm font-semibold text-[var(--foreground)]">Aulas de hoje</p>
+            <p className="text-sm font-semibold text-[var(--foreground)]">Aulas do dia</p>
             <p className="text-[11px] text-[var(--muted)]">{weekDays[selectedDayIndex]?.full}</p>
           </section>
 
@@ -357,22 +364,18 @@ export default function SchedulePage() {
                           </div>
                           <div>
                             <p className="text-sm font-semibold text-[var(--foreground)]">{event.dog}</p>
-                            <p className="text-[11px] text-[var(--muted)]">{event.client} • Sessao {event.sessionNumber}</p>
+                            <p className="text-[11px] text-[var(--muted)]">{event.client} • Aula {event.sessionNumber}</p>
                           </div>
                         </div>
                         <span className={`rounded-full px-2 py-1 text-[10px] font-semibold ${statusBadge(event.status as EventStatus)}`}>
-                          {event.status}
+                          {statusLabel(event.status as EventStatus)}
                         </span>
                       </div>
 
-                      <div className="mt-2 grid grid-cols-3 gap-2 text-[11px]">
-                        <Link href={relatedMeta ? `/treinos/registro?clientId=${relatedMeta.clientId}&dogId=${relatedMeta.dogId}` : "/treinos/registro"} className="inline-flex items-center justify-center gap-1 rounded-lg border border-[var(--border)] bg-[#f7fbff] px-2 py-1.5 text-[#145a82]">
-                          <TinyIcon name="play" />
-                          Iniciar
-                        </Link>
+                      <div className="mt-2 grid grid-cols-2 gap-2 text-[11px]">
                         <Link href={relatedMeta ? `/treinos/registro?clientId=${relatedMeta.clientId}&dogId=${relatedMeta.dogId}` : "/treinos/registro"} className="inline-flex items-center justify-center gap-1 rounded-lg border border-[var(--border)] bg-[#f7fbff] px-2 py-1.5 text-[#145a82]">
                           <TinyIcon name="notes" />
-                          Registro
+                          Registrar aula
                         </Link>
                         <button type="button" onClick={() => handleOpenWhatsApp(relatedMeta?.phone, event.dog)} className="inline-flex items-center justify-center gap-1 rounded-lg border border-[var(--border)] bg-[#f7fbff] px-2 py-1.5 text-[#145a82]">
                           <TinyIcon name="whats" />
@@ -395,7 +398,7 @@ export default function SchedulePage() {
                           disabled={busyEventId === event.id}
                           className="rounded-full border border-amber-300 bg-amber-50 px-2.5 py-1 text-amber-900 disabled:opacity-50"
                         >
-                          Em andamento
+                          Agendada
                         </button>
                         <button
                           type="button"
@@ -422,8 +425,8 @@ export default function SchedulePage() {
           <section className="mt-4 rounded-2xl border border-[var(--border)] bg-sky-50 p-3">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-sm font-semibold text-[var(--foreground)]">Organize as aulas de forma eficiente</p>
-                <p className="text-xs text-[var(--muted)]">Agende nova aula e acompanhe os status.</p>
+                <p className="text-sm font-semibold text-[var(--foreground)]">Agenda simples de atendimento</p>
+                <p className="text-xs text-[var(--muted)]">A agenda mostra horários. O registro da aula fica em Treinos.</p>
               </div>
               <button
                 type="button"
@@ -441,8 +444,8 @@ export default function SchedulePage() {
               <form onSubmit={onSubmit} className="mt-3 grid gap-2.5 sm:grid-cols-2">
                 <label className="grid gap-1">
                   <span className="flex items-center justify-between text-[11px] font-medium text-[var(--muted)]">
-                    Cliente
-                    <Link href="/clientes" className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#145a82]">+ Novo cliente</Link>
+                    Tutor
+                    <Link href="/clientes" className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#145a82]">+ Novo tutor</Link>
                   </span>
                   <select
                     value={selectedClient?.id ?? ""}
@@ -462,7 +465,7 @@ export default function SchedulePage() {
                 <label className="grid gap-1">
                   <span className="flex items-center justify-between text-[11px] font-medium text-[var(--muted)]">
                     Cão
-                    <Link href="/clientes" className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#145a82]">+ Novo cão</Link>
+                    <Link href="/clientes" className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#145a82]">+ Cadastrar cão</Link>
                   </span>
                   <select
                     value={selectedDog?.id ?? ""}
@@ -501,10 +504,10 @@ export default function SchedulePage() {
                     onChange={(event) => setStatus(event.target.value as EventStatus)}
                     className="rounded-xl border border-[var(--border)] bg-white px-3 py-2 text-sm outline-none focus:border-sky-400"
                   >
-                    <option value="Pendente">Pendente</option>
-                    <option value="Confirmado">Confirmado</option>
+                    <option value="Pendente">Agendada</option>
+                    <option value="Confirmado">Concluída</option>
                     <option value="Cancelado">Cancelado</option>
-                    <option value="Aguardando">Aguardando</option>
+                    <option value="Aguardando">Aguardando confirmação</option>
                   </select>
                 </label>
 

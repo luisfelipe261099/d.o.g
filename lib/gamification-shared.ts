@@ -120,8 +120,8 @@ export function buildPublicState(raw: RawGamification): GamificationState {
 }
 
 export type ApplyActionInput =
-  | { action: "task_completed" }
-  | { action: "task_uncompleted" }
+  | { action: "task_completed"; taskId?: string }
+  | { action: "task_uncompleted"; taskId?: string }
   | { action: "feedback_sent" }
   | { action: "trainer_rated"; rating: number }
   | { action: "session_rated"; sessionId: string; rating: number }

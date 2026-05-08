@@ -24,12 +24,16 @@ export function LoginClient() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    await submitCredentials(email, password);
+  }
+
+  async function submitCredentials(nextEmail: string, nextPassword: string, redirectTo = safNext) {
     setError("");
     setLoading(true);
 
     const result = await signIn("credentials", {
-      email:    email.trim().toLowerCase(),
-      password,
+      email:    nextEmail.trim().toLowerCase(),
+      password: nextPassword,
       redirect: false,
     });
 
@@ -39,7 +43,13 @@ export function LoginClient() {
       return;
     }
 
-    router.replace(safNext);
+    router.replace(redirectTo);
+  }
+
+  function handleDemoLogin(nextEmail: string, redirectTo: string) {
+    setEmail(nextEmail);
+    setPassword("123456");
+    void submitCredentials(nextEmail, "123456", redirectTo);
   }
 
   return (
@@ -94,6 +104,36 @@ export function LoginClient() {
             </div>
           ) : null}
         </form>
+
+        <div className="relative mt-5 rounded-2xl border border-[var(--border)] bg-white/80 p-3">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#2d6f99]">Entrar em modo demo</p>
+          <div className="mt-3 grid gap-2">
+            <button
+              type="button"
+              onClick={() => handleDemoLogin("adestrador@adestro.com.br", "/dashboard")}
+              disabled={loading}
+              className="rounded-2xl border border-[var(--border)] bg-[#f7fbff] px-4 py-2 text-left text-sm font-semibold text-[#145a82] disabled:opacity-60"
+            >
+              Entrar como adestrador
+            </button>
+            <button
+              type="button"
+              onClick={() => handleDemoLogin("cliente@adestro.com.br", "/portal/cliente")}
+              disabled={loading}
+              className="rounded-2xl border border-[var(--border)] bg-[#f7fbff] px-4 py-2 text-left text-sm font-semibold text-[#145a82] disabled:opacity-60"
+            >
+              Entrar como tutor
+            </button>
+            <button
+              type="button"
+              onClick={() => handleDemoLogin("admin@adestro.com.br", "/admin")}
+              disabled={loading}
+              className="rounded-2xl border border-[var(--border)] bg-[#f7fbff] px-4 py-2 text-left text-sm font-semibold text-[#145a82] disabled:opacity-60"
+            >
+              Entrar como admin
+            </button>
+          </div>
+        </div>
 
         <p className="relative mt-6 text-center text-sm text-[var(--muted)]">
           Ainda nao tem conta?{" "}

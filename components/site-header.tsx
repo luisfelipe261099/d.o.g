@@ -45,12 +45,16 @@ export function SiteHeader() {
 
   const trainerNav = [
     { href: "/dashboard", label: "Início", kicker: "Home", description: "Comece por aqui" },
-    { href: "/clientes", label: "Clientes", kicker: "Carteira", description: "Tutores e cães" },
+    { href: "/clientes", label: "Tutores e cães", kicker: "Carteira", description: "Cadastros e histórico" },
     { href: "/agenda", label: "Agenda", kicker: "Hoje", description: "Próximos atendimentos" },
     { href: "/treinos", label: "Treinos", kicker: "Histórico", description: "Sessões registradas" },
     { href: "/portal", label: "Portal do Tutor", kicker: "Externo", description: "Link compartilhado com o tutor" },
+  ];
+
+  const trainerMoreNav = [
     { href: "/ia", label: "Assistente IA", kicker: "Apoio", description: "Sugestões para casos complexos" },
     { href: "/planos", label: "Meu Plano", kicker: "Assinatura", description: "Plano e pagamento" },
+    { href: "/tutorial", label: "Tutorial", kicker: "Ajuda", description: "Passo a passo da plataforma" },
     { href: "/configuracoes", label: "Configurações", kicker: "Conta", description: "Preferências da conta" },
   ];
 
@@ -65,6 +69,8 @@ export function SiteHeader() {
         ? trainerNav
         : clientNav
     : [];
+  const secondaryNav = isAuthenticated && userRole === "trainer" ? trainerMoreNav : [];
+  const secondaryActive = secondaryNav.some((item) => pathname === item.href);
 
   const roleLabel = userRole === "admin" ? "Administrador" : userRole === "client" ? "Cliente" : "Adestrador";
 
@@ -108,6 +114,36 @@ export function SiteHeader() {
                 {item.label}
               </Link>
             ))}
+
+            {secondaryNav.length ? (
+              <details className="group relative">
+                <summary
+                  className={`list-none whitespace-nowrap rounded-xl border px-3 py-2 text-sm font-semibold transition marker:hidden ${
+                    secondaryActive
+                      ? "border-[#145a82] bg-[#145a82] text-white shadow-[0_12px_24px_rgba(20,90,130,0.24)]"
+                      : "border-[rgba(20,79,116,0.18)] bg-[rgba(250,255,255,0.94)] text-[var(--foreground)] hover:border-[rgba(20,90,130,0.34)] hover:bg-white"
+                  }`}
+                >
+                  Mais
+                </summary>
+                <div className="absolute right-0 top-12 z-50 grid min-w-52 gap-2 rounded-2xl border border-[var(--border)] bg-white p-2 shadow-[0_18px_45px_rgba(17,73,110,0.18)]">
+                  {secondaryNav.map((item) => (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={`rounded-xl px-3 py-2 text-sm font-semibold transition ${
+                        pathname === item.href
+                          ? "bg-[#145a82] text-white"
+                          : "text-[var(--foreground)] hover:bg-sky-50"
+                      }`}
+                    >
+                      <span className="block">{item.label}</span>
+                      <span className="block text-[11px] font-normal opacity-75">{item.description}</span>
+                    </Link>
+                  ))}
+                </div>
+              </details>
+            ) : null}
 
             {isAuthenticated ? (
               <button
@@ -191,6 +227,27 @@ export function SiteHeader() {
                   {item.label}
                 </Link>
               ))}
+              {secondaryNav.length ? (
+                <div className="mt-2 border-t border-[var(--border)] pt-3">
+                  <p className="mb-2 px-1 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">Mais</p>
+                  <div className="grid gap-3">
+                    {secondaryNav.map((item) => (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={() => setMenuOpen(false)}
+                        className={`rounded-2xl border px-5 py-4 text-base font-semibold transition break-words ${
+                          pathname === item.href
+                            ? "border-[#1b719d] bg-[rgba(36,140,196,0.14)] text-[var(--foreground)]"
+                            : "border-[var(--border)] bg-white text-[var(--foreground)]"
+                        }`}
+                      >
+                        {item.label}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
             </nav>
 
             <button

@@ -12,6 +12,8 @@ const plans = [
     label: "Trial Gratuito",
     price: "R$ 0",
     cycle: "90 dias",
+    detail: "Teste completo por 90 dias",
+    lessonInfo: "Sem cobrança de aulas no período de teste",
     badge: "Gratis",
     features: ["Todos os modulos", "Ate 10 clientes", "Agenda + treinos", "Portal do cliente", "IA de protocolo"],
     highlight: false,
@@ -22,6 +24,8 @@ const plans = [
     label: "Starter",
     price: "R$ 420",
     cycle: "/mes",
+    detail: "Referência: pacote inicial de atendimento",
+    lessonInfo: "Sugestão comercial: até 4 aulas por cliente ativo",
     badge: null,
     features: ["Ate 15 clientes", "Agenda + treinos", "Portal do cliente basico", "Suporte por e-mail"],
     highlight: false,
@@ -32,6 +36,8 @@ const plans = [
     label: "Pro",
     price: "R$ 690",
     cycle: "/mes",
+    detail: "Referência: operação recorrente",
+    lessonInfo: "Controle de pacotes de 4, 8 ou 12 aulas no painel",
     badge: "Mais popular",
     features: ["Clientes ilimitados", "Financeiro + cobranca", "Assistente IA", "Portal completo", "Prioridade no suporte"],
     highlight: true,
@@ -42,6 +48,8 @@ const plans = [
     label: "Business",
     price: "R$ 990",
     cycle: "/mes",
+    detail: "Referência: equipe ou franquia",
+    lessonInfo: "Pacotes maiores, equipe e relatórios por carteira",
     badge: null,
     features: ["Multi-adestrador", "Relatorios analiticos", "White label do portal", "Gerente de conta"],
     highlight: false,
@@ -128,7 +136,7 @@ export function CadastroClient() {
         <div className="mx-auto max-w-xl text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[rgba(20,90,130,0.8)]">Adestro</p>
           <h2 className="mt-2 font-display text-2xl font-semibold text-[var(--foreground)] sm:text-3xl">Escolha seu plano</h2>
-          <p className="mt-2 text-sm text-[var(--muted)]">Comece de graca por 90 dias ou escolha um plano pago diretamente.</p>
+          <p className="mt-2 text-sm text-[var(--muted)]">Comece de graca por 90 dias ou escolha um plano pago. Os pacotes de aulas podem ser ajustados depois em Meu Plano.</p>
         </div>
 
         <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -157,10 +165,14 @@ export function CadastroClient() {
                   <span className="font-display text-2xl font-semibold text-[var(--foreground)]">{plan.price}</span>
                   <span className="mb-0.5 text-xs text-[var(--muted)]">{plan.cycle}</span>
                 </div>
+                <p className="mt-2 rounded-xl border border-[var(--border)] bg-white/80 px-3 py-2 text-xs leading-5 text-[var(--muted)]">
+                  <span className="font-semibold text-[var(--foreground)]">{plan.detail}</span><br />
+                  {plan.lessonInfo}
+                </p>
                 <ul className="mt-4 space-y-2">
                   {plan.features.map((f) => (
                     <li key={f} className="flex items-start gap-2 text-sm text-[var(--muted)]">
-                      <span className="mt-0.5 flex-shrink-0 text-emerald-600">?</span>
+                      <span className="mt-0.5 flex-shrink-0 text-emerald-600">✓</span>
                       {f}
                     </li>
                   ))}
@@ -202,7 +214,7 @@ export function CadastroClient() {
           onClick={() => setStep("plan")}
           className="relative mb-4 flex items-center gap-1 text-xs font-semibold text-[var(--muted)] hover:text-[#145a82]"
         >
-          ? Voltar aos planos
+          ← Voltar aos planos
         </button>
 
         <p className="relative text-xs font-semibold uppercase tracking-[0.22em] text-[rgba(20,90,130,0.8)]">Adestro</p>
@@ -210,7 +222,7 @@ export function CadastroClient() {
 
         {/* Plano selecionado */}
         <div className="relative mt-3 flex items-center gap-3 rounded-2xl border border-[rgba(20,90,130,0.2)] bg-[rgba(20,90,130,0.05)] px-4 py-2.5">
-          <span className="text-base">??</span>
+          <span className="text-base">✓</span>
           <p className="text-sm font-semibold text-[#145a82]">Plano: {planLabel}</p>
           <button
             type="button"

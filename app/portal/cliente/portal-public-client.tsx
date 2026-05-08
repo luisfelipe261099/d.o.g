@@ -63,10 +63,6 @@ type PortalData = {
   linkMeta: { expiresAt: string; status: "Ativo" };
 };
 
-function formatCurrency(value: number): string {
-  return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-}
-
 function formatDateTime(value?: string | null): string {
   if (!value) return "-";
   const date = new Date(value);
@@ -134,24 +130,18 @@ export function PortalPublicClient({ token }: { token: string }) {
       .slice(0, 12);
   }, [data]);
 
-  const pendingAmount = 0;
+  let latestSessionScore: { title: string; date: string; score: number } | null = null;
+  for (const session of data?.sessions ?? []) {
+    const scores = (session.notes || [])
+      .map((note) => Number(note.score ?? 0))
+      .filter((score) => Number.isFinite(score) && score > 0);
 
-  const latestSessionScore = useMemo(() => {
-    if (!data?.sessions.length) return null;
-
-    for (const session of data.sessions) {
-      const scores = (session.notes || [])
-        .map((note) => Number(note.score ?? 0))
-        .filter((score) => Number.isFinite(score) && score > 0);
-
-      if (scores.length) {
-        const average = scores.reduce((sum, score) => sum + score, 0) / scores.length;
-        return { title: session.title, date: session.date, score: average };
-      }
+    if (scores.length) {
+      const average = scores.reduce((sum, score) => sum + score, 0) / scores.length;
+      latestSessionScore = { title: session.title, date: session.date, score: average };
+      break;
     }
-
-    return null;
-  }, [data]);
+  }
 
   async function handleToggleTask(task: PortalTask) {
     if (!data) return;
@@ -164,8 +154,6 @@ export function PortalPublicClient({ token }: { token: string }) {
       tasks: data.tasks.map((item) => (item.id === task.id ? { ...item, completed: nextCompleted } : item)),
     });
 
-    gam.award(nextCompleted ? "task_completed" : "task_uncompleted", nextCompleted ? `Tarefa: ${task.title}` : undefined);
-
     try {
       const response = await fetch(`/api/portal-public/${encodeURIComponent(token)}${pinQuery}`, {
         method: "PATCH",
@@ -177,6 +165,16 @@ export function PortalPublicClient({ token }: { token: string }) {
         setPinRequired(true);
         throw new Error("PIN requerido");
       }
+      if (!response.ok) throw new Error("Falha ao atualizar tarefa");
+
+      const result = (await response.json()) as { ok?: boolean };
+      if (!result.ok) throw new Error("Tarefa nao encontrada");
+
+      gam.award(
+        nextCompleted ? "task_completed" : "task_uncompleted",
+        nextCompleted ? `Tarefa: ${task.title}` : undefined,
+        task.id,
+      );
     } catch {
       setData({
         ...data,
@@ -284,12 +282,14 @@ export function PortalPublicClient({ token }: { token: string }) {
 
   const completedTasks = data.tasks.filter((task) => task.completed).length;
   const scoreStars = latestSessionScore ? Math.round(Math.min(Math.max(latestSessionScore.score, 0), 10) / 2) : 0;
+  const nextEvent = data.events[0];
+  const latestSession = data.sessions[0];
 
   return (
     <PageShell
       kicker="Portal do tutor"
-      title={`Acompanhamento de ${featuredDog?.name || "seu pet"}`}
-      description="Acesso rapido sem login para visualizar tarefas, agenda e progresso do adestramento."
+      title={`${featuredDog?.name || "Seu cão"}: tarefas e próxima aula`}
+      description="Veja o que fazer em casa, quando será a próxima aula e o resumo mais recente do treino."
     >
       <section className="space-y-4">
         <article className="rounded-[1.75rem] border border-[var(--border)] bg-slate-950 p-5 text-white shadow-sm">
@@ -314,7 +314,7 @@ export function PortalPublicClient({ token }: { token: string }) {
               </div>
             </div>
             <div className="rounded-2xl border border-white/20 bg-white/10 px-3 py-2 text-xs text-slate-300">
-              <p>Status do link: {data.linkMeta.status}</p>
+              <p>Link: {data.linkMeta.status}</p>
               <p>Expira em: {formatDateTime(data.linkMeta.expiresAt)}</p>
             </div>
           </div>
@@ -325,25 +325,17 @@ export function PortalPublicClient({ token }: { token: string }) {
               <p className="mt-2 text-2xl font-semibold">{completedTasks}/{data.tasks.length}</p>
             </div>
             <div className="rounded-2xl bg-white/10 p-4">
-              <p className="text-xs uppercase tracking-[0.16em] text-slate-300">Agenda</p>
-              <p className="mt-2 text-2xl font-semibold">{data.events.length}</p>
+              <p className="text-xs uppercase tracking-[0.16em] text-slate-300">Próxima aula</p>
+              <p className="mt-2 text-2xl font-semibold">{nextEvent ? nextEvent.time : "-"}</p>
+              <p className="mt-1 text-xs text-slate-300">{nextEvent?.day || "Sem data"}</p>
             </div>
             <div className="rounded-2xl bg-white/10 p-4">
-              <p className="text-xs uppercase tracking-[0.16em] text-slate-300">Financeiro pendente</p>
-              <p className="mt-2 text-xl font-semibold">
-                {formatCurrency(pendingAmount)}
-              </p>
+              <p className="text-xs uppercase tracking-[0.16em] text-slate-300">Último treino</p>
+              <p className="mt-2 text-xl font-semibold">{latestSession?.date || "-"}</p>
+              <p className="mt-1 text-xs text-slate-300">{latestSession?.title || "Sem registro"}</p>
             </div>
           </div>
         </article>
-
-        <GamificationPanel
-          state={gam.state}
-          trainerName={data.trainer.name}
-          onRateTrainer={gam.rateTrainer}
-          lastEarned={gam.lastEarned}
-          onDismissEarned={gam.dismissEarned}
-        />
 
         <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
           <article className="rounded-[1.5rem] border border-[var(--border)] bg-[var(--panel)] p-5 shadow-sm">
@@ -464,6 +456,14 @@ export function PortalPublicClient({ token }: { token: string }) {
             </div>
           </div>
         </article>
+
+        <GamificationPanel
+          state={gam.state}
+          trainerName={data.trainer.name}
+          onRateTrainer={gam.rateTrainer}
+          lastEarned={gam.lastEarned}
+          onDismissEarned={gam.dismissEarned}
+        />
 
         <article className="rounded-[1.5rem] border border-[var(--border)] bg-white p-5 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">Fale com o adestrador</p>

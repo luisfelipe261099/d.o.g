@@ -183,6 +183,42 @@ export default function DashboardPage() {
     { value: String(pendingEvents), label: "Pendências", link: "/agenda" },
   ];
 
+  const nextAction = (() => {
+    if (!clients.length) {
+      return {
+        label: "Cadastrar tutor e cão",
+        detail: "Comece criando a ficha do tutor responsável e do cão atendido.",
+        href: "/clientes",
+        button: "Cadastrar agora",
+      };
+    }
+
+    if (!events.length) {
+      return {
+        label: "Agendar primeira aula",
+        detail: "Escolha dia e horário para transformar o cadastro em atendimento.",
+        href: "/agenda",
+        button: "Agendar aula",
+      };
+    }
+
+    if (!sessions.length) {
+      return {
+        label: "Registrar aula realizada",
+        detail: "Anote evolução, fotos e tarefas para manter o tutor atualizado.",
+        href: "/treinos/registro",
+        button: "Registrar aula",
+      };
+    }
+
+    return {
+      label: "Enviar portal ao tutor",
+      detail: "Compartilhe tarefas, próximos encontros e evolução em um link simples.",
+      href: "/portal",
+      button: "Abrir portal",
+    };
+  })();
+
   return (
     <AuthGuard role="trainer">
       <main className="mx-auto w-full max-w-md px-3 pb-8 pt-3 sm:max-w-xl">
@@ -194,7 +230,7 @@ export default function DashboardPage() {
               </div>
               <div>
                 <p className="text-[1.12rem] font-semibold text-[var(--foreground)]">{getGreeting()}, {getFirstName(trainerName || "adestrador")}!</p>
-                <p className="text-xs text-[var(--muted)]">Aqui está o resumo da sua operação.</p>
+                <p className="text-xs text-[var(--muted)]">Veja sua próxima ação e os atendimentos do dia.</p>
               </div>
             </div>
             <div className="flex items-center gap-2 text-[var(--muted)]">
@@ -206,6 +242,22 @@ export default function DashboardPage() {
               </Link>
             </div>
           </header>
+
+          <section className="mt-4 rounded-2xl border border-[#cfe4f3] bg-white p-3">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#2d6f99]">Próxima ação</p>
+            <div className="mt-2 flex items-start justify-between gap-3">
+              <div>
+                <h1 className="text-lg font-semibold leading-tight text-[var(--foreground)]">{nextAction.label}</h1>
+                <p className="mt-1 text-xs leading-5 text-[var(--muted)]">{nextAction.detail}</p>
+              </div>
+              <Link
+                href={nextAction.href}
+                className="flex-shrink-0 rounded-full bg-[#145a82] px-3 py-2 text-[11px] font-semibold text-white"
+              >
+                {nextAction.button}
+              </Link>
+            </div>
+          </section>
 
           <article className="mt-4 overflow-hidden rounded-2xl bg-[linear-gradient(140deg,#0f3d5e_0%,#145a82_56%,#2c7eab_100%)] p-4 text-white">
             <p className="text-[11px] uppercase tracking-[0.15em] text-sky-100">Próximo atendimento</p>
@@ -222,6 +274,7 @@ export default function DashboardPage() {
                     alt={`Foto de ${heroDog.name}`}
                     fill
                     sizes="96px"
+                    priority
                     unoptimized
                     className="object-cover"
                   />
@@ -308,7 +361,7 @@ export default function DashboardPage() {
               {[
                 {
                   step: 1,
-                  label: "Cadastre cliente e cão",
+                  label: "Cadastre tutor e cão",
                   detail: "Crie a ficha do tutor com os dados do cão.",
                   href: "/clientes",
                   done: clients.length > 0,
@@ -330,7 +383,7 @@ export default function DashboardPage() {
                 {
                   step: 4,
                   label: "Compartilhe o portal com o tutor",
-                  detail: "Envie um link seguro para acompanhamento.",
+                  detail: "Envie um link seguro para acompanhamento em casa.",
                   href: "/portal",
                   done: false,
                 },
@@ -367,8 +420,9 @@ export default function DashboardPage() {
             </div>
             <div className="mt-3 grid gap-2">
               {[
-                { label: "Novo cliente", href: "/cadastro", icon: "user" as const, detail: "Cadastrar cliente e cão" },
-                { label: "Registrar treino", href: "/treinos", icon: "train" as const, detail: "Lançar sessão de hoje" },
+                { label: "Novo tutor", href: "/clientes", icon: "user" as const, detail: "Cadastrar tutor e cão" },
+                { label: "Registrar aula", href: "/treinos/registro", icon: "train" as const, detail: "Lançar treino de hoje" },
+                { label: "Ver tutorial", href: "/tutorial", icon: "portal" as const, detail: "Passo a passo para equipe e tutor" },
               ].map((item) => (
                 <Link
                   key={item.label}

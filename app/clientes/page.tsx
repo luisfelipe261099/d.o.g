@@ -39,10 +39,6 @@ function statusLabel(status: ClientStatus): string {
   return "Inativo";
 }
 
-function formatCurrency(value: number): string {
-  return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-}
-
 function SmallIcon({ name }: { name: "search" | "filter" | "plus" | "dog" | "money" | "calendar" }) {
   if (name === "search") {
     return (
@@ -160,16 +156,13 @@ export default function ClientsPage() {
   }
 
   const clientsWithMeta = useMemo(() => {
-    const now = Date.now();
-    const recentWindow = 45 * 24 * 60 * 60 * 1000;
-
     return clients.map((client, index) => {
       const lastSessionDate = sessions
         .filter((session) => session.clientId === client.id || session.clientName === client.name)
         .map((session) => parseBrazilianDate(session.date))
         .sort((a, b) => b - a)[0] ?? 0;
 
-      const hasRecentSession = lastSessionDate > 0 && now - lastSessionDate <= recentWindow;
+      const hasRecentSession = lastSessionDate > 0;
       const status = getClientStatus({ hasRecentSession });
 
       return {
@@ -211,6 +204,18 @@ export default function ClientsPage() {
         return b.insertionOrder - a.insertionOrder;
       });
   }, [clientsWithMeta, searchTerm, statusFilter, sortMode]);
+
+  const filteredDogs = useMemo(
+    () =>
+      filteredClients.flatMap((item) =>
+        item.client.dogs.map((dog) => ({
+          client: item.client,
+          dog,
+          status: item.status,
+        })),
+      ),
+    [filteredClients],
+  );
 
   const totalDogs = clients.reduce((total, client) => total + client.dogs.length, 0);
   const activeClients = clientsWithMeta.filter((item) => item.status === "ativos").length;
@@ -263,7 +268,7 @@ export default function ClientsPage() {
       setTrainingTypesRaw("");
       setPlanLabel("");
       setShowForm(false);
-      setSaveMessage("Cliente e cão cadastrados com sucesso.");
+      setSaveMessage("Tutor e cão cadastrados com sucesso.");
       window.setTimeout(() => setSaveMessage(""), 3000);
     } finally {
       setIsSaving(false);
@@ -276,9 +281,9 @@ export default function ClientsPage() {
         <section className="rounded-[2rem] border border-[var(--border)] bg-gradient-to-b from-[#f8fcff] to-[#f2f9ff] p-4 shadow-[var(--shadow)]">
           <header className="flex items-center justify-between gap-3">
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#2d6f99]">Painel de clientes</p>
-              <h1 className="font-display text-2xl font-semibold leading-tight text-[var(--foreground)]">Clientes e cães</h1>
-              <p className="mt-1 text-xs text-[var(--muted)]">Gestão rápida para cadastro, status e acesso ao treino.</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#2d6f99]">Painel de tutores</p>
+              <h1 className="font-display text-2xl font-semibold leading-tight text-[var(--foreground)]">Tutores e cães</h1>
+              <p className="mt-1 text-xs text-[var(--muted)]">Cadastre o tutor responsável, o cão e o objetivo do treino.</p>
             </div>
             <button
               type="button"
@@ -299,14 +304,14 @@ export default function ClientsPage() {
               onClick={() => setShowForm(true)}
               className="rounded-full border border-[#145a82] bg-[#145a82] px-3 py-1.5 text-[11px] font-semibold text-white"
             >
-              + Novo cliente
+              + Novo tutor
             </button>
             <button
               type="button"
               onClick={() => setShowForm(true)}
               className="rounded-full border border-[#145a82] bg-white px-3 py-1.5 text-[11px] font-semibold text-[#145a82]"
             >
-              + Novo cão
+              + Cadastrar cão
             </button>
           </div>
 
@@ -316,7 +321,7 @@ export default function ClientsPage() {
               onClick={() => setEntityKind("humanos")}
               className={`rounded-full px-3 py-1.5 transition ${entityKind === "humanos" ? "bg-[#145a82] text-white" : "text-[var(--muted)]"}`}
             >
-              Clientes humanos
+              Tutores
             </button>
             <button
               type="button"
@@ -333,7 +338,7 @@ export default function ClientsPage() {
               <input
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
-                placeholder={entityKind === "humanos" ? "Buscar cliente pelo nome" : "Buscar cão pelo nome ou raça"}
+                placeholder={entityKind === "humanos" ? "Buscar tutor pelo nome" : "Buscar cão pelo nome ou raça"}
                 className="w-full border-none bg-transparent text-sm text-[var(--foreground)] outline-none"
               />
             </label>
@@ -370,7 +375,7 @@ export default function ClientsPage() {
 
           <section className="mt-4 grid grid-cols-2 gap-2">
             <article className="rounded-xl border border-[var(--border)] bg-white p-3">
-              <p className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-[#2d6f99]"><SmallIcon name="plus" /> Clientes</p>
+              <p className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-[#2d6f99]"><SmallIcon name="plus" /> Tutores</p>
               <p className="text-2xl font-semibold text-[var(--foreground)]">{clients.length}</p>
               <p className="mt-1 text-xs text-[var(--muted)]">Base cadastrada</p>
             </article>
@@ -392,7 +397,7 @@ export default function ClientsPage() {
           </section>
 
           <section className="mt-4 flex items-center justify-between rounded-xl border border-[#c9dfef] bg-white px-3 py-2 text-xs text-[var(--muted)]">
-            <p>{filteredClients.length} {entityKind === "humanos" ? "clientes" : "cães"} encontrados</p>
+            <p>{entityKind === "humanos" ? filteredClients.length : filteredDogs.length} {entityKind === "humanos" ? "tutores" : "cães"} encontrados</p>
             <label className="flex items-center gap-1.5">
               Ordenar:
               <select
@@ -407,17 +412,73 @@ export default function ClientsPage() {
           </section>
 
           <section className="mt-2 rounded-xl border border-[#d7e8f4] bg-[#eef6fc] px-3 py-2 text-xs text-[#245d84]">
-            {clients.length} cliente(s) cadastrados.
+            {clients.length} tutor(es) e {totalDogs} cão(ões) cadastrados.
           </section>
 
           <section className="mt-3 space-y-2">
             {filteredClients.length === 0 ? (
               <article className="rounded-2xl border border-[var(--border)] bg-white p-4 text-sm text-[var(--muted)]">
-                Nenhum {entityKind === "humanos" ? "cliente" : "cão"} encontrado com os filtros atuais.
+                Nenhum {entityKind === "humanos" ? "tutor" : "cão"} encontrado com os filtros atuais.
               </article>
             ) : null}
 
-            {filteredClients.map((item) => {
+            {entityKind === "caes" ? filteredDogs.map(({ client, dog, status }) => (
+              <article key={`${client.id}-${dog.id}`} className="rounded-2xl border border-[#cfe4f3] bg-white p-3 shadow-[0_10px_24px_rgba(15,72,106,0.09)]">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-3">
+                    <div className="relative h-11 w-11 overflow-hidden rounded-full bg-sky-100">
+                      {dog.photoUrl ? (
+                        <Image
+                          src={dog.photoUrl}
+                          alt={`Foto de ${dog.name}`}
+                          fill
+                          sizes="44px"
+                          unoptimized
+                          className="object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center text-[#145a82]">
+                          <SmallIcon name="dog" />
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-[var(--foreground)]">{dog.name}</p>
+                      <p className="text-xs text-[var(--muted)]">Tutor: {client.name} • {dog.breed || "Raça não informada"}</p>
+                    </div>
+                  </div>
+                  <span className={`rounded-full px-2 py-1 text-[10px] font-semibold uppercase ${statusStyle(status)}`}>
+                    {statusLabel(status)}
+                  </span>
+                </div>
+
+                <div className="mt-2 grid grid-cols-2 gap-2 text-[11px] text-[var(--muted)]">
+                  <p>Idade: {dog.age || "Não informada"}</p>
+                  <p>Peso: {dog.weight || "Não informado"}</p>
+                  <p>Plano: {client.plan || "Personalizado"}</p>
+                  <p>{client.phone || "Sem telefone"}</p>
+                </div>
+
+                <div className="mt-3 flex flex-wrap gap-2 text-[10px] font-semibold uppercase text-[var(--muted)]">
+                  {(dog.trainingTypes.length ? dog.trainingTypes : ["Treino geral"]).slice(0, 3).map((type) => (
+                    <span key={type} className="inline-flex items-center gap-1 rounded-full border border-sky-100 bg-sky-50 px-2 py-1 text-[#145a82]">
+                      <SmallIcon name="dog" />
+                      {type}
+                    </span>
+                  ))}
+                </div>
+
+                <div className="mt-3 flex items-center justify-between">
+                  <Link
+                    href={`/treinos?clientId=${client.id}&dogId=${dog.id}`}
+                    className="rounded-full border border-[var(--border)] bg-[#145a82] px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-white"
+                  >
+                    Ver histórico
+                  </Link>
+                  <Link href="/agenda" className="text-xs font-semibold text-[#145a82]">Agendar aula</Link>
+                </div>
+              </article>
+            )) : filteredClients.map((item) => {
               const firstDog = item.client.dogs[0];
               const firstDogId = firstDog?.id;
 
@@ -444,7 +505,7 @@ export default function ClientsPage() {
                       <div>
                         <p className="text-sm font-semibold text-[var(--foreground)]">{item.client.name}</p>
                         <p className="text-xs text-[var(--muted)]">
-                          {firstDog ? `${firstDog.name} • ${firstDog.breed}` : "Sem cao cadastrado"}
+                          {firstDog ? `${firstDog.name} • ${firstDog.breed}` : "Sem cão cadastrado"}
                         </p>
                       </div>
                     </div>
@@ -457,7 +518,7 @@ export default function ClientsPage() {
                     <p>Plano: {item.client.plan || "Personalizado"}</p>
                     <p>{item.client.propertyType || "Nao informado"}</p>
                     <p>{item.client.phone || "Sem telefone"}</p>
-                    <p>{item.client.dogs.length} cao(es)</p>
+                    <p>{item.client.dogs.length} cão(ões)</p>
                   </div>
 
                   <div className="mt-3 flex flex-wrap gap-2 text-[10px] font-semibold uppercase text-[var(--muted)]">
@@ -476,7 +537,7 @@ export default function ClientsPage() {
                       href={firstDogId ? `/treinos?clientId=${item.client.id}&dogId=${firstDogId}` : "/treinos"}
                       className="rounded-full border border-[var(--border)] bg-[#145a82] px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-white"
                     >
-                      Abrir treino
+                      Ver histórico
                     </Link>
                     <Link href="/portal" className="text-xs font-semibold text-[#145a82]">Portal</Link>
                   </div>
@@ -488,8 +549,8 @@ export default function ClientsPage() {
           <section className="mt-4 rounded-2xl border border-[var(--border)] bg-[#f1f8fe] p-3">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-sm font-semibold text-[var(--foreground)]">Novo cliente ou novo cão?</p>
-                <p className="mt-1 text-xs text-[var(--muted)]">Cadastre agora e comece o acompanhamento.</p>
+                <p className="text-sm font-semibold text-[var(--foreground)]">Novo tutor e cão</p>
+                <p className="mt-1 text-xs text-[var(--muted)]">Cadastre a dupla atendida e siga para agenda ou treino.</p>
               </div>
               <button
                 type="button"
@@ -503,12 +564,12 @@ export default function ClientsPage() {
 
           {showForm ? (
             <section className="mt-4 rounded-2xl border border-[var(--border)] bg-white p-4">
-              <p className="text-sm font-semibold text-[var(--foreground)]">Cadastro de cliente e cão</p>
+              <p className="text-sm font-semibold text-[var(--foreground)]">Cadastro de tutor e cão</p>
               <form onSubmit={onSubmit} className="mt-3 grid gap-2 sm:grid-cols-2">
                 <input
                   value={clientName}
                   onChange={(event) => setClientName(event.target.value)}
-                  placeholder="Nome do cliente"
+                  placeholder="Nome do tutor"
                   className="rounded-xl border border-[var(--border)] px-3 py-2 text-sm outline-none focus:border-sky-400"
                   required
                 />
@@ -521,14 +582,14 @@ export default function ClientsPage() {
                 <input
                   value={dogName}
                   onChange={(event) => setDogName(event.target.value)}
-                  placeholder="Nome do cao"
+                  placeholder="Nome do cão"
                   className="rounded-xl border border-[var(--border)] px-3 py-2 text-sm outline-none focus:border-sky-400"
                   required
                 />
                 <input
                   value={breed}
                   onChange={(event) => setBreed(event.target.value)}
-                  placeholder="Raca"
+                  placeholder="Raça"
                   className="rounded-xl border border-[var(--border)] px-3 py-2 text-sm outline-none focus:border-sky-400"
                 />
                 <input
@@ -553,7 +614,7 @@ export default function ClientsPage() {
                   className="rounded-xl border border-[var(--border)] px-3 py-2 text-sm outline-none focus:border-sky-400 sm:col-span-2"
                 />
                 <label className="sm:col-span-2 rounded-xl border border-dashed border-[var(--border)] bg-sky-50/40 px-3 py-2 text-xs text-[var(--muted)]">
-                  Enviar foto do cachorro (opcional)
+                  Enviar foto do cão (opcional)
                   <input
                     type="file"
                     accept="image/*"
@@ -567,7 +628,7 @@ export default function ClientsPage() {
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={dogPhotoPreview || dogPhotoUrl.trim()}
-                        alt="Preview da foto do cachorro"
+                        alt="Preview da foto do cão"
                         className="h-full w-full object-cover"
                       />
                     </div>

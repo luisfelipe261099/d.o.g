@@ -66,7 +66,7 @@ function statusFromScore(score: number): FeedStatus {
 }
 
 function statusLabel(status: FeedStatus): string {
-  if (status === "confirmado") return "Confirmado";
+  if (status === "confirmado") return "Concluído";
   if (status === "andamento") return "Em andamento";
   return "Pendente";
 }
@@ -348,7 +348,7 @@ export default function TrainingPage() {
   function handleOpenWhatsApp(phone?: string, dogName?: string) {
     const normalizedPhone = (phone ?? "").replace(/\D/g, "");
     if (!normalizedPhone) {
-      setSaveError("Tutor sem telefone valido para abrir WhatsApp.");
+      setSaveError("Tutor sem telefone válido para abrir WhatsApp.");
       window.setTimeout(() => setSaveError(""), 3000);
       return;
     }
@@ -518,8 +518,11 @@ export default function TrainingPage() {
       <main className="mx-auto w-full max-w-md px-3 pb-24 pt-3 sm:max-w-xl">
         {clients.length === 0 ? (
           <section className="rounded-[2rem] border border-dashed border-[var(--border)] bg-white p-8 text-center">
-            <p className="text-lg font-semibold text-[var(--foreground)]">Nenhum cliente cadastrado</p>
-            <p className="mt-2 text-sm text-[var(--muted)]">Cadastre um cliente e seu cao para comecar os registros.</p>
+            <p className="text-lg font-semibold text-[var(--foreground)]">Nenhum tutor cadastrado</p>
+            <p className="mt-2 text-sm text-[var(--muted)]">Cadastre um tutor e seu cão para começar os registros.</p>
+            <Link href="/clientes" className="pc-primary-action mt-4 inline-flex rounded-full px-4 py-2 text-sm font-semibold">
+              Cadastrar tutor
+            </Link>
           </section>
         ) : (
           <section className="rounded-[2rem] border border-[var(--border)] bg-[#f7fbff] p-3.5 shadow-[var(--shadow)]">
@@ -529,8 +532,8 @@ export default function TrainingPage() {
                   <TinyIcon name="back" />
                 </Link>
                 <div>
-                  <p className="text-base font-semibold text-[var(--foreground)]">Treinos</p>
-                  <p className="text-[11px] text-[var(--muted)]">Gerencie e registre os treinos dos seus caes.</p>
+                  <p className="text-base font-semibold text-[var(--foreground)]">Histórico de treinos</p>
+                  <p className="text-[11px] text-[var(--muted)]">Consulte aulas registradas e abra o registro guiado.</p>
                 </div>
               </div>
               <button
@@ -549,7 +552,7 @@ export default function TrainingPage() {
                 <input
                   value={searchTerm}
                   onChange={(event) => setSearchTerm(event.target.value)}
-                  placeholder="Buscar por cao ou tutor..."
+                  placeholder="Buscar por cão ou tutor..."
                   className="w-full border-none bg-transparent text-sm text-[var(--foreground)] outline-none"
                 />
               </label>
@@ -594,11 +597,11 @@ export default function TrainingPage() {
               </article>
               <article className="rounded-xl border border-[var(--border)] bg-white p-3">
                 <p className="text-2xl font-semibold text-[var(--foreground)]">{draftNotes.length}</p>
-                <p className="text-xs text-[var(--muted)]">Em andamento</p>
+                <p className="text-xs text-[var(--muted)]">Blocos do registro</p>
               </article>
               <article className="rounded-xl border border-[var(--border)] bg-white p-3">
                 <p className="text-2xl font-semibold text-[var(--foreground)]">{trainingSessions.length}</p>
-                <p className="text-xs text-[var(--muted)]">Concluidos</p>
+                <p className="text-xs text-[var(--muted)]">Aulas registradas</p>
               </article>
               <article className="rounded-xl border border-[var(--border)] bg-white p-3">
                 <p className="text-2xl font-semibold text-[var(--foreground)]">{pendingSessionsCount}</p>
@@ -609,7 +612,7 @@ export default function TrainingPage() {
             <section className="mt-4 flex items-center justify-between">
               <p className="text-sm font-semibold text-[var(--foreground)]">{feedTitle}</p>
               <div className="flex items-center gap-3">
-                <Link href="/treinos/registro" className="text-[11px] font-semibold text-[#145a82]">Novo registro</Link>
+                <Link href="/treinos/registro" className="text-[11px] font-semibold text-[#145a82]">Registrar aula</Link>
                 <Link href="/agenda" className="text-[11px] font-semibold text-[#145a82]">Ver agenda</Link>
               </div>
             </section>
@@ -619,7 +622,7 @@ export default function TrainingPage() {
                 const score = averageSessionScore(session.notes);
                 const status = statusFromScore(score);
                 const dogMeta = session.dogId ? dogDirectory.get(session.dogId) : undefined;
-                const dogName = session.dogName || dogMeta?.name || "Cao";
+                const dogName = session.dogName || dogMeta?.name || "Cão";
                 const breed = dogMeta?.breed || "Sem raca";
                 const clientName = session.clientName || dogMeta?.clientName || "Tutor";
                 const firstNote = session.notes[0];
@@ -657,20 +660,13 @@ export default function TrainingPage() {
                       </span>
                     </div>
 
-                    <div className="mt-3 grid grid-cols-3 gap-2 text-[11px]">
-                      <Link
-                        href={session.clientId && session.dogId ? `/treinos/registro?clientId=${session.clientId}&dogId=${session.dogId}` : "/treinos/registro"}
-                        className="inline-flex items-center justify-center gap-1 rounded-lg border border-[var(--border)] bg-[#f7fbff] px-2 py-1.5 text-[#145a82]"
-                      >
-                        <TinyIcon name="play" />
-                        Iniciar
-                      </Link>
+                    <div className="mt-3 grid grid-cols-2 gap-2 text-[11px]">
                       <Link
                         href={session.clientId && session.dogId ? `/treinos/registro?clientId=${session.clientId}&dogId=${session.dogId}` : "/treinos/registro"}
                         className="inline-flex items-center justify-center gap-1 rounded-lg border border-[var(--border)] bg-[#f7fbff] px-2 py-1.5 text-[#145a82]"
                       >
                         <TinyIcon name="list" />
-                        Registro
+                        Registrar aula
                       </Link>
                       <button
                         type="button"
@@ -695,15 +691,15 @@ export default function TrainingPage() {
             <section className="mt-4 rounded-2xl border border-[var(--border)] bg-[#f1f8fe] p-3">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-sm font-semibold text-[var(--foreground)]">Registro de treino e acompanhamento</p>
-                  <p className="text-xs text-[var(--muted)]">Preencha os blocos e mantenha a evolucao do caso.</p>
+                  <p className="text-sm font-semibold text-[var(--foreground)]">Registro guiado da aula</p>
+                  <p className="text-xs text-[var(--muted)]">Use um caminho único para resumo, avaliação, fotos e tarefa de casa.</p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setShowForm((value) => !value)}
                   className="rounded-full bg-[#145a82] px-4 py-2 text-xs font-semibold text-white"
                 >
-                  {showForm ? "Fechar" : "Novo treino"}
+                  {showForm ? "Fechar" : "Registro rápido"}
                 </button>
               </div>
             </section>
@@ -714,7 +710,7 @@ export default function TrainingPage() {
                 <form onSubmit={onSubmit} className="mt-3 grid gap-3">
                   <div className="grid gap-2 sm:grid-cols-2">
                     <label className="grid gap-1">
-                      <span className="text-[11px] font-medium text-[var(--muted)]">Cliente</span>
+                      <span className="text-[11px] font-medium text-[var(--muted)]">Tutor</span>
                       <select
                         value={selectedClientValue}
                         onChange={(event) => {
@@ -734,7 +730,7 @@ export default function TrainingPage() {
                     </label>
 
                     <label className="grid gap-1">
-                      <span className="text-[11px] font-medium text-[var(--muted)]">Cao</span>
+                      <span className="text-[11px] font-medium text-[var(--muted)]">Cão</span>
                       <select
                         value={selectedDogValue}
                         onChange={(event) => {

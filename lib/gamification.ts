@@ -90,8 +90,8 @@ export function useGamification(token: string, options: UseGamificationOptions =
   );
 
   const award = useCallback(
-    (action: "task_completed" | "task_uncompleted" | "feedback_sent", _reason?: string) => {
-      void sendAction({ action } as ApplyActionInput);
+    (action: "task_completed" | "task_uncompleted" | "feedback_sent", _reason?: string, taskId?: string) => {
+      void sendAction({ action, taskId } as ApplyActionInput);
     },
     [sendAction],
   );

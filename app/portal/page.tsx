@@ -213,14 +213,16 @@ export default function PortalPage() {
   }
 
   async function handleCopyPortalLink() {
-    if (!lastGeneratedUrl) {
+    const shareUrl = lastGeneratedUrl || portalLink?.shareUrl || "";
+
+    if (!shareUrl) {
       setCopyStatus("error");
       window.setTimeout(() => setCopyStatus("idle"), 2000);
       return;
     }
 
     try {
-      await navigator.clipboard.writeText(lastGeneratedUrl);
+      await navigator.clipboard.writeText(shareUrl);
       setCopyStatus("ok");
     } catch {
       setCopyStatus("error");
@@ -236,7 +238,7 @@ export default function PortalPage() {
           <header className="flex items-start justify-between gap-3">
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#2d6f99]">Portal do tutor</p>
-              <h1 className="font-display text-2xl font-semibold text-[var(--foreground)]">Gestao do tutor</h1>
+              <h1 className="font-display text-2xl font-semibold text-[var(--foreground)]">Compartilhar acompanhamento</h1>
               <p className="mt-1 text-xs text-[var(--muted)]">Adestrador: {trainerName || "Sem nome"}</p>
             </div>
             <div className="flex items-center gap-2">
@@ -264,7 +266,7 @@ export default function PortalPage() {
 
           <div className="mt-4 grid gap-2 sm:grid-cols-2">
           <label className="grid gap-1 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
-            Cliente
+            1. Escolha o tutor
             <select
               value={selectedClient?.id ?? ""}
               onChange={(event) => setSelectedClientId(event.target.value)}
@@ -280,7 +282,7 @@ export default function PortalPage() {
           </label>
 
           <label className="grid gap-1 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
-            Cão
+            2. Escolha o cão
             <select
               value={selectedDog?.id ?? ""}
               onChange={(event) => setSelectedDogId(event.target.value)}
@@ -313,9 +315,9 @@ export default function PortalPage() {
                 <div className="flex h-20 w-20 items-center justify-center rounded-xl bg-sky-100 text-2xl">🐾</div>
               )}
               <div>
-                <h2 className="font-semibold text-[var(--foreground)]">Portal do {selectedDog.name}</h2>
+                <h2 className="font-semibold text-[var(--foreground)]">3. Link do portal de {selectedDog.name}</h2>
                 <p className="mt-1 text-xs text-[var(--muted)]">
-                  {selectedClient.name} • {selectedClient.plan || "Plano não informado"}
+                  Tutor: {selectedClient.name} • {selectedClient.plan || "Plano não informado"}
                 </p>
               </div>
             </div>
@@ -393,7 +395,7 @@ export default function PortalPage() {
                 disabled={!selectedClient || isGeneratingLink}
                 className="flex-1 rounded-xl border border-sky-300 bg-sky-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-sky-700 transition-colors hover:bg-sky-100 disabled:opacity-60"
               >
-                {isGeneratingLink ? "Gerando..." : portalLink ? "Renovar" : "Gerar link"}
+                {isGeneratingLink ? "Gerando..." : portalLink ? "Renovar link" : "Gerar link"}
               </button>
               <button
                 type="button"
@@ -414,7 +416,7 @@ export default function PortalPage() {
 
             {linkError ? <p className="mt-2 text-xs text-rose-600">{linkError}</p> : null}
             {copyStatus === "ok" ? <p className="mt-2 text-xs text-sky-700">Copiado!</p> : null}
-            {copyStatus === "error" ? <p className="mt-2 text-xs text-rose-600">Gere um novo link.</p> : null}
+            {copyStatus === "error" ? <p className="mt-2 text-xs text-rose-600">Gere ou renove o link antes de copiar.</p> : null}
           </article>
         )}
 
@@ -434,11 +436,11 @@ export default function PortalPage() {
         </div>
 
         <article className="mb-4 rounded-2xl border border-[var(--border)] bg-[var(--panel)] p-4">
-          <h2 className="font-semibold text-[var(--foreground)]">Entregas para casa</h2>
-          <p className="mt-1 text-xs text-[var(--muted)]">Tarefas entre sessões</p>
+          <h2 className="font-semibold text-[var(--foreground)]">4. Tarefas para casa</h2>
+          <p className="mt-1 text-xs text-[var(--muted)]">O tutor verá estas tarefas logo ao abrir o portal.</p>
 
           {!selectedClient ? (
-            <p className="mt-3 text-xs text-[var(--muted)]">Selecione um cliente para gerenciar tarefas.</p>
+            <p className="mt-3 text-xs text-[var(--muted)]">Selecione um tutor para gerenciar tarefas.</p>
           ) : (
             <>
               {selectedTasks.length === 0 ? (

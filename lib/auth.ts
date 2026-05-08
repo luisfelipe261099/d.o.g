@@ -4,8 +4,18 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 
+const devDemoUsers = [
+  { id: "demo-trainer", email: "adestrador@adestro.com.br", name: "Adestrador Demo", role: "trainer" },
+  { id: "demo-client", email: "cliente@adestro.com.br", name: "Tutor Demo", role: "client" },
+  { id: "demo-admin", email: "admin@adestro.com.br", name: "Admin Demo", role: "admin" },
+];
+
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: PrismaAdapter(prisma),
+  secret:
+    process.env.AUTH_SECRET ??
+    process.env.NEXTAUTH_SECRET ??
+    (process.env.NODE_ENV === "development" ? "adestro-local-demo-secret" : undefined),
   trustHost: true,
   session: { strategy: "jwt" },
   pages: {
@@ -29,7 +39,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           where: { email: email.toLowerCase().trim() },
         });
 
-        if (!user) return null;
+        if (!user) {
+          if (process.env.NODE_ENV === "development" && password === "123456") {
+            const demoUser = devDemoUsers.find((item) => item.email === email.toLowerCase().trim());
+            if (demoUser) return demoUser;
+          }
+          return null;
+        }
 
         const passwordMatch = await bcrypt.compare(password, user.password);
         if (!passwordMatch) return null;

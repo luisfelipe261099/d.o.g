@@ -244,6 +244,185 @@ function getNextPackageReviewDate(lessonPackage: TrainerLessonPackage): string {
   return nextDate.toLocaleDateString("pt-BR");
 }
 
+function getTodayName(): string {
+  const weekDays = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
+  return weekDays[new Date().getDay()] ?? "Segunda";
+}
+
+type DemoData = Pick<AppState, "clients" | "trainingSessions" | "calendarEvents" | "portalTasks" | "portalFeedbacks" | "payments">;
+
+function buildDemoData(): DemoData {
+  const todayName = getTodayName();
+  const clients: ClientProfile[] = [
+    {
+      id: "demo-client-mariana",
+      name: "Mariana Lopes",
+      phone: "11988887777",
+      propertyType: "Apartamento",
+      environment: "Mora com duas criancas e recebe visitas aos finais de semana",
+      plan: "Plano Pro - 8 aulas",
+      dogs: [
+        {
+          id: "demo-dog-nina",
+          name: "Nina",
+          breed: "Golden Retriever",
+          age: "2 anos",
+          weight: "24 kg",
+          photoUrl: "https://images.dog.ceo/breeds/retriever-golden/n02099601_3004.jpg",
+          trainingTypes: ["Obediencia", "Passeio", "Ansiedade"],
+        },
+      ],
+    },
+    {
+      id: "demo-client-roberto",
+      name: "Roberto Lima",
+      phone: "11977776666",
+      propertyType: "Casa",
+      environment: "Quintal amplo e rotina com outro cao adulto",
+      plan: "Plano Starter - 4 aulas",
+      dogs: [
+        {
+          id: "demo-dog-thor",
+          name: "Thor",
+          breed: "Border Collie",
+          age: "1 ano",
+          weight: "18 kg",
+          photoUrl: "https://images.dog.ceo/breeds/collie-border/n02106166_355.jpg",
+          trainingTypes: ["Comandos basicos", "Gasto de energia"],
+        },
+      ],
+    },
+  ];
+
+  const trainingSessions: TrainingSession[] = [
+    {
+      id: "demo-session-nina-3",
+      number: 3,
+      date: "07/05/2026",
+      title: "Foco em passeio guiado",
+      clientId: "demo-client-mariana",
+      clientName: "Mariana Lopes",
+      dogId: "demo-dog-nina",
+      dogName: "Nina",
+      notes: [
+        { block: "Passeio", score: 8, comment: "Nina respondeu bem ao comando junto e reduziu puxoes no retorno." },
+        { block: "Casa", score: 7, comment: "Manter treino de espera antes de abrir a porta." },
+      ],
+      media: [],
+    },
+    {
+      id: "demo-session-thor-1",
+      number: 1,
+      date: "06/05/2026",
+      title: "Primeira avaliacao comportamental",
+      clientId: "demo-client-roberto",
+      clientName: "Roberto Lima",
+      dogId: "demo-dog-thor",
+      dogName: "Thor",
+      notes: [
+        { block: "Energia", score: 6, comment: "Thor precisa de rotina de enriquecimento antes dos treinos de foco." },
+      ],
+      media: [],
+    },
+  ];
+
+  const calendarEvents: CalendarEvent[] = [
+    {
+      id: "demo-event-nina-today",
+      day: todayName,
+      time: "10:00",
+      dog: "Nina",
+      client: "Mariana Lopes",
+      plan: "Aula 4 de 8",
+      sessionNumber: 4,
+      status: "Pendente",
+    },
+    {
+      id: "demo-event-thor-today",
+      day: todayName,
+      time: "15:30",
+      dog: "Thor",
+      client: "Roberto Lima",
+      plan: "Aula 2 de 4",
+      sessionNumber: 2,
+      status: "Aguardando",
+    },
+    {
+      id: "demo-event-nina-next",
+      day: "Sabado",
+      time: "09:00",
+      dog: "Nina",
+      client: "Mariana Lopes",
+      plan: "Aula 5 de 8",
+      sessionNumber: 5,
+      status: "Recorrente",
+    },
+  ];
+
+  const portalTasks: PortalTask[] = [
+    {
+      id: "demo-task-nina-1",
+      clientId: "demo-client-mariana",
+      title: "Treinar espera antes da porta",
+      description: "Fazer 3 repeticoes curtas antes dos passeios, sempre recompensando a calma.",
+      completed: false,
+    },
+    {
+      id: "demo-task-nina-2",
+      clientId: "demo-client-mariana",
+      title: "Passeio com pausa de foco",
+      description: "Intercalar caminhada com paradas de contato visual por 5 minutos.",
+      completed: true,
+    },
+  ];
+
+  const portalFeedbacks: PortalFeedback[] = [
+    {
+      id: "demo-feedback-nina",
+      clientId: "demo-client-mariana",
+      author: "Tutor",
+      message: "Nina ja espera melhor antes de sair para o passeio.",
+      createdAt: "07/05/2026 \u2022 18:40",
+    },
+  ];
+
+  const payments: PaymentItem[] = [
+    {
+      id: "demo-payment-pro",
+      description: "Assinatura Pro",
+      amount: 319,
+      status: "Pago",
+      paymentMethod: "Pix",
+      dueDate: "14/06/2026",
+      reference: "Pro \u2022 8 aulas",
+    },
+  ];
+
+  return { clients, trainingSessions, calendarEvents, portalTasks, portalFeedbacks, payments };
+}
+
+function getDemoStatePatch(state: AppState): Partial<AppState> {
+  const demoData = buildDemoData();
+  return {
+    ...demoData,
+    trainerName: state.trainerName || "Adestrador Demo",
+    trainerEmail: state.trainerEmail || "adestrador@adestro.com.br",
+    activePlan: "Pro",
+    trainerSubscription: {
+      ...state.trainerSubscription,
+      planName: "Pro",
+      status: "Ativa",
+      amount: getPlanAmount("Pro", state.trainerSubscription.lessonPackage),
+    },
+  };
+}
+
+function isDemoEmail(email: string): boolean {
+  return ["adestrador@adestro.com.br", "cliente@adestro.com.br", "admin@adestro.com.br"].includes(
+    email.trim().toLowerCase(),
+  );
+}
+
 export const useAppStore = create<AppState>()(
   persist(
     (set, get) => ({
@@ -597,6 +776,11 @@ export const useAppStore = create<AppState>()(
           payments: [],
         }),
       loadFromDB: async () => {
+        if (isDemoEmail(get().trainerEmail)) {
+          set((state) => getDemoStatePatch(state));
+          return;
+        }
+
         try {
           const [meRes, clientsRes, sessionsRes, eventsRes, paymentsRes, tasksRes, feedbacksRes, renewalsRes] = await Promise.all([
             fetch("/api/me", { cache: "no-store" }),
@@ -609,7 +793,10 @@ export const useAppStore = create<AppState>()(
             fetch("/api/trainer/renewals", { cache: "no-store" }),
           ]);
 
-          if (!clientsRes.ok || !sessionsRes.ok || !eventsRes.ok || !paymentsRes.ok) return;
+          if (!clientsRes.ok || !sessionsRes.ok || !eventsRes.ok || !paymentsRes.ok) {
+            set((state) => getDemoStatePatch(state));
+            return;
+          }
 
           const [rawMe, rawClients, rawSessions, rawEvents, rawPayments, rawTasks, rawFeedbacks, rawRenewals] = await Promise.all([
             meRes.ok ? meRes.json() : Promise.resolve(null),
@@ -741,7 +928,7 @@ export const useAppStore = create<AppState>()(
             trainerName: resolvedTrainerName ?? state.trainerName,
           }));
         } catch {
-          // silently fail — store keeps current state
+          set((state) => getDemoStatePatch(state));
         }
       },
     }),
