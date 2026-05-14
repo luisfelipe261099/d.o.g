@@ -290,21 +290,29 @@ model PortalAccessLink {
 // ─── Gamificação do cliente ───────────────────────────────────────────────
 
 model ClientGamification {
-  id                  String   @id @default(cuid())
-  clientId            String   @unique
-  client              ClientProfile @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  trainerId           String
-  trainer             Trainer  @relation(fields: [trainerId], references: [id], onDelete: Cascade)
-  points              Int      @default(0)
-  streakDays          Int      @default(0)
-  lastVisitDate       String?  // YYYY-MM-DD
-  trainerRating       Int      @default(0)
-  totalTasksCompleted Int      @default(0)
-  totalFeedbacks      Int      @default(0)
-  watchedVideos       String   @db.Text
-  sessionRatings      String   @db.Text
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  id                      String   @id @default(cuid())
+  clientId                String   @unique
+  client                  ClientProfile @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  trainerId               String
+  trainer                 Trainer  @relation(fields: [trainerId], references: [id], onDelete: Cascade)
+  points                  Int      @default(0)
+  streakDays              Int      @default(0)
+  lastVisitDate           String?  // YYYY-MM-DD
+  trainerRating           Int      @default(0)
+  totalTasksCompleted     Int      @default(0)
+  totalFeedbacks          Int      @default(0)
+  totalTrainingsCompleted Int      @default(0)
+  totalFeedbacksReceived  Int      @default(0)
+  tutorsInvited           Int      @default(0)
+  weeklyTasksCompleted    Int      @default(0)
+  successfulTrainings     Int      @default(0)
+  videosShared            Int      @default(0)
+  monthlyProgress         Int      @default(0)
+  watchedVideos           String   @db.Text
+  sessionRatings          String   @db.Text
+  techniquesUsed          String   @db.Text @default("[]")
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
 
   @@index([trainerId])
 }
