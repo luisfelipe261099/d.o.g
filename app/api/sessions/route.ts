@@ -6,6 +6,8 @@ import { prisma } from "@/lib/prisma";
 export async function GET() {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+  const role = ((session.user as { role?: string }).role ?? "").toLowerCase();
+  if (role !== "trainer") return NextResponse.json({ error: "Acesso negado" }, { status: 403 });
 
   const trainer = await prisma.trainer.findUnique({ where: { userId: session.user.id } });
   if (!trainer) return NextResponse.json({ error: "Adestrador não encontrado" }, { status: 404 });
@@ -26,6 +28,8 @@ export async function GET() {
 export async function POST(request: Request) {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+  const role = ((session.user as { role?: string }).role ?? "").toLowerCase();
+  if (role !== "trainer") return NextResponse.json({ error: "Acesso negado" }, { status: 403 });
 
   const trainer = await prisma.trainer.findUnique({ where: { userId: session.user.id } });
   if (!trainer) return NextResponse.json({ error: "Adestrador não encontrado" }, { status: 404 });

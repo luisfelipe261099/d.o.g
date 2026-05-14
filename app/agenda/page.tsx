@@ -177,11 +177,31 @@ export default function SchedulePage() {
     return map;
   }, [clients]);
 
+  const dogPhotoById = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const client of clients) {
+      for (const dog of client.dogs) {
+        if (dog.photoUrl) map.set(dog.id, dog.photoUrl);
+      }
+    }
+    return map;
+  }, [clients]);
+
   const clientDogMetaByNames = useMemo(() => {
     const map = new Map<string, { clientId: string; dogId: string; phone: string }>();
     clients.forEach((client) => {
       client.dogs.forEach((dog) => {
         map.set(`${client.name}::${dog.name}`, { clientId: client.id, dogId: dog.id, phone: client.phone });
+      });
+    });
+    return map;
+  }, [clients]);
+
+  const clientDogMetaByIds = useMemo(() => {
+    const map = new Map<string, { clientId: string; dogId: string; phone: string }>();
+    clients.forEach((client) => {
+      client.dogs.forEach((dog) => {
+        map.set(`${client.id}::${dog.id}`, { clientId: client.id, dogId: dog.id, phone: client.phone });
       });
     });
     return map;
@@ -224,6 +244,8 @@ export default function SchedulePage() {
     setIsCreating(true);
     try {
       const ok = await addCalendarEvent({
+        clientId: selectedClient.id,
+        dogId: selectedDog.id,
         day: dayName,
         time,
         dog: selectedDog.name,
@@ -344,8 +366,11 @@ export default function SchedulePage() {
 
           <section className="mt-2 space-y-2.5">
             {eventsForSelectedDay.map((event) => {
-              const photo = dogPhotoByName.get(event.dog);
-              const relatedMeta = clientDogMetaByNames.get(`${event.client}::${event.dog}`);
+              const photo = (event.dogId ? dogPhotoById.get(event.dogId) : undefined) ?? dogPhotoByName.get(event.dog);
+              const relatedMeta =
+                (event.clientId && event.dogId
+                  ? clientDogMetaByIds.get(`${event.clientId}::${event.dogId}`)
+                  : undefined) ?? clientDogMetaByNames.get(`${event.client}::${event.dog}`);
               return (
                 <article key={event.id} className="rounded-2xl border border-[var(--border)] bg-white p-3">
                   <div className="flex items-start gap-3">

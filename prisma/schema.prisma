@@ -138,6 +138,7 @@ model ClientProfile {
   createdAt      DateTime @default(now())
 
   dogs     Dog[]
+  calendarEvents CalendarEvent[]
   portalTasks     PortalTask[]
   portalFeedbacks PortalFeedback[]
   portalAccessLink PortalAccessLink?
@@ -164,6 +165,7 @@ model Dog {
   trainingTypes String        @db.Text // JSON serializado
 
   sessions TrainingSession[]
+  calendarEvents CalendarEvent[]
 
   @@index([clientId])
 }
@@ -195,6 +197,10 @@ model CalendarEvent {
   id            String   @id @default(cuid())
   trainerId     String
   trainer       Trainer  @relation(fields: [trainerId], references: [id], onDelete: Cascade)
+  clientId      String?
+  clientProfile ClientProfile? @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  dogId         String?
+  dogProfile    Dog?     @relation(fields: [dogId], references: [id], onDelete: SetNull)
   day           String
   time          String
   dog           String
@@ -205,6 +211,8 @@ model CalendarEvent {
   createdAt     DateTime @default(now())
 
   @@index([trainerId])
+  @@index([clientId])
+  @@index([dogId])
 }
 
 // ─── Pagamento ────────────────────────────────────────────────────────────────

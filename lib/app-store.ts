@@ -64,6 +64,8 @@ export type TrainingSession = {
 
 export type CalendarEvent = {
   id: string;
+  clientId?: string;
+  dogId?: string;
   day: string;
   time: string;
   dog: string;
@@ -129,6 +131,7 @@ export type TrainerRenewalRecord = {
 
 type AppState = {
   hydrated: boolean;
+  dataLoadError: string | null;
   isAuthenticated: boolean;
   userRole: UserRole;
   trainerName: string;
@@ -144,6 +147,7 @@ type AppState = {
   portalFeedbacks: PortalFeedback[];
   payments: PaymentItem[];
   setHydrated: (value: boolean) => void;
+  setDataLoadError: (value: string | null) => void;
   login: (email: string, role: UserRole) => void;
   logout: () => void;
   setActivePlan: (plan: TrainerPlanName) => void;
@@ -185,6 +189,8 @@ type AppState = {
   setEventStatus: (eventId: string, status: SessionStatus) => Promise<boolean>;
   toggleEventStatus: (eventId: string) => void;
   addCalendarEvent: (payload: {
+    clientId: string;
+    dogId: string;
     day: string;
     time: string;
     dog: string;
@@ -329,6 +335,8 @@ function buildDemoData(): DemoData {
   const calendarEvents: CalendarEvent[] = [
     {
       id: "demo-event-nina-today",
+      clientId: "demo-client-mariana",
+      dogId: "demo-dog-nina",
       day: todayName,
       time: "10:00",
       dog: "Nina",
@@ -339,6 +347,8 @@ function buildDemoData(): DemoData {
     },
     {
       id: "demo-event-thor-today",
+      clientId: "demo-client-roberto",
+      dogId: "demo-dog-thor",
       day: todayName,
       time: "15:30",
       dog: "Thor",
@@ -349,6 +359,8 @@ function buildDemoData(): DemoData {
     },
     {
       id: "demo-event-nina-next",
+      clientId: "demo-client-mariana",
+      dogId: "demo-dog-nina",
       day: "Sabado",
       time: "09:00",
       dog: "Nina",
@@ -427,6 +439,7 @@ export const useAppStore = create<AppState>()(
   persist(
     (set, get) => ({
       hydrated: false,
+      dataLoadError: null,
       isAuthenticated: false,
       userRole: "trainer",
       trainerName: "",
@@ -456,6 +469,7 @@ export const useAppStore = create<AppState>()(
       portalFeedbacks: [],
       payments: [],
       setHydrated: (value) => set({ hydrated: value }),
+      setDataLoadError: (value) => set({ dataLoadError: value }),
       login: (email, role) => {
         const trainer = email.split("@")[0] || "Adestrador";
         const trainerName = trainer
@@ -468,6 +482,7 @@ export const useAppStore = create<AppState>()(
           userRole: role,
           trainerEmail: email,
           trainerName,
+          dataLoadError: null,
         });
       },
       logout: () =>
@@ -476,6 +491,7 @@ export const useAppStore = create<AppState>()(
           userRole: "trainer",
           trainerName: "",
           trainerEmail: "",
+          dataLoadError: null,
         }),
       setActivePlan: (plan) => set({ activePlan: plan }),
       setTrainerSubscriptionPlan: async (plan) => {
@@ -708,6 +724,8 @@ export const useAppStore = create<AppState>()(
         const tempId = createId("evt");
         const tempEvent: CalendarEvent = {
           id:            tempId,
+          clientId:      payload.clientId,
+          dogId:         payload.dogId,
           day:           payload.day,
           time:          payload.time,
           dog:           payload.dog,
@@ -735,6 +753,8 @@ export const useAppStore = create<AppState>()(
 
           const created = await response.json() as {
             id: string;
+            clientId?: string;
+            dogId?: string;
             day: string;
             time: string;
             dog: string;
@@ -750,6 +770,8 @@ export const useAppStore = create<AppState>()(
               event.id === tempId
                 ? {
                     id: created.id,
+                  clientId: created.clientId ?? payload.clientId,
+                  dogId: created.dogId ?? payload.dogId,
                     day: created.day,
                     time: created.time,
                     dog: created.dog,
@@ -777,7 +799,10 @@ export const useAppStore = create<AppState>()(
         }),
       loadFromDB: async () => {
         if (isDemoEmail(get().trainerEmail)) {
-          set((state) => getDemoStatePatch(state));
+          set((state) => ({
+            ...getDemoStatePatch(state),
+            dataLoadError: null,
+          }));
           return;
         }
 
@@ -794,7 +819,9 @@ export const useAppStore = create<AppState>()(
           ]);
 
           if (!clientsRes.ok || !sessionsRes.ok || !eventsRes.ok || !paymentsRes.ok) {
-            set((state) => getDemoStatePatch(state));
+            set({
+              dataLoadError: "Nao foi possivel sincronizar os dados agora. Verifique sua conexao e tente novamente.",
+            });
             return;
           }
 
@@ -855,6 +882,8 @@ export const useAppStore = create<AppState>()(
 
           const calendarEvents: CalendarEvent[] = (rawEvents as Array<Record<string, unknown>>).map((e) => ({
             id:            String(e.id),
+            clientId:      e.clientId ? String(e.clientId) : undefined,
+            dogId:         e.dogId ? String(e.dogId) : undefined,
             day:           String(e.day),
             time:          String(e.time),
             dog:           String(e.dog),
@@ -918,6 +947,7 @@ export const useAppStore = create<AppState>()(
             portalTasks,
             portalFeedbacks,
             trainerRenewalHistory,
+            dataLoadError: null,
             activePlan: dbPlanName,
             trainerSubscription: {
               ...state.trainerSubscription,
@@ -928,7 +958,9 @@ export const useAppStore = create<AppState>()(
             trainerName: resolvedTrainerName ?? state.trainerName,
           }));
         } catch {
-          set((state) => getDemoStatePatch(state));
+          set({
+            dataLoadError: "Falha ao carregar os dados da conta. Tente novamente em instantes.",
+          });
         }
       },
     }),

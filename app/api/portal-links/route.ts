@@ -72,6 +72,10 @@ export async function GET(request: Request) {
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Nao autenticado" }, { status: 401 });
   }
+  const role = ((session.user as { role?: string }).role ?? "").toLowerCase();
+  if (role !== "trainer") {
+    return NextResponse.json({ error: "Acesso negado" }, { status: 403 });
+  }
 
   const trainer = await ensureTrainer(session.user.id);
   if (!trainer) {
@@ -130,6 +134,10 @@ export async function POST(request: Request) {
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Nao autenticado" }, { status: 401 });
+  }
+  const role = ((session.user as { role?: string }).role ?? "").toLowerCase();
+  if (role !== "trainer") {
+    return NextResponse.json({ error: "Acesso negado" }, { status: 403 });
   }
 
   const trainer = await ensureTrainer(session.user.id);
@@ -206,6 +214,10 @@ export async function PATCH(request: Request) {
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Nao autenticado" }, { status: 401 });
+  }
+  const role = ((session.user as { role?: string }).role ?? "").toLowerCase();
+  if (role !== "trainer") {
+    return NextResponse.json({ error: "Acesso negado" }, { status: 403 });
   }
 
   const trainer = await ensureTrainer(session.user.id);

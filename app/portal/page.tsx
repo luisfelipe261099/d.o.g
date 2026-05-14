@@ -42,7 +42,7 @@ export default function PortalPage() {
   const [taskTitle, setTaskTitle] = useState("");
   const [selectedClientId, setSelectedClientId] = useState("");
   const [selectedDogId, setSelectedDogId] = useState("");
-  const [copyStatus, setCopyStatus] = useState<"idle" | "ok" | "error">("idle");
+  const [copyStatus, setCopyStatus] = useState<"idle" | "ok" | "ok-renewed" | "error">("idle");
   const [isAddingTask, setIsAddingTask] = useState(false);
   const [portalLink, setPortalLink] = useState<PortalLinkInfo | null>(null);
   const [lastGeneratedUrl, setLastGeneratedUrl] = useState("");
@@ -131,8 +131,12 @@ export default function PortalPage() {
     if (!selectedClient) return [];
 
     return events.filter((event) => {
-      const sameClient = event.client === selectedClient.name;
-      const sameDog = selectedDog ? event.dog === selectedDog.name : true;
+      const sameClient = event.clientId ? event.clientId === selectedClient.id : event.client === selectedClient.name;
+      const sameDog = selectedDog
+        ? event.dogId
+          ? event.dogId === selectedDog.id
+          : event.dog === selectedDog.name
+        : true;
       return sameClient && sameDog;
     });
   }, [events, selectedClient, selectedDog]);
@@ -147,11 +151,11 @@ export default function PortalPage() {
     });
   }, [sessions, selectedClient, selectedDog]);
 
-  async function handleGeneratePortalLink() {
-    if (!selectedClient?.id || isGeneratingLink) return;
+  async function requestNewPortalLink(): Promise<string | null> {
+    if (!selectedClient?.id || isGeneratingLink) return null;
     if (pinEnabled && !/^\d{4}$/.test(pin)) {
       setLinkError("Defina um PIN de 4 dígitos para proteger o link.");
-      return;
+      return null;
     }
 
     setIsGeneratingLink(true);
@@ -171,12 +175,19 @@ export default function PortalPage() {
       if (!body.link) throw new Error("Resposta sem link");
 
       setPortalLink(body.link);
-      setLastGeneratedUrl(body.link.shareUrl ?? "");
+      const nextShareUrl = body.link.shareUrl ?? "";
+      setLastGeneratedUrl(nextShareUrl);
+      return nextShareUrl;
     } catch {
       setLinkError("Não foi possível gerar o link deste tutor. Tente novamente.");
+      return null;
     } finally {
       setIsGeneratingLink(false);
     }
+  }
+
+  async function handleGeneratePortalLink() {
+    await requestNewPortalLink();
   }
 
   async function handleRevokePortalLink() {
@@ -213,22 +224,28 @@ export default function PortalPage() {
   }
 
   async function handleCopyPortalLink() {
-    const shareUrl = lastGeneratedUrl || portalLink?.shareUrl || "";
+    let shareUrl = lastGeneratedUrl || portalLink?.shareUrl || "";
+    let renewed = false;
 
     if (!shareUrl) {
-      setCopyStatus("error");
-      window.setTimeout(() => setCopyStatus("idle"), 2000);
-      return;
+      const generated = await requestNewPortalLink();
+      if (!generated) {
+        setCopyStatus("error");
+        window.setTimeout(() => setCopyStatus("idle"), 2500);
+        return;
+      }
+      shareUrl = generated;
+      renewed = true;
     }
 
     try {
       await navigator.clipboard.writeText(shareUrl);
-      setCopyStatus("ok");
+      setCopyStatus(renewed ? "ok-renewed" : "ok");
     } catch {
       setCopyStatus("error");
     }
 
-    window.setTimeout(() => setCopyStatus("idle"), 2000);
+    window.setTimeout(() => setCopyStatus("idle"), 2500);
   }
 
   return (
@@ -414,8 +431,15 @@ export default function PortalPage() {
               </button>
             </div>
 
+            {portalLink && !lastGeneratedUrl && !portalLink.shareUrl ? (
+              <p className="mt-2 text-xs text-[var(--muted)]">
+                Por segurança, o link completo nao e reexibido apos recarregar. Ao tocar em copiar, um novo link e gerado automaticamente.
+              </p>
+            ) : null}
+
             {linkError ? <p className="mt-2 text-xs text-rose-600">{linkError}</p> : null}
             {copyStatus === "ok" ? <p className="mt-2 text-xs text-sky-700">Copiado!</p> : null}
+            {copyStatus === "ok-renewed" ? <p className="mt-2 text-xs text-sky-700">Link renovado e copiado.</p> : null}
             {copyStatus === "error" ? <p className="mt-2 text-xs text-rose-600">Gere ou renove o link antes de copiar.</p> : null}
           </article>
         )}

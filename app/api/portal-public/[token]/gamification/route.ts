@@ -116,15 +116,25 @@ async function taskMatchesState(trainerId: string, clientId: string, taskId: str
   return Boolean(task && task.completed === completed);
 }
 
+async function getClientName(clientId: string): Promise<string | null> {
+  const client = await prisma.clientProfile.findUnique({
+    where: { id: clientId },
+    select: { name: true },
+  });
+
+  return client?.name ?? null;
+}
+
 async function sessionBelongsToClient(trainerId: string, clientId: string, sessionId: string): Promise<boolean> {
+  const clientName = await getClientName(clientId);
+  const ownershipFilters: Array<Record<string, unknown>> = [{ dog: { clientId } }];
+  if (clientName) ownershipFilters.push({ clientName });
+
   const session = await prisma.trainingSession.findFirst({
     where: {
       id: sessionId,
       trainerId,
-      OR: [
-        { clientId },
-        { dog: { clientId } },
-      ],
+      OR: ownershipFilters,
     },
     select: { id: true },
   });
@@ -133,13 +143,14 @@ async function sessionBelongsToClient(trainerId: string, clientId: string, sessi
 }
 
 async function videoBelongsToClient(trainerId: string, clientId: string, videoId: string): Promise<boolean> {
+  const clientName = await getClientName(clientId);
+  const ownershipFilters: Array<Record<string, unknown>> = [{ dog: { clientId } }];
+  if (clientName) ownershipFilters.push({ clientName });
+
   const sessions = await prisma.trainingSession.findMany({
     where: {
       trainerId,
-      OR: [
-        { clientId },
-        { dog: { clientId } },
-      ],
+      OR: ownershipFilters,
     },
     select: { id: true, media: true },
     take: 50,

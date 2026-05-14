@@ -49,13 +49,13 @@ export function SiteHeader() {
     { href: "/agenda", label: "Agenda", kicker: "Hoje", description: "Próximos atendimentos" },
     { href: "/treinos", label: "Treinos", kicker: "Histórico", description: "Sessões registradas" },
     { href: "/portal", label: "Portal do Tutor", kicker: "Externo", description: "Link compartilhado com o tutor" },
+    { href: "/ia", label: "Assistente IA", kicker: "Apoio", description: "Sugestões para casos complexos" },
+    { href: "/configuracoes", label: "Configurações", kicker: "Conta", description: "Preferências da conta" },
   ];
 
   const trainerMoreNav = [
-    { href: "/ia", label: "Assistente IA", kicker: "Apoio", description: "Sugestões para casos complexos" },
     { href: "/planos", label: "Meu Plano", kicker: "Assinatura", description: "Plano e pagamento" },
     { href: "/tutorial", label: "Tutorial", kicker: "Ajuda", description: "Passo a passo da plataforma" },
-    { href: "/configuracoes", label: "Configurações", kicker: "Conta", description: "Preferências da conta" },
   ];
 
   const clientNav = [

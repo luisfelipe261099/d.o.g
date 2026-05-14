@@ -72,10 +72,13 @@ export async function GET(_request: Request, { params }: Params) {
     prisma.calendarEvent.findMany({
       where: {
         trainerId: link.trainerId,
-        client: link.client.name,
+        OR: [
+          { clientId: link.clientId },
+          { clientId: null, client: link.client.name },
+        ],
       },
       orderBy: { createdAt: "desc" },
-      take: 20,
+      take: 60,
     }),
     prisma.trainingSession.findMany({
       where: {
@@ -115,6 +118,20 @@ export async function GET(_request: Request, { params }: Params) {
     data: { lastAccessAt: new Date() },
   });
 
+  const clientDogNames = new Set(link.client.dogs.map((dog) => dog.name));
+  const clientDogIds = new Set(link.client.dogs.map((dog) => dog.id));
+  const filteredEvents = events
+    .filter((event) => {
+      if (event.clientId && event.clientId !== link.clientId) return false;
+      if (event.dogId) {
+        if (!clientDogIds.size) return true;
+        return clientDogIds.has(event.dogId);
+      }
+      if (!clientDogNames.size) return true;
+      return clientDogNames.has(event.dog);
+    })
+    .slice(0, 20);
+
   return NextResponse.json({
     trainer: {
       id: link.trainer.id,
@@ -128,7 +145,7 @@ export async function GET(_request: Request, { params }: Params) {
       plan: link.client.plan,
       dogs: link.client.dogs,
     },
-    events,
+    events: filteredEvents,
     sessions: sessions.map((session) => ({
       ...session,
       notes: mapSessionNotes(session.notes),
