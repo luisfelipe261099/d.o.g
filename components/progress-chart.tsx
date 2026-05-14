@@ -13,9 +13,11 @@ interface ProgressChartProps {
   dogName: string;
 }
 
+type ProgressDimensionKey = Exclude<keyof MonthlyProgress, "month">;
+
 export function ProgressChart({ data, dogName }: ProgressChartProps) {
   const max = 5;
-  const dimensions = [
+  const dimensions: Array<{ key: ProgressDimensionKey; label: string; color: string }> = [
     { key: "obedience", label: "Obediência", color: "#3b82f6" },
     { key: "socialBehavior", label: "Comportamento Social", color: "#8b5cf6" },
     { key: "confidence", label: "Confiança", color: "#ec4899" },
@@ -54,7 +56,7 @@ export function ProgressChart({ data, dogName }: ProgressChartProps) {
             <h4 className="mb-3 font-semibold text-gray-700">{month.month}</h4>
             <div className="space-y-2">
               {dimensions.map((dim) => {
-                const value = (month as Record<string, number>)[dim.key] || 0;
+                const value = month[dim.key] || 0;
                 const percentage = (value / max) * 100;
                 return (
                   <div key={dim.key} className="flex items-center gap-3">
