@@ -1,102 +1,101 @@
 # Tutorial do Sistema Adestro
 
-Bem-vindo ao sistema Adestro! Este tutorial foi criado para ajudar pessoas leigas a utilizarem o sistema de forma simples e eficiente. Siga os passos abaixo para aprender como navegar e aproveitar todas as funcionalidades disponíveis.
+O Adestro organiza a rotina do adestrador em um fluxo simples: cadastrar tutor e cão, agendar aula, registrar treino, orientar o tutor e usar a IA como apoio técnico para planejar próximos exercícios.
 
 ---
 
-## Índice
-1. [Introdução](#introdução)
-2. [Acessando o Sistema](#acessando-o-sistema)
-3. [Navegação Geral](#navegação-geral)
-4. [Funcionalidades Principais](#funcionalidades-principais)
-   - [Cadastro de Adestradores](#cadastro-de-adestradores)
-   - [Cadastro de Clientes e Cães](#cadastro-de-clientes-e-cães)
-   - [Agenda](#agenda)
-   - [Treinos](#treinos)
-   - [Portal do Tutor](#portal-do-tutor)
-   - [Financeiro](#financeiro)
-   - [Gamificação](#gamificação)
-   - [Tutorial](#tutorial)
-5. [Dicas e Suporte](#dicas-e-suporte)
+## 1. Tutorial do Adestrador
+
+A página **Tutorial** deve servir como explicação do funcionamento do sistema. Ela não deve jogar o usuário para outras páginas ao clicar em botões. O objetivo é ensinar a lógica do processo.
+
+### Fluxo recomendado
+
+1. **Cadastrar tutor e cão**
+   - Registre nome do tutor, telefone, ambiente da casa e plano contratado.
+   - No cão, informe raça, idade, peso e foco do treino.
+   - Use os focos para indicar temas como guia, ansiedade, socialização, obediência ou gasto de energia.
+
+2. **Organizar a agenda**
+   - Cada aula deve estar ligada ao tutor e ao cão corretos.
+   - A agenda mostra horário, número da sessão e status do atendimento.
+   - Ela ajuda o adestrador a saber onde parou no plano.
+
+3. **Registrar a sessão**
+   - Anote o que foi treinado, como o cão respondeu e quais dificuldades apareceram.
+   - Separe notas por bloco técnico, como guia, foco, permanência ou manejo.
+   - Inclua evidências quando forem úteis para o histórico.
+
+4. **Definir tarefa para casa**
+   - O tutor precisa sair da aula sabendo exatamente o que praticar.
+   - A tarefa deve ter frequência, duração e cuidado principal.
+   - Melhor uma orientação clara e curta do que muitas tarefas confusas.
+
+5. **Usar a IA como apoio técnico**
+   - A IA ajuda o adestrador quando ele precisa estruturar um treino.
+   - Exemplo: “Como faço treinamento de guia para um Pastor Alemão que puxa na rua?”
+   - A IA sugere um roteiro inicial, mas o adestrador adapta conforme o cão real.
 
 ---
 
-## Introdução
-O Adestro é uma plataforma desenvolvida para facilitar a gestão de adestradores, clientes e treinos. Ele oferece ferramentas para organizar sua agenda, registrar sessões de treino, acompanhar a evolução dos clientes e muito mais.
+## 2. Tutorial do Cliente/Tutor
+
+A página **Tutorial para Clientes** deve explicar como o tutor usa o portal, com visual organizado e linguagem simples.
+
+### Como o tutor usa o portal
+
+1. **Entrar no portal**
+   - Abrir o link enviado pelo adestrador.
+   - Digitar o PIN, se existir.
+   - Conferir se o nome do cão está correto.
+
+2. **Ver tarefas de casa**
+   - Ler qual exercício foi passado.
+   - Observar duração, frequência e cuidado principal.
+   - Praticar em momentos calmos.
+
+3. **Marcar tarefas concluídas**
+   - Marcar apenas depois de realmente praticar.
+   - Isso ajuda o adestrador a acompanhar o engajamento.
+
+4. **Acompanhar evolução**
+   - Ver histórico, observações e progresso do cão.
+   - Usar as orientações para manter a família alinhada.
+
+5. **Enviar avaliação ou comentário**
+   - Informar dúvidas, dificuldades e comportamentos observados em casa.
+   - Esse feedback ajuda a ajustar a próxima aula.
 
 ---
 
-## Acessando o Sistema
-1. Abra o navegador de sua preferência (Google Chrome, Firefox, etc.).
-2. Acesse o site do Adestro pelo link fornecido pela sua organização.
-3. Faça login com seu e-mail e senha cadastrados.
-   - Caso não tenha uma conta, clique em "Registrar" e siga as instruções para criar uma nova conta.
+## 3. Assistente de IA
+
+O Assistente de IA não deve parecer apenas um resumidor de áudio. A ideia principal é ajudar o adestrador a montar sugestões de treino quando ele precisa de orientação prática.
+
+### Exemplo de uso correto
+
+O adestrador informa:
+
+> Pastor Alemão puxa muito na guia, perde foco na rua e reage quando vê outro cão. Quero um treino para passeio mais calmo.
+
+A IA deve sugerir:
+
+- diagnóstico rápido do nível de energia e foco;
+- aquecimento com contato visual;
+- treino de andar ao lado;
+- recompensa na posição correta;
+- mudanças de direção;
+- pausas de foco;
+- aumento gradual de distrações;
+- tarefa simples para o tutor praticar em casa.
+
+A resposta da IA é um ponto de partida técnico. O adestrador continua responsável por avaliar o cão, adaptar o exercício e decidir o que é seguro aplicar.
 
 ---
 
-## Navegação Geral
-- **Menu Principal**: Localizado na parte superior da tela, permite acessar as principais áreas do sistema.
-- **Botão de Ajuda**: Disponível no canto inferior direito, oferece suporte e respostas rápidas.
-- **Notificações**: Ícone no canto superior direito para visualizar atualizações importantes.
+## 4. Regra geral do sistema
 
----
+Cada aula deve terminar com três coisas claras:
 
-## Funcionalidades Principais
-
-### Cadastro de Adestradores
-1. Acesse a seção **Administração > Adestradores** no menu.
-2. Clique em "Adicionar Adestrador".
-3. Preencha os dados do adestrador, como nome, e-mail e especialidades.
-4. Clique em "Salvar" para concluir.
-
-### Cadastro de Clientes e Cães
-1. Acesse a seção **Clientes** no menu.
-2. Clique em "Adicionar Cliente".
-3. Insira as informações do tutor e do cão, como nome, idade e raça.
-4. Clique em "Salvar".
-
-### Agenda
-1. Acesse a seção **Agenda** no menu.
-2. Visualize os compromissos da semana.
-3. Para adicionar um novo compromisso, clique em "Novo Agendamento".
-4. Preencha os detalhes, como data, horário e cliente.
-5. Clique em "Salvar".
-
-### Treinos
-1. Acesse a seção **Treinos** no menu.
-2. Clique em "Registrar Treino".
-3. Insira as informações da sessão, como notas e vídeos de apoio.
-4. Clique em "Salvar".
-
-### Portal do Tutor
-1. Acesse a seção **Portal** no menu.
-2. Visualize as tarefas e evolução do cliente.
-3. Envie mensagens ou vídeos de treinamento diretamente pelo portal.
-
-### Financeiro
-1. Acesse a seção **Financeiro** no menu.
-2. Visualize as cobranças e assinaturas ativas.
-3. Gere relatórios financeiros clicando em "Exportar Relatório".
-
-### Gamificação
-1. Acesse a seção **Gamificação** no menu.
-2. Visualize os pontos e conquistas dos clientes.
-3. Adicione novas tarefas para engajar os tutores.
-
-### Tutorial
-1. Acesse a seção **Tutorial** no menu.
-2. Siga o passo a passo para aprender a usar cada funcionalidade.
-3. Marque as etapas concluídas para acompanhar seu progresso.
-
----
-
-## Dicas e Suporte
-- **Dica 1**: Utilize o botão de ajuda para acessar respostas rápidas.
-- **Dica 2**: Mantenha os dados dos clientes e adestradores sempre atualizados.
-- **Dica 3**: Explore a seção de gamificação para engajar mais os tutores.
-
-Para suporte adicional, entre em contato com nossa equipe pelo e-mail suporte@adestro.com ou pelo telefone (11) 1234-5678.
-
----
-
-Esperamos que este tutorial tenha sido útil! Aproveite ao máximo o sistema Adestro.
+1. O adestrador sabe o que foi treinado.
+2. O tutor sabe o que praticar em casa.
+3. O sistema guarda histórico suficiente para orientar a próxima sessão.

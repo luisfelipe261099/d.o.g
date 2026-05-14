@@ -1,67 +1,94 @@
 "use client";
 
-import Link from "next/link";
-
 import { PageShell } from "@/components/page-shell";
 import { useAppStore } from "@/lib/app-store";
 
-const trainerSteps = [
+const trainerFlow = [
   {
     title: "Cadastrar tutor e cão",
-    text: "Abra Tutores e cães, use Novo tutor ou Cadastrar cão, preencha contato, foto, raça, focos do treino e plano combinado.",
-    href: "/clientes",
-    action: "Ir para tutores",
+    why: "Essa é a base de todo o acompanhamento.",
+    how: [
+      "Registre nome do tutor, contato, ambiente onde o cão vive e plano combinado.",
+      "No cadastro do cão, inclua raça, idade, peso e principais objetivos de treino.",
+      "Use os focos de treino para deixar claro se o caso é guia, ansiedade, socialização, obediência ou outro tema.",
+    ],
   },
   {
-    title: "Agendar primeira aula",
-    text: "Na Agenda, escolha o dia, selecione tutor e cão, defina horário e status inicial da aula.",
-    href: "/agenda",
-    action: "Abrir agenda",
+    title: "Organizar a agenda",
+    why: "A agenda mostra quando o atendimento acontece e evita perda de histórico.",
+    how: [
+      "Associe cada aula ao tutor e ao cão corretos.",
+      "Defina horário, número da sessão e status do atendimento.",
+      "Use a agenda como referência para saber qual cão será atendido e em que etapa do plano ele está.",
+    ],
   },
   {
-    title: "Registrar o treino",
-    text: "Em Treinos, salve o título da sessão, avaliação, observações e imagens para alimentar histórico, portal e IA.",
-    href: "/treinos/registro",
-    action: "Registrar treino",
+    title: "Registrar a sessão de treino",
+    why: "O registro transforma a aula em histórico técnico.",
+    how: [
+      "Anote o que foi treinado, como o cão respondeu e quais dificuldades apareceram.",
+      "Use notas por bloco, como guia, foco, permanência, socialização ou manejo em casa.",
+      "Inclua evidências quando fizer sentido, como foto da postura, ambiente ou exercício concluído.",
+    ],
   },
   {
-    title: "Usar a IA antes da próxima aula",
-    text: "No Assistente IA, gere resumo a partir da transcrição e peça sugestão de próximo treino com base nas últimas semanas.",
-    href: "/ia",
-    action: "Abrir IA",
+    title: "Definir tarefa para casa",
+    why: "O tutor precisa saber exatamente o que repetir fora da aula.",
+    how: [
+      "Escreva uma orientação curta, prática e possível de executar na rotina do tutor.",
+      "Explique frequência, duração e cuidado principal do exercício.",
+      "Evite passar muitas tarefas ao mesmo tempo; uma tarefa bem feita vale mais que várias confusas.",
+    ],
   },
   {
-    title: "Enviar o portal do tutor",
-    text: "No Portal do Tutor, gere um link com validade e PIN opcional para o tutor acompanhar tarefas, fotos, agenda e evolução.",
-    href: "/portal",
-    action: "Gerar portal",
+    title: "Usar a IA como apoio técnico",
+    why: "A IA ajuda quando o adestrador precisa de ideia, estrutura ou próximo passo.",
+    how: [
+      "Informe o cão, raça, objetivo e dificuldade atual.",
+      "Descreva o problema como você falaria para outro profissional: exemplo, treinamento de guia para Pastor Alemão que puxa na rua.",
+      "Use a sugestão como roteiro inicial e ajuste conforme temperamento, ambiente e resposta do cão.",
+    ],
   },
 ];
 
-const tutorSteps = [
-  "Abrir o link enviado pelo adestrador e informar o PIN, quando houver.",
-  "Conferir próximas aulas, tarefas de casa e últimas anotações do treino.",
-  "Marcar tarefas concluídas depois da prática em casa.",
-  "Ver fotos ou evidências anexadas nas sessões.",
-  "Avaliar aulas, enviar comentário e acompanhar os pontos de engajamento.",
-];
-
-const adjustmentStatus = [
-  { label: "Dashboard com próximo atendimento e resumo da ultima aula", status: "Ajustado" },
-  { label: "Tutores e caes separados, com busca", status: "Ajustado" },
-  { label: "Agenda com novo tutor/cao no fluxo de agendamento", status: "Ajustado" },
-  { label: "Assistente IA com resumo, lembrete e sugestao por historico", status: "Ajustado" },
-  { label: "Portal do tutor com galeria, tarefas, avaliacoes e gamificacao", status: "Ajustado" },
-  { label: "Configuracoes da conta", status: "Ajustado" },
-  { label: "Cadastro explicando melhor plano, pacote e valor por aulas", status: "Ajustado" },
-];
-
-const videoSteps = [
+const assistantExamples = [
   {
-    title: "Adicionar link de vídeo",
-    text: "Grave o treinamento, suba no YouTube e adicione o link para o cliente visualizar.",
-    href: "/treinos",
-    action: "Adicionar vídeo",
+    case: "Pastor Alemão puxando na guia",
+    suggestion: "A IA deve sugerir aquecimento de foco, reforço por andar ao lado, mudanças de direção, pausas de contato visual e aumento gradual de distrações.",
+  },
+  {
+    case: "Filhote pulando nas visitas",
+    suggestion: "A IA deve propor manejo do ambiente, treino de senta para cumprimentar, recompensa por quatro patas no chão e prática com visitas controladas.",
+  },
+  {
+    case: "Cão ansioso ao ficar sozinho",
+    suggestion: "A IA deve montar passos curtos de dessensibilização, enriquecimento ambiental e registro de evolução sem forçar tempo excessivo.",
+  },
+];
+
+const tutorGuidance = [
+  "O tutor recebe um portal simples para ver tarefas, evolução e orientações.",
+  "A linguagem das tarefas deve ser clara, sem termos técnicos demais.",
+  "O objetivo é fazer o tutor praticar corretamente em casa, não apenas visualizar informações.",
+  "Feedbacks do tutor ajudam a ajustar a próxima sessão.",
+];
+
+const statusLabels = [
+  {
+    label: "Tutores cadastrados",
+    getValue: (clients: number, dogs: number) => `${clients} tutor(es), ${dogs} cão(es)`,
+  },
+  {
+    label: "Sessões registradas",
+    getValue: (_clients: number, _dogs: number, sessions: number) => `${sessions} sessão(ões)`,
+  },
+  {
+    label: "Agendamentos ativos",
+    getValue: (_clients: number, _dogs: number, _sessions: number, events: number) => `${events} agendamento(s)`,
+  },
+  {
+    label: "Tarefas para tutores",
+    getValue: (_clients: number, _dogs: number, _sessions: number, _events: number, tasks: number) => `${tasks} tarefa(s)`,
   },
 ];
 
@@ -72,363 +99,59 @@ export default function TutorialPage() {
   const portalTasks = useAppStore((state) => state.portalTasks);
 
   const totalDogs = clients.reduce((total, client) => total + client.dogs.length, 0);
-  const hasClients = clients.length > 0;
-  const hasEvents = events.length > 0;
-  const hasSessions = sessions.length > 0;
-  const hasPortalTasks = portalTasks.length > 0;
-
-  const operationalChecklist = [
-    {
-      label: "Cadastro inicial (tutor e cao)",
-      done: hasClients && totalDogs > 0,
-      detail: `${clients.length} tutor(es) e ${totalDogs} cao(es) cadastrados`,
-      href: "/clientes",
-      action: "Abrir tutores",
-    },
-    {
-      label: "Primeira agenda criada",
-      done: hasEvents,
-      detail: `${events.length} agendamento(s) ativo(s)`,
-      href: "/agenda",
-      action: "Abrir agenda",
-    },
-    {
-      label: "Treino registrado",
-      done: hasSessions,
-      detail: `${sessions.length} sessao(oes) registrada(s)`,
-      href: "/treinos/registro",
-      action: "Registrar treino",
-    },
-    {
-      label: "Portal com tarefa para tutor",
-      done: hasPortalTasks,
-      detail: `${portalTasks.length} tarefa(s) criada(s)`,
-      href: "/portal",
-      action: "Abrir portal",
-    },
-  ];
-
-  const completedSteps = operationalChecklist.filter((item) => item.done).length;
-  const completionPercent = Math.round((completedSteps / operationalChecklist.length) * 100);
-
-  const priorities = (() => {
-    if (!hasClients || totalDogs === 0) {
-      return [
-        {
-          title: "Base inicial nao criada",
-          detail: "Cadastre tutor e cao para liberar agenda, treinos e portal.",
-          level: "alta" as const,
-          href: "/clientes",
-          action: "Cadastrar base",
-        },
-      ];
-    }
-
-    const nextPriorities: Array<{
-      title: string;
-      detail: string;
-      level: "alta" | "media";
-      href: string;
-      action: string;
-    }> = [];
-
-    if (hasClients && !hasEvents) {
-      nextPriorities.push({
-        title: "Carteira sem agenda",
-        detail: "Ja existe cadastro, mas sem agendamento ativo para atendimento.",
-        level: "alta",
-        href: "/agenda",
-        action: "Agendar aula",
-      });
-    }
-
-    if (hasEvents && !hasSessions) {
-      nextPriorities.push({
-        title: "Aulas sem registro tecnico",
-        detail: "Existem agendamentos, mas nenhum treino foi registrado no historico.",
-        level: "alta",
-        href: "/treinos/registro",
-        action: "Registrar treino",
-      });
-    }
-
-    if (hasSessions && !hasPortalTasks) {
-      nextPriorities.push({
-        title: "Tutor sem acompanhamento no portal",
-        detail: "Ja ha sessoes registradas, mas sem tarefa para pratica em casa.",
-        level: "media",
-        href: "/portal",
-        action: "Criar tarefa",
-      });
-    }
-
-    if (!nextPriorities.length) {
-      nextPriorities.push({
-        title: "Operacao em dia",
-        detail: "Fluxo principal completo. Use IA para acelerar preparacao da proxima aula.",
-        level: "media",
-        href: "/ia",
-        action: "Revisar com IA",
-      });
-    }
-
-    return nextPriorities;
-  })();
-
-  function getChecklistState(item: { label: string; done: boolean }): {
-    text: string;
-    className: string;
-  } {
-    if (item.done) {
-      return {
-        text: "Concluido",
-        className: "bg-emerald-100 text-emerald-800",
-      };
-    }
-
-    if (item.label === "Primeira agenda criada" && hasClients) {
-      return {
-        text: "Atencao",
-        className: "bg-rose-100 text-rose-800",
-      };
-    }
-
-    if (item.label === "Treino registrado" && hasEvents) {
-      return {
-        text: "Atencao",
-        className: "bg-rose-100 text-rose-800",
-      };
-    }
-
-    return {
-      text: "Pendente",
-      className: "bg-amber-100 text-amber-900",
-    };
-  }
-
-  const measurableStepDone = [
-    hasClients && totalDogs > 0,
-    hasEvents,
-    hasSessions,
-    hasPortalTasks,
-  ];
-
-  const firstPendingMeasurableIndex = measurableStepDone.findIndex((done) => !done);
-
-  const flowSteps = trainerSteps
-    .map((step, index) => {
-      const measurableMap = [0, 1, 2, 4] as const;
-      const measurableIndex = measurableMap.indexOf(index as 0 | 1 | 2 | 4);
-      const isMeasurable = measurableIndex >= 0;
-      const done = isMeasurable ? measurableStepDone[measurableIndex] : false;
-
-      let status: "agora" | "atencao" | "depois" | "concluido" = "depois";
-
-      if (done) {
-        status = "concluido";
-      } else if (isMeasurable && measurableIndex === firstPendingMeasurableIndex) {
-        const isDelayed =
-          (index === 1 && hasClients && !hasEvents) ||
-          (index === 2 && hasEvents && !hasSessions) ||
-          (index === 4 && hasSessions && !hasPortalTasks);
-
-        status = isDelayed ? "atencao" : "agora";
-      }
-
-      const orderMap = {
-        atencao: 0,
-        agora: 1,
-        depois: 2,
-        concluido: 3,
-      } satisfies Record<typeof status, number>;
-
-      return {
-        ...step,
-        originalNumber: index + 1,
-        done,
-        status,
-        order: orderMap[status],
-      };
-    })
-    .sort((left, right) => {
-      const byOrder = left.order - right.order;
-      if (byOrder !== 0) return byOrder;
-      return left.originalNumber - right.originalNumber;
-    });
-
-  const nextStep = (() => {
-    if (!hasClients || totalDogs === 0) {
-      return {
-        title: "Cadastre seu primeiro tutor e cao",
-        detail: "Sem cadastro inicial, agenda e treinos ficam bloqueados no dia a dia.",
-        href: "/clientes",
-        action: "Cadastrar agora",
-      };
-    }
-
-    if (!hasEvents) {
-      return {
-        title: "Crie o primeiro agendamento",
-        detail: "A agenda organiza o atendimento e acelera o registro da aula.",
-        href: "/agenda",
-        action: "Agendar aula",
-      };
-    }
-
-    if (!hasSessions) {
-      return {
-        title: "Registre a primeira sessao",
-        detail: "Esse registro alimenta o historico, portal e sugestoes da IA.",
-        href: "/treinos/registro",
-        action: "Registrar sessao",
-      };
-    }
-
-    if (!hasPortalTasks) {
-      return {
-        title: "Crie a primeira tarefa no portal",
-        detail: "Assim o tutor acompanha a pratica em casa e gera engajamento.",
-        href: "/portal",
-        action: "Criar tarefa",
-      };
-    }
-
-    return {
-      title: "Fluxo principal concluido",
-      detail: "Agora use a IA para preparar a proxima aula com base no historico.",
-      href: "/ia",
-      action: "Abrir IA",
-    };
-  })();
-
-  const quickHelp = [
-    {
-      question: "Nao estou vendo o tutor na agenda",
-      answer: "Confirme se o tutor e o cao foram cadastrados antes em Tutores e caes.",
-      href: "/clientes",
-      action: "Ver cadastros",
-    },
-    {
-      question: "Nao consigo compartilhar o portal",
-      answer: "Abra o Portal do Tutor, gere ou renove o link e copie novamente.",
-      href: "/portal",
-      action: "Abrir portal",
-    },
-    {
-      question: "Quero registrar aula mais rapido",
-      answer: "Use Treinos > Registro para preencher bloco tecnico, notas e evidencias.",
-      href: "/treinos/registro",
-      action: "Registrar aula",
-    },
-  ];
 
   return (
     <PageShell
-      kicker="Tutorial"
-      title="Como usar o Adestro na operação"
-      description="Passo a passo para o adestrador conduzir o atendimento e para o tutor acompanhar o treino pelo portal."
+      kicker="Tutorial do adestrador"
+      title="Como o Adestro organiza sua rotina"
+      description="Um guia explicativo para entender o fluxo de atendimento, o portal do tutor e o papel correto do Assistente de IA."
       requireAuth="trainer"
     >
-      <section className="mb-4 rounded-[1.5rem] border border-[var(--border)] bg-[var(--panel)] p-5 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#2d6f99]">Comece por aqui</p>
-        <div className="mt-2 flex flex-wrap items-start justify-between gap-3">
+      <section className="rounded-[1.5rem] border border-[var(--border)] bg-[var(--panel)] p-5 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#2d6f99]">Ideia principal</p>
+        <div className="mt-2 grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
           <div>
-            <h2 className="font-display text-2xl font-semibold text-[var(--foreground)]">{nextStep.title}</h2>
-            <p className="mt-1 text-sm leading-6 text-[var(--muted)]">{nextStep.detail}</p>
+            <h2 className="font-display text-2xl font-semibold text-[var(--foreground)]">O sistema acompanha o atendimento do começo ao pós-aula</h2>
+            <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
+              O Adestro não é só uma lista de páginas. Ele funciona como uma rotina: primeiro você cadastra tutor e cão, depois agenda, registra o treino, orienta o tutor e usa a IA para preparar o próximo passo quando precisar de apoio técnico.
+            </p>
           </div>
-          <Link href={nextStep.href} className="rounded-full border border-[#145a82] bg-white px-4 py-2 text-xs font-semibold text-[#145a82]">
-            {nextStep.action}
-          </Link>
-        </div>
-      </section>
-
-      <section className="mb-4 rounded-[1.5rem] border border-[var(--border)] bg-white p-5 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#2d6f99]">Prioridades de hoje</p>
-        <div className="mt-3 space-y-2">
-          {priorities.map((item) => (
-            <div key={item.title} className="flex items-start justify-between gap-3 rounded-2xl border border-[var(--border)] bg-[#f7fbff] p-3">
-              <div>
-                <div className="flex items-center gap-2">
-                  <p className="text-sm font-semibold text-[var(--foreground)]">{item.title}</p>
-                  <span className={`rounded-full px-2 py-1 text-[10px] font-semibold uppercase ${item.level === "alta" ? "bg-rose-100 text-rose-800" : "bg-amber-100 text-amber-900"}`}>
-                    {item.level === "alta" ? "Alta" : "Media"}
-                  </span>
-                </div>
-                <p className="text-xs text-[var(--muted)]">{item.detail}</p>
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-1">
+            {statusLabels.map((item) => (
+              <div key={item.label} className="rounded-2xl border border-[var(--border)] bg-white p-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d6f99]">{item.label}</p>
+                <p className="mt-1 text-sm font-semibold text-[var(--foreground)]">
+                  {item.getValue(clients.length, totalDogs, sessions.length, events.length, portalTasks.length)}
+                </p>
               </div>
-              <Link href={item.href} className="rounded-full border border-[var(--border)] bg-white px-2.5 py-1 text-[10px] font-semibold text-[#145a82]">
-                {item.action}
-              </Link>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </section>
 
-      <div className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
+      <div className="mt-4 grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
         <section className="rounded-[1.5rem] border border-[var(--border)] bg-white p-5 shadow-sm">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#2d6f99]">Adestrador</p>
-              <h2 className="mt-1 font-display text-2xl font-semibold text-[var(--foreground)]">Fluxo de atendimento</h2>
-            </div>
-            <Link href="/dashboard" className="rounded-full border border-[var(--border)] bg-[#f7fbff] px-3 py-1.5 text-xs font-semibold text-[#145a82]">
-              Voltar ao dashboard
-            </Link>
-          </div>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#2d6f99]">Fluxo de atendimento</p>
+          <h2 className="mt-1 font-display text-2xl font-semibold text-[var(--foreground)]">Como deve ser feito</h2>
 
           <ol className="mt-5 grid gap-3">
-            {flowSteps.map((step) => (
-              <li
-                key={step.title}
-                className={`rounded-2xl border p-4 transition ${
-                  step.status === "concluido"
-                    ? "border-[var(--border)] bg-white opacity-60"
-                    : step.status === "atencao"
-                    ? "border-rose-300 bg-rose-50"
-                    : step.status === "agora"
-                    ? "border-sky-300 bg-sky-50"
-                    : "border-[var(--border)] bg-[#f7fbff]"
-                }`}
-              >
+            {trainerFlow.map((step, index) => (
+              <li key={step.title} className="rounded-2xl border border-[var(--border)] bg-[#f7fbff] p-4">
                 <div className="flex gap-3">
-                  <span
-                    className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-sm font-semibold ${
-                      step.status === "concluido"
-                        ? "bg-slate-200 text-slate-700"
-                        : step.status === "atencao"
-                        ? "bg-rose-500 text-white"
-                        : "bg-[#145a82] text-white"
-                    }`}
-                  >
-                    {step.originalNumber}
+                  <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-[#145a82] text-sm font-semibold text-white">
+                    {index + 1}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="text-sm font-semibold text-[var(--foreground)]">{step.title}</h3>
-                      <span
-                        className={`rounded-full px-2 py-1 text-[10px] font-semibold uppercase ${
-                          step.status === "concluido"
-                            ? "bg-emerald-100 text-emerald-800"
-                            : step.status === "atencao"
-                            ? "bg-rose-100 text-rose-800"
-                            : step.status === "agora"
-                            ? "bg-sky-100 text-sky-800"
-                            : "bg-amber-100 text-amber-900"
-                        }`}
-                      >
-                        {step.status === "concluido"
-                          ? "Concluido"
-                          : step.status === "atencao"
-                          ? "Atencao"
-                          : step.status === "agora"
-                          ? "Agora"
-                          : "Depois"}
-                      </span>
-                    </div>
-                    <p className="mt-1 text-sm leading-6 text-[var(--muted)]">{step.text}</p>
-                    <Link href={step.href} className="mt-3 inline-flex rounded-full border border-[#145a82] bg-white px-3 py-1.5 text-xs font-semibold text-[#145a82]">
-                      {step.action}
-                    </Link>
+                    <h3 className="text-base font-semibold text-[var(--foreground)]">{step.title}</h3>
+                    <p className="mt-1 text-sm font-medium text-[#2d6f99]">{step.why}</p>
+                    <ul className="mt-3 grid gap-2">
+                      {step.how.map((item) => (
+                        <li key={item} className="flex gap-2 text-sm leading-6 text-[var(--muted)]">
+                          <span className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[#1f8e80]" />
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
                 </div>
               </li>
@@ -438,98 +161,39 @@ export default function TutorialPage() {
 
         <div className="grid gap-4">
           <section className="rounded-[1.5rem] border border-[var(--border)] bg-[var(--panel)] p-5 shadow-sm">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#2d6f99]">Progresso real</p>
-                <h2 className="mt-1 font-display text-2xl font-semibold text-[var(--foreground)]">Checklist operacional</h2>
-              </div>
-              <span className="rounded-full border border-[var(--border)] bg-white px-3 py-1 text-xs font-semibold text-[#145a82]">
-                {completionPercent}%
-              </span>
-            </div>
-
-            <div className="mt-4 space-y-2">
-              {operationalChecklist.map((item) => (
-                (() => {
-                  const state = getChecklistState(item);
-                  return (
-                    <div key={item.label} className="flex items-start justify-between gap-3 rounded-2xl border border-[var(--border)] bg-white p-3">
-                      <div>
-                        <p className="text-sm font-semibold text-[var(--foreground)]">{item.label}</p>
-                        <p className="text-xs text-[var(--muted)]">{item.detail}</p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className={`rounded-full px-2 py-1 text-[10px] font-semibold uppercase ${state.className}`}>
-                          {state.text}
-                        </span>
-                        <Link href={item.href} className="rounded-full border border-[var(--border)] bg-[#f7fbff] px-2.5 py-1 text-[10px] font-semibold text-[#145a82]">
-                          {item.action}
-                        </Link>
-                      </div>
-                    </div>
-                  );
-                })()
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#2d6f99]">Assistente de IA</p>
+            <h2 className="mt-1 font-display text-2xl font-semibold text-[var(--foreground)]">A IA sugere treino, não substitui o adestrador</h2>
+            <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
+              A ideia correta é usar a IA quando você não lembra como estruturar um exercício, quer variar uma progressão ou precisa preparar uma próxima aula com base no caso do cão.
+            </p>
+            <div className="mt-4 grid gap-3">
+              {assistantExamples.map((example) => (
+                <article key={example.case} className="rounded-2xl border border-[var(--border)] bg-white p-4">
+                  <p className="text-sm font-semibold text-[var(--foreground)]">{example.case}</p>
+                  <p className="mt-1 text-sm leading-6 text-[var(--muted)]">{example.suggestion}</p>
+                </article>
               ))}
             </div>
           </section>
 
-          <section className="rounded-[1.5rem] border border-[var(--border)] bg-[var(--panel)] p-5 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#2d6f99]">Tutor</p>
-            <h2 className="mt-1 font-display text-2xl font-semibold text-[var(--foreground)]">Como acompanhar pelo portal</h2>
-            <div className="mt-4 space-y-2">
-              {tutorSteps.map((step, index) => (
-                <div key={step} className="flex gap-3 rounded-2xl border border-[var(--border)] bg-white p-3">
-                  <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-sky-50 text-xs font-semibold text-[#145a82]">
-                    {index + 1}
-                  </span>
-                  <p className="text-sm leading-6 text-[var(--muted)]">{step}</p>
+          <section className="rounded-[1.5rem] border border-[var(--border)] bg-white p-5 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#2d6f99]">Portal do tutor</p>
+            <h2 className="mt-1 font-display text-xl font-semibold text-[var(--foreground)]">Como orientar o cliente</h2>
+            <div className="mt-4 grid gap-2">
+              {tutorGuidance.map((item) => (
+                <div key={item} className="rounded-2xl border border-[var(--border)] bg-[#f7fbff] p-3 text-sm leading-6 text-[var(--muted)]">
+                  {item}
                 </div>
               ))}
             </div>
           </section>
 
           <section className="rounded-[1.5rem] border border-[var(--border)] bg-white p-5 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#2d6f99]">Duvidas comuns</p>
-            <h2 className="mt-1 font-display text-xl font-semibold text-[var(--foreground)]">Resolva rapido</h2>
-            <div className="mt-4 space-y-2">
-              {quickHelp.map((item) => (
-                <div key={item.question} className="flex items-start justify-between gap-3 rounded-2xl border border-[var(--border)] bg-[#f7fbff] px-3 py-2">
-                  <div>
-                    <p className="text-sm font-semibold text-[var(--foreground)]">{item.question}</p>
-                    <p className="text-xs text-[var(--muted)]">{item.answer}</p>
-                  </div>
-                  <Link href={item.href} className="rounded-full border border-[var(--border)] bg-white px-2.5 py-1 text-[10px] font-semibold text-[#145a82]">
-                    {item.action}
-                  </Link>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          <section className="rounded-[1.5rem] border border-[var(--border)] bg-white p-5 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#2d6f99]">Contexto do produto</p>
-            <h2 className="mt-1 font-display text-xl font-semibold text-[var(--foreground)]">Ajustes implementados</h2>
-            <div className="mt-4 space-y-2">
-              {adjustmentStatus.map((item) => (
-                <div key={item.label} className="flex items-start justify-between gap-3 rounded-2xl border border-[var(--border)] bg-[#f7fbff] px-3 py-2">
-                  <p className="text-sm text-[var(--muted)]">{item.label}</p>
-                  <span className="rounded-full bg-emerald-100 px-2 py-1 text-[10px] font-semibold uppercase text-emerald-800">
-                    {item.status}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          <section>
-            <h2>Vídeos de Treinamento</h2>
-            {videoSteps.map((step, index) => (
-              <div key={index}>
-                <h3>{step.title}</h3>
-                <p>{step.text}</p>
-                <Link href={step.href}>{step.action}</Link>
-              </div>
-            ))}
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#2d6f99]">Regra prática</p>
+            <h2 className="mt-1 font-display text-xl font-semibold text-[var(--foreground)]">Cada aula deve terminar com clareza</h2>
+            <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
+              Ao final da sessão, o adestrador precisa saber o que foi treinado, o tutor precisa saber o que praticar e o sistema precisa guardar histórico suficiente para apoiar a próxima decisão.
+            </p>
           </section>
         </div>
       </div>

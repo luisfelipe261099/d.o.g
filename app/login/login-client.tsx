@@ -69,11 +69,10 @@ export function LoginClient() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="mt-2 w-full rounded-2xl border border-[var(--border)] bg-[rgba(250,255,255,0.94)] px-4 py-3 text-sm outline-none transition focus:border-[#1b719d]"
+              className="mt-2 w-full rounded-2xl border border-[var(--border)] bg-[rgba(250,255,255,0.94)] px-4 py-3 text-base outline-none transition focus:border-[#1b719d] sm:text-sm"
               placeholder="voce@adestrador.com"
               required
               autoComplete="email"
-              autoFocus
             />
           </label>
 
@@ -83,7 +82,7 @@ export function LoginClient() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="mt-2 w-full rounded-2xl border border-[var(--border)] bg-[rgba(250,255,255,0.94)] px-4 py-3 text-sm outline-none transition focus:border-[#1b719d]"
+                className="mt-2 w-full rounded-2xl border border-[var(--border)] bg-[rgba(250,255,255,0.94)] px-4 py-3 text-base outline-none transition focus:border-[#1b719d] sm:text-sm"
                 placeholder="------"
                 required
                 autoComplete="current-password"

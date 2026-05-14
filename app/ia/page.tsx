@@ -1,12 +1,11 @@
 "use client";
 
-import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import { AuthGuard } from "@/components/auth-guard";
 import { useAppStore } from "@/lib/app-store";
 
-type Tab = "resumo" | "sugestao";
+type Tab = "sugestao" | "resumo";
 
 function parseBrazilianDate(date: string): number {
   const [day, month, year] = date.split("/").map(Number);
@@ -18,7 +17,7 @@ export default function IaPage() {
   const clients = useAppStore((state) => state.clients);
   const sessions = useAppStore((state) => state.trainingSessions);
 
-  const [tab, setTab] = useState<Tab>("resumo");
+  const [tab, setTab] = useState<Tab>("sugestao");
   const [selectedClientId, setSelectedClientId] = useState(clients[0]?.id ?? "");
   const [selectedDogId, setSelectedDogId] = useState(clients[0]?.dogs[0]?.id ?? "");
   const [transcript, setTranscript] = useState("");
@@ -27,6 +26,7 @@ export default function IaPage() {
   const [reminder, setReminder] = useState("");
   const [reminderSaved, setReminderSaved] = useState("");
   const [suggestion, setSuggestion] = useState("");
+  const [trainingNeed, setTrainingNeed] = useState("Treinamento de guia para cão que puxa na rua e perde foco com distrações.");
 
   const selectedClient = useMemo(
     () => clients.find((client) => client.id === selectedClientId) ?? clients[0],
@@ -85,15 +85,30 @@ export default function IaPage() {
     const baseLine = last
       ? `Última sessão (${last.date}): ${last.title}.`
       : "Sem sessões recentes registradas para este cão.";
+    const need = trainingNeed.trim() || `Montar progressão para ${focuses.join(" + ")}.`;
 
     setSuggestion(
       [
+        `Plano sugerido para ${selectedDog.name} (${selectedDog.breed})`,
+        `Necessidade informada: ${need}`,
         baseLine,
-        `Sugestão para a próxima aula com ${selectedDog.name}:`,
-        `1. Aquecimento (5min) revisando: ${focuses[0]}.`,
-        `2. Bloco principal (15min): progressão em ${focuses.slice(0, 2).join(" + ") || "obediência"} com aumento de distração.`,
-        `3. Reforço final (5min): place + permanência sob distração leve.`,
-        `Observação: registre a evolução em vídeo curto para enviar ao cliente.`,
+        "",
+        "1. Diagnóstico rápido (3 a 5 min)",
+        "Observe nível de energia, resposta ao nome, contato visual e reação ao ambiente antes de exigir desempenho.",
+        "",
+        "2. Aquecimento de foco (5 min)",
+        `Reforce ${focuses[0]} em ambiente com pouca distração. Use recompensa alta e sessões curtas para criar engajamento.`,
+        "",
+        "3. Bloco principal de treino (12 a 18 min)",
+        need.toLowerCase().includes("guia")
+          ? "Para guia: trabalhe andar ao lado, recompensa na posição correta, mudanças de direção, paradas com contato visual e retomada calma. Aumente distrações só depois de resposta consistente."
+          : `Trabalhe ${focuses.slice(0, 2).join(" + ") || "obediência"} em progressões pequenas, aumentando distância, duração ou distração uma variável por vez.`,
+        "",
+        "4. Tarefa para o tutor",
+        "Passe uma prática de 5 minutos por dia, com critério simples de sucesso e sem correções confusas.",
+        "",
+        "5. Atenção profissional",
+        "Ajuste o plano se o cão demonstrar medo, excesso de excitação, dor, agressividade ou queda brusca de motivação.",
       ].join("\n"),
     );
   }
@@ -104,9 +119,9 @@ export default function IaPage() {
         <section className="rounded-[2rem] border border-[var(--border)] bg-[#f7fbff] p-4 shadow-[var(--shadow)]">
           <header>
             <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#2d6f99]">Assistente</p>
-            <h1 className="font-display text-2xl font-semibold text-[var(--foreground)]">Assistente de IA</h1>
+            <h1 className="font-display text-2xl font-semibold text-[var(--foreground)]">Assistente de IA para treinos</h1>
             <p className="mt-1 text-xs text-[var(--muted)]">
-              Resumir aula a partir do áudio e sugerir o próximo treino com base no histórico do cão.
+              Descreva o caso do cão e receba uma sugestão estruturada de treino para usar como ponto de partida profissional.
             </p>
           </header>
 
@@ -147,14 +162,14 @@ export default function IaPage() {
               onClick={() => setTab("resumo")}
               className={`rounded-full px-3 py-1.5 transition ${tab === "resumo" ? "bg-[#145a82] text-white" : "text-[var(--muted)]"}`}
             >
-              Resumir áudio da aula
+              Resumir aula
             </button>
             <button
               type="button"
               onClick={() => setTab("sugestao")}
               className={`rounded-full px-3 py-1.5 transition ${tab === "sugestao" ? "bg-[#145a82] text-white" : "text-[var(--muted)]"}`}
             >
-              Sugerir próximo treino
+              Plano de treino
             </button>
           </div>
 
@@ -203,9 +218,23 @@ export default function IaPage() {
           ) : (
             <section className="mt-4 grid gap-3">
               <article className="rounded-2xl border border-[var(--border)] bg-white p-3">
+                <p className="text-sm font-semibold text-[var(--foreground)]">1. Explique o que você quer treinar</p>
+                <p className="mt-1 text-xs text-[var(--muted)]">
+                  Escreva como falaria no atendimento: raça, comportamento, objetivo e dificuldade atual.
+                </p>
+                <textarea
+                  value={trainingNeed}
+                  onChange={(event) => setTrainingNeed(event.target.value)}
+                  rows={4}
+                  placeholder="Ex.: Pastor Alemão puxa na guia, ignora o tutor na rua e reage quando vê outro cão. Quero progressão para passeio mais calmo."
+                  className="mt-3 w-full rounded-xl border border-[var(--border)] px-3 py-2 text-sm outline-none focus:border-sky-400"
+                />
+              </article>
+
+              <article className="rounded-2xl border border-[var(--border)] bg-white p-3">
                 <div className="flex items-center justify-between gap-2">
                   <div>
-                    <p className="text-sm font-semibold text-[var(--foreground)]">Lembrete da próxima aula</p>
+                    <p className="text-sm font-semibold text-[var(--foreground)]">2. Lembrete da próxima aula</p>
                     <p className="mt-1 text-xs text-[var(--muted)]">
                       Anote para você mesmo onde parou. Aparecerá ao abrir a próxima sessão deste cão.
                     </p>
@@ -238,7 +267,7 @@ export default function IaPage() {
               </article>
 
               <article className="rounded-2xl border border-[var(--border)] bg-white p-3">
-                <p className="text-sm font-semibold text-[var(--foreground)]">Linha do tempo (últimas 4 semanas)</p>
+                <p className="text-sm font-semibold text-[var(--foreground)]">3. Linha do tempo (últimas 4 semanas)</p>
                 <p className="mt-1 text-xs text-[var(--muted)]">
                   Visão cronológica dos treinos para entender onde parou com {selectedDog?.name ?? "este cão"}.
                 </p>
@@ -258,13 +287,16 @@ export default function IaPage() {
               </article>
 
               <article className="rounded-2xl border border-[var(--border)] bg-white p-3">
-                <p className="text-sm font-semibold text-[var(--foreground)]">Sugestão de próxima aula</p>
+                <p className="text-sm font-semibold text-[var(--foreground)]">4. Sugestão de plano de treino</p>
+                <p className="mt-1 text-xs text-[var(--muted)]">
+                  A IA monta um roteiro técnico inicial. O adestrador decide o que aplicar e adapta ao cão real.
+                </p>
                 <button
                   type="button"
                   onClick={handleSuggestNextTraining}
                   className="mt-2 rounded-full border border-[#145a82] bg-[#145a82] px-3 py-1.5 text-xs font-semibold text-white"
                 >
-                  Gerar sugestão
+                  Gerar plano sugerido
                 </button>
                 {suggestion ? (
                   <pre className="mt-3 whitespace-pre-wrap rounded-xl border border-sky-100 bg-sky-50 px-3 py-2 font-sans text-xs text-[#245d84]">
@@ -274,10 +306,6 @@ export default function IaPage() {
               </article>
             </section>
           )}
-
-          <div className="mt-4">
-            <Link href="/treinos" className="text-xs font-semibold text-[#145a82]">Voltar para treinos →</Link>
-          </div>
         </section>
       </main>
     </AuthGuard>
