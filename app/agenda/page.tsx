@@ -383,9 +383,17 @@ export default function SchedulePage() {
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex items-start gap-2.5">
                           <div className="relative h-10 w-10 overflow-hidden rounded-full bg-sky-50">
-                            {photo ? (
-                              <Image src={photo} alt={`Foto de ${event.dog}`} fill sizes="40px" unoptimized className="object-cover" />
-                            ) : null}
+                            <Image
+                              src={photo || "/images/dog-default-bolt.svg"}
+                              alt={`Foto de ${event.dog}`}
+                              fill
+                              sizes="40px"
+                              unoptimized
+                              onError={(event) => {
+                                event.currentTarget.src = "/images/dog-default-bolt.svg";
+                              }}
+                              className="object-cover"
+                            />
                           </div>
                           <div>
                             <p className="text-sm font-semibold text-[var(--foreground)]">{event.dog}</p>

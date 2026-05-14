@@ -427,20 +427,17 @@ export default function ClientsPage() {
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-start gap-3">
                     <div className="relative h-11 w-11 overflow-hidden rounded-full bg-sky-100">
-                      {dog.photoUrl ? (
-                        <Image
-                          src={dog.photoUrl}
-                          alt={`Foto de ${dog.name}`}
-                          fill
-                          sizes="44px"
-                          unoptimized
-                          className="object-cover"
-                        />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center text-[#145a82]">
-                          <SmallIcon name="dog" />
-                        </div>
-                      )}
+                      <Image
+                        src={dog.photoUrl || "/images/dog-default-bolt.svg"}
+                        alt={`Foto de ${dog.name}`}
+                        fill
+                        sizes="44px"
+                        unoptimized
+                        onError={(event) => {
+                          event.currentTarget.src = "/images/dog-default-bolt.svg";
+                        }}
+                        className="object-cover"
+                      />
                     </div>
                     <div>
                       <p className="text-sm font-semibold text-[var(--foreground)]">{dog.name}</p>
@@ -487,20 +484,17 @@ export default function ClientsPage() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-start gap-3">
                       <div className="relative h-11 w-11 overflow-hidden rounded-full bg-sky-100">
-                        {firstDog?.photoUrl ? (
-                          <Image
-                            src={firstDog.photoUrl}
-                            alt={`Foto de ${firstDog.name}`}
-                            fill
-                            sizes="44px"
-                            unoptimized
-                            className="object-cover"
-                          />
-                        ) : (
-                          <div className="flex h-full w-full items-center justify-center text-[#145a82]">
-                            <SmallIcon name="dog" />
-                          </div>
-                        )}
+                        <Image
+                          src={firstDog?.photoUrl || "/images/dog-default-bolt.svg"}
+                          alt={`Foto de ${firstDog?.name || "Pet"}`}
+                          fill
+                          sizes="44px"
+                          unoptimized
+                          onError={(event) => {
+                            event.currentTarget.src = "/images/dog-default-bolt.svg";
+                          }}
+                          className="object-cover"
+                        />
                       </div>
                       <div>
                         <p className="text-sm font-semibold text-[var(--foreground)]">{item.client.name}</p>

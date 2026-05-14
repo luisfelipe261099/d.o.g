@@ -47,10 +47,11 @@ export default function RelatoriosPage() {
   return (
     <PageShell
       kicker="Admin"
-      title="Relatórios e Analytics"
-      description="Visualize metricas de uso, crescimento e desempenho da base de adestradores da plataforma."
+      title="Relatorios"
+      description="Visualize crescimento, uso da plataforma e sinais de risco para agir mais rapido."
       requireAuth="admin"
     >
+      <AdminContextNav />
       <div className="mx-auto max-w-7xl space-y-6">
         <div className="grid gap-6 lg:grid-cols-2">
           {/* Crescimento de Usuários */}

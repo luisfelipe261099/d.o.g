@@ -632,20 +632,17 @@ export default function TrainingPage() {
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-start gap-2.5">
                         <div className="relative h-11 w-11 overflow-hidden rounded-full bg-sky-50">
-                          {dogMeta?.photoUrl ? (
-                            <Image
-                              src={dogMeta.photoUrl}
-                              alt={`Foto de ${dogName}`}
-                              fill
-                              sizes="44px"
-                              unoptimized
-                              className="object-cover"
-                            />
-                          ) : (
-                            <div className="flex h-full w-full items-center justify-center text-[#145a82]">
-                              <TinyIcon name="list" />
-                            </div>
-                          )}
+                          <Image
+                            src={dogMeta?.photoUrl || "/images/dog-default-bolt.svg"}
+                            alt={`Foto de ${dogName}`}
+                            fill
+                            sizes="44px"
+                            unoptimized
+                            onError={(event) => {
+                              event.currentTarget.src = "/images/dog-default-bolt.svg";
+                            }}
+                            className="object-cover"
+                          />
                         </div>
                         <div>
                           <p className="text-sm font-semibold text-[var(--foreground)]">{dogName}</p>

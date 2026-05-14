@@ -319,18 +319,17 @@ export default function PortalPage() {
           {selectedClient && selectedDog && (
             <article className="mb-4 mt-4 rounded-2xl border border-[var(--border)] bg-[var(--panel)] p-4">
             <div className="flex flex-col gap-3">
-              {selectedDog.photoUrl ? (
-                <Image
-                  src={selectedDog.photoUrl}
-                  alt={`Foto de ${selectedDog.name}`}
-                  width={96}
-                  height={96}
-                  unoptimized
-                  className="h-20 w-20 rounded-xl object-cover"
-                />
-              ) : (
-                <div className="flex h-20 w-20 items-center justify-center rounded-xl bg-sky-100 text-2xl">🐾</div>
-              )}
+              <Image
+                src={selectedDog.photoUrl || "/images/dog-default-bolt.svg"}
+                alt={`Foto de ${selectedDog.name}`}
+                width={96}
+                height={96}
+                unoptimized
+                onError={(event) => {
+                  event.currentTarget.src = "/images/dog-default-bolt.svg";
+                }}
+                className="h-20 w-20 rounded-xl object-cover"
+              />
               <div>
                 <h2 className="font-semibold text-[var(--foreground)]">3. Link do portal de {selectedDog.name}</h2>
                 <p className="mt-1 text-xs text-[var(--muted)]">

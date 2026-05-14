@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { PageShell } from "@/components/page-shell";
+import { AdminContextNav } from "@/components/admin-context-nav";
 
 type TrainerRow = {
   id: string;
@@ -87,10 +88,11 @@ export default function PlanosPage() {
   return (
     <PageShell
       kicker="Admin"
-      title="Configuracao de planos"
-      description="Defina precos, recursos e estrutura dos planos de assinatura da plataforma."
+      title="Planos"
+      description="Ajuste o plano de cada conta e acompanhe a distribuicao atual da base."
       requireAuth="admin"
     >
+      <AdminContextNav />
       <div className="mx-auto max-w-7xl space-y-6">
         <div className="grid gap-6 xl:grid-cols-[1.3fr_0.7fr]">
           <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel-strong)] p-6">

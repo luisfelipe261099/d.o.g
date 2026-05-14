@@ -197,6 +197,56 @@ export default function TutorialPage() {
     };
   }
 
+  const measurableStepDone = [
+    hasClients && totalDogs > 0,
+    hasEvents,
+    hasSessions,
+    hasPortalTasks,
+  ];
+
+  const firstPendingMeasurableIndex = measurableStepDone.findIndex((done) => !done);
+
+  const flowSteps = trainerSteps
+    .map((step, index) => {
+      const measurableMap = [0, 1, 2, 4] as const;
+      const measurableIndex = measurableMap.indexOf(index as 0 | 1 | 2 | 4);
+      const isMeasurable = measurableIndex >= 0;
+      const done = isMeasurable ? measurableStepDone[measurableIndex] : false;
+
+      let status: "agora" | "atencao" | "depois" | "concluido" = "depois";
+
+      if (done) {
+        status = "concluido";
+      } else if (isMeasurable && measurableIndex === firstPendingMeasurableIndex) {
+        const isDelayed =
+          (index === 1 && hasClients && !hasEvents) ||
+          (index === 2 && hasEvents && !hasSessions) ||
+          (index === 4 && hasSessions && !hasPortalTasks);
+
+        status = isDelayed ? "atencao" : "agora";
+      }
+
+      const orderMap = {
+        atencao: 0,
+        agora: 1,
+        depois: 2,
+        concluido: 3,
+      } satisfies Record<typeof status, number>;
+
+      return {
+        ...step,
+        originalNumber: index + 1,
+        done,
+        status,
+        order: orderMap[status],
+      };
+    })
+    .sort((left, right) => {
+      const byOrder = left.order - right.order;
+      if (byOrder !== 0) return byOrder;
+      return left.originalNumber - right.originalNumber;
+    });
+
   const nextStep = (() => {
     if (!hasClients || totalDogs === 0) {
       return {
@@ -318,14 +368,54 @@ export default function TutorialPage() {
           </div>
 
           <ol className="mt-5 grid gap-3">
-            {trainerSteps.map((step, index) => (
-              <li key={step.title} className="rounded-2xl border border-[var(--border)] bg-[#f7fbff] p-4">
+            {flowSteps.map((step) => (
+              <li
+                key={step.title}
+                className={`rounded-2xl border p-4 transition ${
+                  step.status === "concluido"
+                    ? "border-[var(--border)] bg-white opacity-60"
+                    : step.status === "atencao"
+                    ? "border-rose-300 bg-rose-50"
+                    : step.status === "agora"
+                    ? "border-sky-300 bg-sky-50"
+                    : "border-[var(--border)] bg-[#f7fbff]"
+                }`}
+              >
                 <div className="flex gap-3">
-                  <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-[#145a82] text-sm font-semibold text-white">
-                    {index + 1}
+                  <span
+                    className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-sm font-semibold ${
+                      step.status === "concluido"
+                        ? "bg-slate-200 text-slate-700"
+                        : step.status === "atencao"
+                        ? "bg-rose-500 text-white"
+                        : "bg-[#145a82] text-white"
+                    }`}
+                  >
+                    {step.originalNumber}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <h3 className="text-sm font-semibold text-[var(--foreground)]">{step.title}</h3>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="text-sm font-semibold text-[var(--foreground)]">{step.title}</h3>
+                      <span
+                        className={`rounded-full px-2 py-1 text-[10px] font-semibold uppercase ${
+                          step.status === "concluido"
+                            ? "bg-emerald-100 text-emerald-800"
+                            : step.status === "atencao"
+                            ? "bg-rose-100 text-rose-800"
+                            : step.status === "agora"
+                            ? "bg-sky-100 text-sky-800"
+                            : "bg-amber-100 text-amber-900"
+                        }`}
+                      >
+                        {step.status === "concluido"
+                          ? "Concluido"
+                          : step.status === "atencao"
+                          ? "Atencao"
+                          : step.status === "agora"
+                          ? "Agora"
+                          : "Depois"}
+                      </span>
+                    </div>
                     <p className="mt-1 text-sm leading-6 text-[var(--muted)]">{step.text}</p>
                     <Link href={step.href} className="mt-3 inline-flex rounded-full border border-[#145a82] bg-white px-3 py-1.5 text-xs font-semibold text-[#145a82]">
                       {step.action}

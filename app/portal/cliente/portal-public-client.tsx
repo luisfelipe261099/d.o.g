@@ -81,6 +81,7 @@ export function PortalPublicClient({ token }: { token: string }) {
   const [pinRequired, setPinRequired] = useState(false);
   const [unlockAttempt, setUnlockAttempt] = useState(0);
   const [openVideo, setOpenVideo] = useState<{ id: string; src: string; title: string } | null>(null);
+  const [photoLoadFailed, setPhotoLoadFailed] = useState(false);
 
   const gam = useGamification(token, { pin: pinRequired ? pin : undefined });
 
@@ -113,6 +114,11 @@ export function PortalPublicClient({ token }: { token: string }) {
   }, [token, pinQuery, pinRequired, unlockAttempt]);
 
   const featuredDog = data?.client.dogs[0];
+  const featuredDogPhoto = photoLoadFailed ? "/images/dog-default-bolt.svg" : featuredDog?.photoUrl || "/images/dog-default-bolt.svg";
+
+  useEffect(() => {
+    setPhotoLoadFailed(false);
+  }, [featuredDog?.id, featuredDog?.photoUrl]);
 
   const sessionGallery = useMemo(() => {
     if (!data) return [] as Array<{ id: string; src: string; sessionTitle: string; sessionDate: string }>;
@@ -297,15 +303,23 @@ export function PortalPublicClient({ token }: { token: string }) {
             <div className="flex items-start gap-4">
               {featuredDog?.photoUrl ? (
                 <Image
-                  src={featuredDog.photoUrl}
+                  src={featuredDogPhoto}
                   alt={`Foto de ${featuredDog.name}`}
+                  width={90}
+                  height={90}
+                  unoptimized
+                  onError={() => setPhotoLoadFailed(true)}
+                  className="h-20 w-20 rounded-[1.25rem] object-cover"
+                />
+              ) : (
+                <Image
+                  src={featuredDogPhoto}
+                  alt={`Foto de ${featuredDog?.name || "Pet"}`}
                   width={90}
                   height={90}
                   unoptimized
                   className="h-20 w-20 rounded-[1.25rem] object-cover"
                 />
-              ) : (
-                <div className="flex h-20 w-20 items-center justify-center rounded-[1.25rem] bg-white/10 text-3xl">🐾</div>
               )}
               <div>
                 <h2 className="font-display text-2xl font-semibold">{featuredDog?.name || "Pet"}</h2>

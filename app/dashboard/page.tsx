@@ -268,21 +268,18 @@ export default function DashboardPage() {
                 <p className="text-xs text-sky-100">{heroPlan}</p>
               </div>
               <div className="relative h-24 w-24 overflow-hidden rounded-2xl bg-white/20">
-                {heroDog?.photoUrl ? (
-                  <Image
-                    src={heroDog.photoUrl}
-                    alt={`Foto de ${heroDog.name}`}
-                    fill
-                    sizes="96px"
-                    priority
-                    unoptimized
-                    className="object-cover"
-                  />
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center text-sky-100">
-                    <Icon name="paw" className="h-9 w-9" />
-                  </div>
-                )}
+                <Image
+                  src={heroDog?.photoUrl || "/images/dog-default-bolt.svg"}
+                  alt={`Foto de ${heroDog?.name || "Pet"}`}
+                  fill
+                  sizes="96px"
+                  priority
+                  unoptimized
+                  onError={(event) => {
+                    event.currentTarget.src = "/images/dog-default-bolt.svg";
+                  }}
+                  className="object-cover"
+                />
               </div>
             </div>
             <Link

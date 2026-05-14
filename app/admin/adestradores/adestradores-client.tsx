@@ -100,6 +100,13 @@ export function AdestradoresClient() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
+      <section className="rounded-2xl border border-[var(--border)] bg-white p-4 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">Fluxo simples</p>
+        <p className="mt-1 text-sm text-[var(--muted)]">
+          1) Filtre por status, 2) abra Novo adestrador ou Editar, 3) salve. Contas novas sao criadas com senha padrao 123456.
+        </p>
+      </section>
+
       <div className="flex items-center justify-between">
         <div className="flex gap-2">
           {[
@@ -237,6 +244,11 @@ export function AdestradoresClient() {
               ))}
             </tbody>
           </table>
+          {!loading && filteredTrainers.length === 0 ? (
+            <div className="border-t border-[var(--border)] px-6 py-5">
+              <p className="text-sm text-[var(--muted)]">Nenhum adestrador encontrado para este filtro.</p>
+            </div>
+          ) : null}
         </div>
       </div>
     </div>

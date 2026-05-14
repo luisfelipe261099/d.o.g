@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 type OverviewResponse = {
@@ -68,6 +69,31 @@ export function AdminDashboard() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-5">
+      <section className="rounded-2xl border border-[var(--border)] bg-white p-5 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">Comece por aqui</p>
+        <h2 className="mt-1 font-display text-2xl font-semibold">O que voce quer fazer agora?</h2>
+        <p className="mt-1 text-sm text-[var(--muted)]">
+          Use os atalhos abaixo para chegar direto na acao principal sem precisar procurar no menu.
+        </p>
+        <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+          {[
+            { href: "/admin/adestradores", label: "Gerenciar adestradores", detail: "Cadastrar, editar e ajustar status" },
+            { href: "/admin/planos", label: "Ajustar planos", detail: "Alterar plano por conta" },
+            { href: "/admin/faturamento", label: "Revisar faturamento", detail: "Pagamentos e pendencias" },
+            { href: "/admin/relatorios", label: "Ver relatorios", detail: "Uso e desempenho da base" },
+          ].map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="rounded-xl border border-[var(--border)] bg-[var(--panel)] px-3 py-2.5 transition hover:bg-white"
+            >
+              <p className="text-sm font-semibold text-[var(--foreground)]">{item.label}</p>
+              <p className="text-xs text-[var(--muted)]">{item.detail}</p>
+            </Link>
+          ))}
+        </div>
+      </section>
+
       {/* KPI Cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         {[
@@ -125,7 +151,7 @@ export function AdminDashboard() {
           {/* Adestradores Ativos */}
           <section className="rounded-2xl border border-[var(--border)] bg-[var(--panel-strong)] p-5 shadow-sm">
             <div className="mb-5 flex items-center justify-between">
-              <h3 className="font-display text-xl font-semibold">Adestradores Ativos</h3>
+              <h3 className="font-display text-xl font-semibold">Base de adestradores</h3>
               <span className="hidden text-sm font-medium text-slate-600 sm:block">
                 {metrics?.activeTrainers ?? 0} ativos • {metrics?.trialTrainers ?? 0} em trial
               </span>
@@ -156,7 +182,7 @@ export function AdminDashboard() {
 
           {/* Relatório de Crescimento */}
           <section className="hidden rounded-2xl border border-[var(--border)] bg-[var(--panel-strong)] p-6 shadow-sm lg:block">
-            <h3 className="mb-5 font-display text-xl font-semibold">Métricas de Plataforma</h3>
+            <h3 className="mb-5 font-display text-xl font-semibold">Indicadores resumidos</h3>
 
             <div className="space-y-4">
               {[
@@ -191,15 +217,15 @@ export function AdminDashboard() {
             </p>
             <h3 className="mt-3 font-display text-2xl font-semibold">Administrador</h3>
             <p className="mt-3 text-sm leading-6 text-slate-300">
-              Visão completa da operação para gerir crescimento, receita recorrente e saúde da base de adestradores.
+              Esta area concentra as decisoes principais de operacao: contas, planos, faturamento e desempenho.
             </p>
 
             <div className="mt-4 space-y-2 border-t border-slate-700 pt-4">
               {[
-                "✓ Criar/editar adestradores",
-                "✓ Gerenciar planos e preços",
-                "✓ Acompanhar receita e inadimplência",
-                "✓ Auditar qualidade de uso",
+                "✓ Criar e editar adestradores",
+                "✓ Ajustar plano por conta",
+                "✓ Acompanhar receita e pendencias",
+                "✓ Ver desempenho da base",
               ].map((item) => (
                 <p key={item} className="text-sm text-slate-300">
                   {item}
@@ -210,7 +236,7 @@ export function AdminDashboard() {
 
           {/* Atividades Recentes */}
           <section className="rounded-2xl border border-[var(--border)] bg-[var(--panel-strong)] p-5 shadow-sm">
-            <h3 className="mb-4 font-display text-lg font-semibold">Atividades Recentes</h3>
+            <h3 className="mb-4 font-display text-lg font-semibold">Movimentacao recente</h3>
 
             <div className="space-y-3">
               {recentTransactions.slice(0, 3).map((tx) => (
@@ -230,7 +256,7 @@ export function AdminDashboard() {
 
           {/* Status do Sistema */}
           <section className="hidden rounded-2xl border border-[var(--border)] bg-[var(--panel-strong)] p-6 shadow-sm lg:block">
-            <h3 className="mb-4 font-display text-lg font-semibold">Saúde do Sistema</h3>
+            <h3 className="mb-4 font-display text-lg font-semibold">Saude do sistema</h3>
 
             <div className="space-y-3">
               {[

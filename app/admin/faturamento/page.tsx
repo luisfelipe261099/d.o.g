@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 import { PageShell } from "@/components/page-shell";
+import { AdminContextNav } from "@/components/admin-context-nav";
 
 type OverviewResponse = {
   metrics: {
@@ -48,9 +49,10 @@ export default function FaturamentoPage() {
     <PageShell
       kicker="Admin"
       title="Faturamento e receita recorrente"
-      description="Acompanhe assinaturas, pagamentos e desempenho financeiro da operacao."
+      description="Veja rapidamente o que foi pago, o que esta pendente e como a receita evolui."
       requireAuth="admin"
     >
+      <AdminContextNav />
       <div className="mx-auto max-w-7xl space-y-6">
         <div className="grid gap-4 md:grid-cols-4">
           {[
