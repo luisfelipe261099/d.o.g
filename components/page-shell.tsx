@@ -6,17 +6,17 @@ import { AuthGuard } from "@/components/auth-guard";
 import type { UserRole } from "@/lib/app-store";
 
 type PageShellProps = {
-  kicker: string;
-  title: string;
-  description: string;
+  kicker?: string;
+  title?: string;
+  description?: string;
   requireAuth?: boolean | UserRole | UserRole[];
   children: ReactNode;
 };
 
 export function PageShell({
-  kicker,
-  title,
-  description,
+  kicker = "Adestro",
+  title = "Painel",
+  description = "Acompanhe suas atividades e resultados na plataforma.",
   requireAuth = false,
   children,
 }: PageShellProps) {

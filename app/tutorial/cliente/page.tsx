@@ -38,10 +38,13 @@ const clientSteps = [
 
 export default function ClientTutorialPage() {
   return (
-    <PageShell>
+    <PageShell
+      kicker="Tutorial"
+      title="Guia para Clientes"
+      description="Aprenda a usar o portal do tutor para acompanhar o treinamento do seu cão"
+    >
       <section>
-        <h1>Tutorial para Clientes</h1>
-        <p>Bem-vindo ao portal do tutor! Aqui estão os passos para aproveitar ao máximo o acompanhamento do treinamento do seu cão:</p>
+        <p>Aqui estão os passos para aproveitar ao máximo o acompanhamento do treinamento do seu cão:</p>
         {clientSteps.map((step, index) => (
           <div key={index}>
             <h2>{step.title}</h2>
