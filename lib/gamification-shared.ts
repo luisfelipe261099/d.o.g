@@ -10,7 +10,11 @@ export type GamificationAction =
   | "feedback_sent"
   | "trainer_rated"
   | "session_rated"
-  | "daily_visit";
+  | "daily_visit"
+  | "training_completed"
+  | "feedback_received"
+  | "invite_tutor"
+  | "multiple_techniques";
 
 export const POINTS: Record<GamificationAction, number> = {
   task_completed: 20,
@@ -20,6 +24,10 @@ export const POINTS: Record<GamificationAction, number> = {
   trainer_rated: 25,
   session_rated: 15,
   daily_visit: 5,
+  training_completed: 10,
+  feedback_received: 15,
+  invite_tutor: 50,
+  multiple_techniques: 60,
 };
 
 export type Badge = {
@@ -31,6 +39,7 @@ export type Badge = {
 };
 
 export const BADGES_DEF: Omit<Badge, "unlocked">[] = [
+  // Badges de Tutor
   { id: "first_task", label: "Primeira tarefa", icon: "🎯", description: "Concluiu sua primeira tarefa de casa." },
   { id: "five_tasks", label: "Treinador dedicado", icon: "🏅", description: "Concluiu 5 tarefas." },
   { id: "ten_tasks", label: "Mestre das tarefas", icon: "🏆", description: "Concluiu 10 tarefas." },
@@ -41,6 +50,18 @@ export const BADGES_DEF: Omit<Badge, "unlocked">[] = [
   { id: "streak_7", label: "Rotina forte", icon: "🚀", description: "7 dias seguidos no portal." },
   { id: "level_3", label: "Nível 3", icon: "📈", description: "Alcançou o nível 3." },
   { id: "level_5", label: "Nível 5", icon: "👑", description: "Alcançou o nível 5." },
+  { id: "first_video_uploaded", label: "Primeiro vídeo enviado", icon: "🎥", description: "Adicionou o primeiro vídeo de treinamento." },
+  // Novas Badges de Tutor
+  { id: "consistent_trainer", label: "Treinador Consistente", icon: "🎪", description: "Completou 7 tarefas em uma semana." },
+  { id: "well_behaved_dog", label: "Cão Bem Comportado", icon: "🐕‍🦺", description: "Marcou 5 treinos como sucesso." },
+  { id: "community_share", label: "Influencer do Adestro", icon: "📱", description: "Compartilhou vídeo de progresso do cão." },
+  { id: "monthly_challenge", label: "Desafiador Mensal", icon: "🏁", description: "Completou o desafio de treino do mês." },
+  // Badges de Adestrador
+  { id: "first_training", label: "Primeiro Treino", icon: "👨‍🏫", description: "Registrou o primeiro treino." },
+  { id: "hundred_sessions", label: "Centésima Sessão", icon: "💯", description: "Completou 100 registros de treino." },
+  { id: "video_educator", label: "Educador em Vídeo", icon: "📹", description: "Enviou 5 vídeos de treinamento." },
+  { id: "mentor_badge", label: "Mentor", icon: "🧑‍🎓", description: "Tem 10 clientes ativos simultaneamente." },
+  { id: "expert_techniques", label: "Especialista em Técnicas", icon: "🎯", description: "Utilizou 5 técnicas diferentes em um mês." },
 ];
 
 // Estado bruto persistido no banco
@@ -53,6 +74,14 @@ export type RawGamification = {
   sessionRatings: Record<string, number>;
   totalTasksCompleted: number;
   totalFeedbacks: number;
+  totalTrainingsCompleted: number;
+  totalFeedbacksReceived: number;
+  tutorsInvited: number;
+  techniquesUsed: string[];
+  weeklyTasksCompleted: number;
+  successfulTrainings: number;
+  videosShared: number;
+  monthlyProgress: number;
 };
 
 // Estado público entregue ao cliente (com derivados)
@@ -73,6 +102,14 @@ export function emptyRawGamification(): RawGamification {
     sessionRatings: {},
     totalTasksCompleted: 0,
     totalFeedbacks: 0,
+    totalTrainingsCompleted: 0,
+    totalFeedbacksReceived: 0,
+    tutorsInvited: 0,
+    techniquesUsed: [],
+    weeklyTasksCompleted: 0,
+    successfulTrainings: 0,
+    videosShared: 0,
+    monthlyProgress: 0,
   };
 }
 
@@ -100,6 +137,18 @@ function computeBadges(raw: RawGamification, level: number): Badge[] {
     if (badge.id === "streak_7" && raw.streakDays >= 7) unlocked = true;
     if (badge.id === "level_3" && level >= 3) unlocked = true;
     if (badge.id === "level_5" && level >= 5) unlocked = true;
+    if (badge.id === "first_video_uploaded" && raw.watchedVideos.length >= 1) unlocked = true;
+    // Novas badges de tutor
+    if (badge.id === "consistent_trainer" && raw.weeklyTasksCompleted >= 7) unlocked = true;
+    if (badge.id === "well_behaved_dog" && raw.successfulTrainings >= 5) unlocked = true;
+    if (badge.id === "community_share" && raw.videosShared >= 1) unlocked = true;
+    if (badge.id === "monthly_challenge" && raw.monthlyProgress >= 100) unlocked = true;
+    // Badges de adestrador
+    if (badge.id === "first_training" && raw.totalTrainingsCompleted >= 1) unlocked = true;
+    if (badge.id === "hundred_sessions" && raw.totalTrainingsCompleted >= 100) unlocked = true;
+    if (badge.id === "video_educator" && raw.totalFeedbacksReceived >= 5) unlocked = true;
+    if (badge.id === "mentor_badge" && raw.tutorsInvited >= 10) unlocked = true;
+    if (badge.id === "expert_techniques" && raw.techniquesUsed.length >= 5) unlocked = true;
     return { ...badge, unlocked };
   });
 }
@@ -125,7 +174,11 @@ export type ApplyActionInput =
   | { action: "feedback_sent" }
   | { action: "trainer_rated"; rating: number }
   | { action: "session_rated"; sessionId: string; rating: number }
-  | { action: "video_watched"; videoId: string };
+  | { action: "video_watched"; videoId: string }
+  | { action: "training_completed" }
+  | { action: "feedback_received" }
+  | { action: "invite_tutor"; count?: number }
+  | { action: "multiple_techniques"; technique: string };
 
 export type ApplyActionResult = {
   raw: RawGamification;
@@ -185,6 +238,37 @@ export function applyAction(current: RawGamification, input: ApplyActionInput): 
         earned = POINTS.video_watched;
         reason = "Vídeo assistido";
         next.points += earned;
+      }
+      break;
+    }
+    case "training_completed": {
+      earned = POINTS.training_completed;
+      reason = "Treino registrado";
+      next.points += earned;
+      next.totalTrainingsCompleted += 1;
+      break;
+    }
+    case "feedback_received": {
+      earned = POINTS.feedback_received;
+      reason = "Feedback recebido do adestrador";
+      next.points += earned;
+      next.totalFeedbacksReceived += 1;
+      break;
+    }
+    case "invite_tutor": {
+      const count = input.count || 1;
+      earned = POINTS.invite_tutor * count;
+      reason = `Convidou ${count} tutor(es)`;
+      next.points += earned;
+      next.tutorsInvited += count;
+      break;
+    }
+    case "multiple_techniques": {
+      if (!next.techniquesUsed.includes(input.technique)) {
+        earned = POINTS.multiple_techniques;
+        reason = "Utilizou nova técnica";
+        next.points += earned;
+        next.techniquesUsed.push(input.technique);
       }
       break;
     }

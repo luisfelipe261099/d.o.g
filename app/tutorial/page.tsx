@@ -56,6 +56,15 @@ const adjustmentStatus = [
   { label: "Cadastro explicando melhor plano, pacote e valor por aulas", status: "Ajustado" },
 ];
 
+const videoSteps = [
+  {
+    title: "Adicionar link de vídeo",
+    text: "Grave o treinamento, suba no YouTube e adicione o link para o cliente visualizar.",
+    href: "/treinos",
+    action: "Adicionar vídeo",
+  },
+];
+
 export default function TutorialPage() {
   const clients = useAppStore((state) => state.clients);
   const sessions = useAppStore((state) => state.trainingSessions);
@@ -510,6 +519,17 @@ export default function TutorialPage() {
                 </div>
               ))}
             </div>
+          </section>
+
+          <section>
+            <h2>Vídeos de Treinamento</h2>
+            {videoSteps.map((step, index) => (
+              <div key={index}>
+                <h3>{step.title}</h3>
+                <p>{step.text}</p>
+                <Link href={step.href}>{step.action}</Link>
+              </div>
+            ))}
           </section>
         </div>
       </div>

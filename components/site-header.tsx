@@ -41,6 +41,7 @@ export function SiteHeader() {
     { href: "/admin/planos", label: "Planos", kicker: "Preços", description: "Configurar planos" },
     { href: "/admin/faturamento", label: "Faturamento", kicker: "Financeiro", description: "Receitas e pagamentos" },
     { href: "/admin/relatorios", label: "Relatórios", kicker: "Analytics", description: "Análises da plataforma" },
+    { href: "/tutorial", label: "Tutorial", kicker: "Ajuda", description: "Passo a passo para administradores" },
   ];
 
   const trainerNav = [
@@ -56,6 +57,7 @@ export function SiteHeader() {
   const trainerMoreNav = [
     { href: "/planos", label: "Meu Plano", kicker: "Assinatura", description: "Plano e pagamento" },
     { href: "/tutorial", label: "Tutorial", kicker: "Ajuda", description: "Passo a passo da plataforma" },
+    { href: "/tutorial/cliente", label: "Tutorial para Clientes", kicker: "Ajuda", description: "Guia para os tutores de cães" },
   ];
 
   const clientNav = [

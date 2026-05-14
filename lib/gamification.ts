@@ -90,8 +90,22 @@ export function useGamification(token: string, options: UseGamificationOptions =
   );
 
   const award = useCallback(
-    (action: "task_completed" | "task_uncompleted" | "feedback_sent", _reason?: string, taskId?: string) => {
+    (action: "task_completed" | "task_uncompleted" | "feedback_sent" | "training_completed" | "feedback_received", _reason?: string, taskId?: string) => {
       void sendAction({ action, taskId } as ApplyActionInput);
+    },
+    [sendAction],
+  );
+
+  const inviteTutor = useCallback(
+    (count?: number) => {
+      void sendAction({ action: "invite_tutor", count });
+    },
+    [sendAction],
+  );
+
+  const useTechnique = useCallback(
+    (technique: string) => {
+      void sendAction({ action: "multiple_techniques", technique });
     },
     [sendAction],
   );
@@ -119,5 +133,5 @@ export function useGamification(token: string, options: UseGamificationOptions =
 
   const dismissEarned = useCallback(() => setLastEarned(null), []);
 
-  return { state, award, watchVideo, rateTrainer, rateSession, lastEarned, dismissEarned, hydrated };
+  return { state, award, watchVideo, rateTrainer, rateSession, lastEarned, dismissEarned, hydrated, inviteTutor, useTechnique };
 }
